@@ -12,11 +12,11 @@ Both are kept in sync; use whichever is faster for what you are doing.
 
 ```shell
 cargo duckdb-ext build   # fast loop, no make
-# -> target/debug/my_extension.duckdb_extension
+# -> target/debug/duckfn_statrs.duckdb_extension
 
 make configure           # once: builds configure/venv (Python + the sqllogictest runner)
 make debug               # the official template path, also what CI runs
-# -> build/debug/extension/my_extension/my_extension.duckdb_extension
+# -> build/debug/extension/duckfn_statrs/duckfn_statrs.duckdb_extension
 ```
 
 The two paths and where each one puts the artifact:
@@ -100,7 +100,7 @@ Pull requests run the build and the tests only; publishing is gated on the ref b
 ### Installing a release
 
 ```sql
-LOAD 'https://github.com/<owner>/<repo>/releases/latest/download/my_extension-windows_amd64.duckdb_extension';
+LOAD 'https://github.com/<owner>/<repo>/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
 ```
 
 A locally built extension needs `duckdb -unsigned`; a released one that a user downloads also has to be

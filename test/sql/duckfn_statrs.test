@@ -1,0 +1,24 @@
+# name: test/sql/duckfn_statrs.test
+# description: 冒烟测试：扩展能被加载，statrs 包装函数注册到位
+# group: [duckfn_statrs]
+
+# 加载之前这个名字不存在（每个 .test 文件都从一个干净的实例开始）
+statement error
+SELECT stat_mean([1.0, 2.0, 3.0]);
+----
+Scalar Function with name stat_mean does not exist
+
+# require 之后扩展就位（测试框架按 --external-extension 加载本地产物）
+require duckfn_statrs
+
+query I
+SELECT stat_mean([1.0, 2.0, 3.0])::DECIMAL(10,1);
+----
+2.0
+
+# 首批注册的是 12 个统计量 + 3 个正态分布函数，全部为标量
+query I
+SELECT count(*) FROM duckdb_functions()
+WHERE starts_with(function_name, 'stat_') AND function_type = 'scalar';
+----
+15

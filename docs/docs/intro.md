@@ -7,7 +7,7 @@ description: A DuckDB extension written in Rust with duckfn — what the project
 
 # Introduction
 
-`my_extension` is a DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)
+`duckfn_statrs` is a DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)
 written in Rust on top of [duckfn](https://crates.io/crates/duckfn). Attribute macros turn ordinary Rust
 functions into the SQL functions DuckDB registers when the extension is loaded; DuckDB's C API is used
 headers-only, so nothing has to be built except the extension itself.
@@ -51,7 +51,7 @@ in `docs/README.md`.
 
 | Path | What it is |
 | --- | --- |
-| `src/extension/mod.rs` | The entry point: `duckfn_entrypoint!("my_extension")` plus the module tree. |
+| `src/extension/mod.rs` | The entry point: `duckfn_entrypoint!("duckfn_statrs")` plus the module tree. |
 | `src/extension/functions/` | The registered functions. Three samples live here: `my_greet`, `my_greet_checked`, `my_sum`. |
 | `src/extension/types/` | Where SQL-facing types go (STRUCT/ENUM definitions, `list<struct>` row types). Empty for now. |
 | `test/sql/` | SQLLogicTest files, one per sample function plus a smoke test. |

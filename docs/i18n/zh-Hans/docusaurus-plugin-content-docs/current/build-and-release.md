@@ -12,11 +12,11 @@ description: 两条构建路径、Justfile 命令、产出 GitHub Release 产物
 
 ```shell
 cargo duckdb-ext build   # 日常迭代，不需要 make
-# -> target/debug/my_extension.duckdb_extension
+# -> target/debug/duckfn_statrs.duckdb_extension
 
 make configure           # 只做一次：建 configure/venv（Python 与 sqllogictest 运行器）
 make debug               # 官方模板那条路，CI 也走它
-# -> build/debug/extension/my_extension/my_extension.duckdb_extension
+# -> build/debug/extension/duckfn_statrs/duckfn_statrs.duckdb_extension
 ```
 
 两条路径，以及各自把产物放在哪：
@@ -96,7 +96,7 @@ PR 只构建 + 测试，不发布：发布那一步由「当前 ref 是版本 ta
 ### 安装一份发布产物
 
 ```sql
-LOAD 'https://github.com/<owner>/<repo>/releases/latest/download/my_extension-windows_amd64.duckdb_extension';
+LOAD 'https://github.com/<owner>/<repo>/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
 ```
 
 本地构建的产物要 `duckdb -unsigned`；从 Release 下载的产物同样要加这个参数，因为它没有 DuckDB 分发密钥

@@ -1,4 +1,16 @@
 function,description,comment,example
-my_greet,"Greets someone by name, the simplest possible scalar function",,SELECT my_greet('world')
-my_greet_checked,"Greets someone by name, returning NULL for an empty name and failing on whitespace","The nullable-and-fallible return shape: Ok(None) is SQL NULL, Err fails the query",SELECT my_greet_checked('')
-my_sum,"Sums a DOUBLE column, skipping NULLs, the simplest possible aggregate function","An empty group, or one where every row is NULL, yields NULL rather than 0","SELECT my_sum(x) FROM (VALUES (1.5), (2.5), (3.0)) t(x); SELECT my_sum(x) FROM (VALUES (1.0), (NULL)) t(x)"
+stat_covariance,"Sample covariance of two DOUBLE lists (Bessel-corrected), failing when their lengths differ",Length mismatch is a query error; equal-but-shorter-than-two lists yield NULL,"SELECT stat_covariance([0.0, 3.0, -2.0], [-5.0, 4.0, 10.0])"
+stat_geometric_mean,"Geometric mean of a DOUBLE list, NULL when it holds a negative value or is empty",,"SELECT stat_geometric_mean([1.0, 2.0, 3.0])"
+stat_harmonic_mean,"Harmonic mean of a DOUBLE list, NULL when it holds a negative value or is empty",,"SELECT stat_harmonic_mean([1.0, 2.0, 3.0])"
+stat_mean,"Arithmetic mean of a DOUBLE list, NULL when the list is empty",,"SELECT stat_mean([1.0, 2.0, 3.0])"
+stat_median,"Median of a DOUBLE list, NULL when the list is empty",,"SELECT stat_median([3.0, 1.0, 2.0])"
+stat_normal_cdf,Normal (Gaussian) cumulative distribution function P(X <= x),,"SELECT stat_normal_cdf(1.96, 0.0, 1.0)"
+stat_normal_pdf,"Normal (Gaussian) probability density at x, given mean and standard deviation",,"SELECT stat_normal_pdf(0.0, 0.0, 1.0)"
+stat_normal_quantile,"Normal (Gaussian) quantile function: the x whose CDF equals p, for p in [0, 1]","A probability outside [0, 1] is a query error rather than a clamped endpoint","SELECT stat_normal_quantile(0.975, 0.0, 1.0)"
+stat_population_covariance,"Population covariance of two DOUBLE lists, failing when their lengths differ",Length mismatch is a query error; equal-but-empty lists yield NULL,"SELECT stat_population_covariance([0.0, 3.0, -2.0], [-5.0, 4.0, 10.0])"
+stat_population_std_dev,"Population standard deviation of a DOUBLE list, NULL when the list is empty",,"SELECT stat_population_std_dev([0.0, 3.0, -2.0])"
+stat_population_variance,"Population variance of a DOUBLE list, NULL when the list is empty",,"SELECT stat_population_variance([0.0, 3.0, -2.0])"
+stat_quadratic_mean,"Quadratic mean (root mean square) of a DOUBLE list, NULL when it is empty",,"SELECT stat_quadratic_mean([1.0, 2.0, 3.0])"
+stat_quantile,"Tau quantile of a DOUBLE list, NULL when the list is empty or tau is not in [0, 1]",,"SELECT stat_quantile([1.0, 2.0, 3.0, 4.0], 0.5)"
+stat_std_dev,"Sample standard deviation of a DOUBLE list (Bessel-corrected), NULL when it holds fewer than two values",,"SELECT stat_std_dev([0.0, 3.0, -2.0])"
+stat_variance,"Sample variance of a DOUBLE list (Bessel-corrected), NULL when it holds fewer than two values",,"SELECT stat_variance([0.0, 3.0, -2.0])"

@@ -1,0 +1,79 @@
+# name: test/sql/stat_list_statistics.test
+# description: statrs::statistics 的 LIST 包装：正常值、NULL 语义、越界与错误路径
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# 集中趋势与离散程度（期望值取自 statrs 的实际输出，统一以 DECIMAL(12,6) 定点打印）
+query RRRR
+SELECT stat_mean([1.0, 2.0, 3.0])::DECIMAL(12,6),
+       stat_geometric_mean([1.0, 2.0, 3.0])::DECIMAL(12,6),
+       stat_harmonic_mean([1.0, 2.0, 3.0])::DECIMAL(12,6),
+       stat_quadratic_mean([1.0, 2.0, 3.0])::DECIMAL(12,6);
+----
+2.000000	1.817121	1.636364	2.160247
+
+query RR
+SELECT stat_median([3.0, 1.0, 2.0])::DECIMAL(12,6),
+       stat_quantile([1.0, 2.0, 3.0, 4.0], 0.5)::DECIMAL(12,6);
+----
+2.000000	2.500000
+
+# 样本版（Bessel 修正）与总体版的区别
+query RRRR
+SELECT stat_variance([0.0, 3.0, -2.0])::DECIMAL(12,6),
+       stat_std_dev([0.0, 3.0, -2.0])::DECIMAL(12,6),
+       stat_population_variance([0.0, 3.0, -2.0])::DECIMAL(12,6),
+       stat_population_std_dev([0.0, 3.0, -2.0])::DECIMAL(12,6);
+----
+6.333333	2.516611	4.222222	2.054805
+
+query RR
+SELECT stat_covariance([0.0, 3.0, -2.0], [-5.0, 4.0, 10.0])::DECIMAL(12,6),
+       stat_population_covariance([0.0, 3.0, -2.0], [-5.0, 4.0, 10.0])::DECIMAL(12,6);
+----
+-5.500000	-3.666667
+
+# statrs 的「算不出」（NAN）统一折算成 SQL NULL：空列表、样本方差不足 2 个元素、tau 越界
+query RRR
+SELECT stat_mean([]::DOUBLE[]),
+       stat_variance([1.0]),
+       stat_quantile([1.0, 2.0], 1.5);
+----
+NULL	NULL	NULL
+
+# 严格 LIST 语义：列表本身为 NULL、或列表里含 NULL 元素，整行 NULL（函数体不执行）
+query R
+SELECT stat_mean(NULL::DOUBLE[]);
+----
+NULL
+
+query R
+SELECT stat_mean([1.0, NULL, 3.0]);
+----
+NULL
+
+# 想跳过 NULL：聚合列成列表时先 FILTER（DuckDB 的 list() 本身保留 NULL）
+query R
+SELECT stat_median(list(v) FILTER (WHERE v IS NOT NULL))::DECIMAL(12,6)
+FROM (VALUES (1.0), (2.0), (NULL), (3.0), (100.0)) t(v);
+----
+2.500000
+
+# 协方差对「两列长度不等」报错而不是 panic
+statement error
+SELECT stat_covariance([1.0, 2.0], [1.0]);
+----
+the two lists must have the same length, got 2 and 1
+
+# 入参类型由 binder 拦下：DOUBLE[] 之外的值不给隐式升成列表
+statement error
+SELECT stat_mean(42.0);
+----
+Binder Error
+
+# 跨多个 DataChunk（STANDARD_VECTOR_SIZE = 2048）
+query II
+SELECT count(*), count(stat_mean([x::DOUBLE, x::DOUBLE + 1.0])) FROM range(3000) t(x);
+----
+3000	3000

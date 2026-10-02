@@ -1,8 +1,11 @@
 [package]
-name = "my_extension"
+name = "duckfn_statrs"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.86"
+# statrs 0.19（及其拉进的 nalgebra 0.35）要求 Rust 1.89，把模板原本的 1.86 下限抬上去了；
+# 降 statrs 版本前先想清楚要放弃哪些 API。
+# statrs 0.19 (and nalgebra 0.35 behind it) requires Rust 1.89, lifting the template's 1.86 floor.
+rust-version = "1.89"
 # 这是 DuckDB 的 loadable extension（靠 GitHub Release 上的 .duckdb_extension 分发，
 # 见根目录 AGENTS.md 的「发版流程」），不发 crates.io。
 #
@@ -27,7 +30,7 @@ strip = true
 # (that is needed while compiling natively) to staticlib (needed since the
 # actual linking will be done via emcc).
 # The name must match the extension name (the Justfile's build_wasm passes it to `--example`).
-name = "my_extension"
+name = "duckfn_statrs"
 path = "src/wasm_lib.rs"
 crate-type = ["staticlib"]
 
@@ -107,6 +110,15 @@ quack-rs = "0.16.0"
 # `1.<major*10000 + minor*100 + patch>.0` (1.5.0 → 1.10500.0, 1.5.6 → 1.10506.0), so `>=1.10500`
 # means "DuckDB >= 1.5".
 libduckdb-sys = { version = ">=1.10500, <2", features = ["loadable-extension"] }
+
+# statrs：Rust 统计计算库，本扩展的存在理由 —— 把它的 statistics / distribution 等模块包装成
+# DuckDB 函数（见 src/extension/functions/）。纯 Rust 实现，与 duckdb 的 loadable-extension 路线不冲突。
+# 默认 features 是 nalgebra / rand / std：nalgebra 服务于矩阵/线性回归一类 API，rand 服务于采样，
+# 只用统计量与分布时用不到 —— 收窄前先确认目标 API 不在被关掉的模块里。
+#
+# statrs: the Rust statistical computing library this extension wraps into DuckDB functions
+# (see src/extension/functions/). Pure Rust, so it sits fine next to the loadable-extension setup.
+statrs = "0.19"
 
 # 用到时间/日期（`DuckDate`、`DuckTimestamp*`…）或 UUID、DECIMAL 的互转时，打开 duckfn 的对应 feature
 # （"chrono" / "uuid" / "rust_decimal"）并把那个 crate 加成直接依赖 —— duckfn 不 re-export 它们。例：

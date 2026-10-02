@@ -48,7 +48,7 @@ functions are the main item.
 just build          # = cargo duckdb-ext build
 ```
 
-The artifact is `target/debug/my_extension.duckdb_extension`. There is no C++ step and no local DuckDB
+The artifact is `target/debug/duckfn_statrs.duckdb_extension`. There is no C++ step and no local DuckDB
 build: the extension is compiled against DuckDB's headers and dispatches through its API table when it
 is loaded.
 
@@ -60,7 +60,7 @@ just repl           # a DuckDB REPL with the extension already loaded
 
 ```sql
 -- or by hand; -unsigned is required for a locally built extension
-duckdb -unsigned -c "LOAD './target/debug/my_extension.duckdb_extension';"
+duckdb -unsigned -c "LOAD './target/debug/duckfn_statrs.duckdb_extension';"
 ```
 
 The sample functions, running right here — the site preloads the extension from the repository's latest
@@ -108,14 +108,14 @@ The faster loop (no `make`, no Python venv of its own) is in [Testing](../guide/
   the file.
 - **The artifact file name must stay `<extension name>.duckdb_extension`.** DuckDB finds the
   entry-point symbol through the file name, so a copy called `win.duckdb_extension` fails with
-  `did not contain function "my_extension_init_c_api"`.
+  `did not contain function "duckfn_statrs_init_c_api"`.
 - **`make test` does not rebuild.** After changing Rust code run `just ci-build` (or `make debug`)
   first, otherwise the tests run against the previous artifact.
 
 :::
 
 One more, on Windows: if `cargo duckdb-ext build` reports the artifact is in use, a DuckDB process is
-holding `target/debug/my_extension.duckdb_extension`. Build to another path instead —
-`cargo duckdb-ext build -o build/debug/my_extension.duckdb_extension` — or close that process. A
+holding `target/debug/duckfn_statrs.duckdb_extension`. Build to another path instead —
+`cargo duckdb-ext build -o build/debug/duckfn_statrs.duckdb_extension` — or close that process. A
 `.duckdb_extension` is not a renamed DLL: DuckDB's metadata lives at the end of the file, so copying
 a DLL over it produces `The metadata at the end of the file is invalid`.

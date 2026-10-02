@@ -9,7 +9,9 @@ AGENTS.md（duckfn-extension-template 自带的那一份）：克隆模板后**�
 
 ## 项目事实（唯一需要人维护的一段）
 
-- 这个扩展做什么：{{PROJECT_GOAL}}
+- 这个扩展做什么：把 [statrs](https://crates.io/crates/statrs) 包装成 DuckDB 函数 ——
+  统计量类函数吃 `LIST(DOUBLE)`（均值/方差/分位数/协方差…），分布类函数吃标量参数
+  （正态 pdf/cdf/分位数…），新增包装以 src/extension/functions/ 里的现有文件为例。
 - 本仓库来自 [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template)：
   克隆后第一件事是 `just rename <新扩展名>`（见下面「扩展名与改名」）。
 
@@ -143,18 +145,18 @@ README 里出现的路径示例，并把 `Cargo.lock` 按新包名重写；脚�
 ### 注册到 DuckDB 的函数名统一加短前缀
 
 凡是出现在 SQL 里的名字都加同一个前缀：标量函数、聚合函数、表函数、COPY 格式、cast、SQL 宏、
-replacement scan。模板里这个前缀是 `my_`。
+replacement scan。本项目的前缀是 `stat_`（模板里是 `my_`）。
 
 社区扩展几乎都不把包名/扩展名写进函数名（见
-<https://duckdb.org/community_extensions/list_of_extensions>）：`my_extension_greet` 这样的全名在每个
-调用点上都是纯噪声，而 `my_` 短到可以忽略，又足以在 `duckdb_functions()` 里按前缀检索。
+<https://duckdb.org/community_extensions/list_of_extensions>）：`duckfn_statrs_greet` 这样的全名在每个
+调用点上都是纯噪声，而 `stat_` 短到可以忽略，又足以在 `duckdb_functions()` 里按前缀检索。
 **前缀只是命名空间，不再是扩展名的缩写** —— 不要因为扩展名变了就跟着改。
 
 前缀之后的部分要能读懂，不要拿缩写堆砌。示例里的名字各只有一个签名：
 
 ```text
-my_greet(name)
-my_sum(value)
+stat_mean(xs)
+stat_normal_pdf(x, mean, std_dev)
 ```
 
 `rename` 脚本不动函数名（那是你的域代码）：换完扩展名顺手把示例函数与 `test/sql/*.test` 一起改成

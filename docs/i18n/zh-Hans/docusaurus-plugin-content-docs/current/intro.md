@@ -7,7 +7,7 @@ description: 用 Rust 与 duckfn 写的 DuckDB 扩展：这个项目里有什么
 
 # 简介
 
-`my_extension` 是一个用 Rust 写的 DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)，
+`duckfn_statrs` 是一个用 Rust 写的 DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)，
 建立在 [duckfn](https://crates.io/crates/duckfn) 之上：属性宏把普通的 Rust 函数变成扩展加载时注册进
 DuckDB 的 SQL 函数；DuckDB 的 C API 只用到头文件，所以除了扩展本身，没有任何东西需要编译。
 
@@ -47,7 +47,7 @@ FROM (VALUES ('world'), ('')) t(name);
 
 | 路径 | 是什么 |
 | --- | --- |
-| `src/extension/mod.rs` | 入口：`duckfn_entrypoint!("my_extension")` 与模块树。 |
+| `src/extension/mod.rs` | 入口：`duckfn_entrypoint!("duckfn_statrs")` 与模块树。 |
 | `src/extension/functions/` | 注册进 DuckDB 的函数。这里有三个示例：`my_greet`、`my_greet_checked`、`my_sum`。 |
 | `src/extension/types/` | 面向 SQL 的类型放这里（STRUCT / ENUM 定义、`list<struct>` 行类型）。目前是空的。 |
 | `test/sql/` | SQLLogicTest 用例，每个示例函数一份，外加一份冒烟测试。 |

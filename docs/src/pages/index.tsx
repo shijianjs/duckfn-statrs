@@ -137,7 +137,7 @@ fn my_greet_checked(name: String) -> DuckOptionResult<String> {
 
 /** The SQL half of the showcase: the whole interface, with no glue in sight. */
 const SQL_SAMPLE = `-- a locally built extension loads with -unsigned
-LOAD './target/debug/my_extension.duckdb_extension';
+LOAD './target/debug/duckfn_statrs.duckdb_extension';
 
 SELECT my_greet_checked('world');  -- Hello, world!
 SELECT my_greet_checked('');       -- NULL

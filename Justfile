@@ -29,7 +29,7 @@ set windows-shell := ["C:\\Program Files\\Git\\bin\\bash.exe", "-c"]
 import "scripts/common.just"
 
 # 扩展名：全小写、只含下划线
-extension_name := "my_extension"
+extension_name := "duckfn_statrs"
 
 # 克隆模板后第一件事：把扩展名改掉（Cargo.toml / Makefile / Justfile / extension/mod.rs / CI / 文档）
 rename new_name:
