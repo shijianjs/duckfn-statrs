@@ -1,17 +1,135 @@
 # name: test/sql/scalar_normal.test
-# description: statrs 正态分布标量包装：pdf / cdf / 分位数、NULL 短路、非法参数报错
+# description: statrs 正态分布标量包装。锚点值取自 statrs 0.19.1 distribution/normal.rs 的
+#   官方测试（test_pdf / test_cdf / test_inverse_cdf，断言自带 epsilon，sqllogictest 的
+#   R 列同为浮点近似比较）与本模块 doc example；错误路径与 NULL 语义为本仓库新增用例。
 # group: [duckfn_statrs]
 
 require duckfn_statrs
 
-# 标准正态的几个锚点值（期望值取自 statrs 的实际输出，统一以 DECIMAL(12,6) 定点打印）
+# ============================================================================
+# 官方 test_pdf：N(10, 0.1)
+# ============================================================================
 query RRRR
-SELECT sr_normal_pdf(0.0, 0.0, 1.0)::DECIMAL(12,6),
-       sr_normal_cdf(0.0, 0.0, 1.0)::DECIMAL(12,6),
-       sr_normal_cdf(1.96, 0.0, 1.0)::DECIMAL(12,6),
-       sr_normal_quantile(0.975, 0.0, 1.0)::DECIMAL(12,6);
+SELECT sr_normal_pdf(8.5, 10.0, 0.1), sr_normal_pdf(9.8, 10.0, 0.1),
+       sr_normal_pdf(10.0, 10.0, 0.1), sr_normal_pdf(10.2, 10.0, 0.1)
 ----
-0.398942	0.500000	0.975002	1.959964
+5.530709549844416159162e-49	0.5399096651318805195056	3.989422804014326779399	0.5399096651318805195056
+
+query R
+SELECT sr_normal_pdf(11.5, 10.0, 0.1)
+----
+5.530709549844416159162e-49
+
+# ============================================================================
+# 官方 test_pdf：N(-5, 1) 与 N(0, 10)
+# ============================================================================
+query RRRR
+SELECT sr_normal_pdf(-10.0, -5.0, 1.0), sr_normal_pdf(-7.5, -5.0, 1.0),
+       sr_normal_pdf(-5.0, -5.0, 1.0), sr_normal_pdf(-2.5, -5.0, 1.0)
+----
+1.486719514734297707908e-6	0.01752830049356853736216	0.3989422804014326779399	0.01752830049356853736216
+
+query R
+SELECT sr_normal_pdf(0.0, -5.0, 1.0)
+----
+1.486719514734297707908e-6
+
+query RRRR
+SELECT sr_normal_pdf(-5.0, 0.0, 10.0), sr_normal_pdf(-2.5, 0.0, 10.0),
+       sr_normal_pdf(0.0, 0.0, 10.0), sr_normal_pdf(2.5, 0.0, 10.0)
+----
+0.03520653267642994777747	0.03866681168028492069412	0.03989422804014326779399	0.03866681168028492069412
+
+query R
+SELECT sr_normal_pdf(5.0, 0.0, 10.0)
+----
+0.03520653267642994777747
+
+# ============================================================================
+# 官方 test_pdf：N(10, 100) 与 std_dev = infinity（密度处处为 0）
+# ============================================================================
+query RRRRR
+SELECT sr_normal_pdf(-200.0, 10.0, 100.0), sr_normal_pdf(-100.0, 10.0, 100.0),
+       sr_normal_pdf(0.0, 10.0, 100.0), sr_normal_pdf(100.0, 10.0, 100.0),
+       sr_normal_pdf(200.0, 10.0, 100.0)
+----
+4.398359598042719404845e-4	0.002178521770325505313831	0.003969525474770117655105	0.002660852498987548218204	6.561581477467659126534e-4
+
+query RRR
+SELECT sr_normal_pdf(-5.0, -5.0, 'infinity'::DOUBLE),
+       sr_normal_pdf(0.0, -5.0, 'infinity'::DOUBLE),
+       sr_normal_pdf(100.0, -5.0, 'infinity'::DOUBLE)
+----
+0.0	0.0	0.0
+
+# 模块 doc example：N(0,1) 的 pdf(1)
+query R
+SELECT sr_normal_pdf(1.0, 0.0, 1.0)
+----
+0.2419707245191433497978
+
+# ============================================================================
+# 官方 test_cdf：N(5, 2)（x = -inf, -5, -2, 0, 4, 5, 6, 10）
+# ============================================================================
+query R
+SELECT sr_normal_cdf('-infinity'::DOUBLE, 5.0, 2.0)
+----
+0.0
+
+query RRRR
+SELECT sr_normal_cdf(-5.0, 5.0, 2.0), sr_normal_cdf(-2.0, 5.0, 2.0),
+       sr_normal_cdf(0.0, 5.0, 2.0), sr_normal_cdf(4.0, 5.0, 2.0)
+----
+0.0000002866515718	0.0002326290790	0.006209665325	0.30853753872598689636229538939166226011639782444542207
+
+query RRR
+SELECT sr_normal_cdf(5.0, 5.0, 2.0), sr_normal_cdf(6.0, 5.0, 2.0),
+       sr_normal_cdf(10.0, 5.0, 2.0)
+----
+0.5	0.69146246127401310363770461060833773988360217555457859	0.993790334674
+
+# ============================================================================
+# 官方 test_inverse_cdf：N(5, 2)（有限项；p = 0 / 1 的 ±inf 端点见下一组）
+# ============================================================================
+query RR
+SELECT sr_normal_quantile(0.00000028665157187919391167375233287464535385442301361187883, 5.0, 2.0),
+       sr_normal_quantile(0.0002326290790355250363499258867279847735487493358890356, 5.0, 2.0)
+----
+-5.0	-2.0
+
+query RR
+SELECT sr_normal_quantile(0.0062096653257761351669781045741922211278977469230927036, 5.0, 2.0),
+       sr_normal_quantile(0.30853753872598689636229538939166226011639782444542207, 5.0, 2.0)
+----
+0.0	4.0
+
+query RR
+SELECT sr_normal_quantile(0.5, 5.0, 2.0),
+       sr_normal_quantile(0.69146246127401310363770461060833773988360217555457859, 5.0, 2.0)
+----
+5.0	6.0
+
+query R
+SELECT sr_normal_quantile(0.9937903346742238648330218954258077788721022530769078, 5.0, 2.0)
+----
+10.0
+
+# 端点：p = 0 落 min、p = 1 落 max（statrs 的 ContinuousCDF 约定，支持集为全实轴 → ±inf）
+query RR
+SELECT sr_normal_quantile(0.0, 5.0, 2.0), sr_normal_quantile(1.0, 5.0, 2.0)
+----
+-inf	inf
+
+# ============================================================================
+# 以下为本仓库新增用例（NULL 与错误路径、分位数往返、逐行求值、跨 DataChunk）
+# ============================================================================
+
+# doc example：Φ(1.96) 与 0.975 分位数
+query RR
+SELECT sr_normal_cdf(1.96, 0.0, 1.0)::DECIMAL(12,6),
+       sr_normal_quantile(0.975, 0.0, 1.0)::DECIMAL(12,6)
+----
+0.975002	1.959964
 
 # 分位数是 CDF 的反函数：q = quantile(p) 处再取 cdf 应回到 p
 query R
@@ -19,25 +137,25 @@ SELECT round(sr_normal_cdf(sr_normal_quantile(0.975, 2.0, 3.0), 2.0, 3.0), 9);
 ----
 0.975
 
-# 任一参数为 NULL：整行短路成 NULL，函数体不执行
+# 任一参数为 NULL：整行短路成 NULL
 query R
-SELECT sr_normal_cdf(NULL, 0.0, 1.0);
+SELECT sr_normal_cdf(NULL, 0.0, 1.0)
 ----
 NULL
 
-# std_dev 非法（<= 0 或 NaN）由 Normal::new 拒绝，报成查询错误
+# std_dev 非法（<= 0 或 NaN）由 Normal::new 拒绝，报查询错误
 statement error
-SELECT sr_normal_pdf(0.0, 0.0, -1.0);
+SELECT sr_normal_pdf(0.0, 0.0, -1.0)
 ----
 Standard deviation is NaN, zero or less than zero
 
 # 概率越界同样报错，而不是被钳到端点
 statement error
-SELECT sr_normal_quantile(1.5, 0.0, 1.0);
+SELECT sr_normal_quantile(1.5, 0.0, 1.0)
 ----
 the probability must be within [0, 1], got 1.5
 
-# 参数可以来自列，逐行求值
+# 参数来自列，逐行求值
 query R
 SELECT sr_normal_cdf(x, mu, sd)::DECIMAL(10,8)
 FROM (VALUES (0.0, 0.0, 1.0), (1.0, 0.0, 1.0), (7.5, 5.0, 2.5)) t(x, mu, sd)

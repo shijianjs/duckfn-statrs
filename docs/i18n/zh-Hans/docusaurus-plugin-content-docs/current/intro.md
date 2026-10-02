@@ -15,16 +15,21 @@ pdf / cdf / 分位数做成**标量函数**（逐行求值）。代码用 [duckf
 之上 —— 仓库里已经装好了构建、测试、文档与发版链路；DuckDB 的 C API 只用到头文件，所以除了扩展
 本身，没有任何东西需要编译。
 
-计算全部交给 statrs：本扩展不重新实现任何统计公式。一次典型的注册就是「一个行处理器 + 一个状态
-类型」—— `sr_mean` 们就是从下面这个形状生成出来的：
+计算全部交给 statrs：本扩展不重新实现任何统计公式。汇总类聚合共用一份状态 ——
+算哪个统计量由类型参数在编译期静态派发（不生成代码、不用 `macro_rules!`）：
 
 ```rust
-#[derive(Default, Debug, Clone)]
-struct MeanState {
-    values: Vec<f64>,
+trait Summary {
+    fn eval(values: &[f64]) -> f64;
 }
 
-impl DuckAggregateState for MeanState {
+#[derive(Default, Debug, Clone)]
+struct SummaryState<S: Summary> {
+    values: Vec<f64>,
+    _marker: PhantomData<S>,
+}
+
+impl<S: Summary> DuckAggregateState for SummaryState<S> {
     type Output = f64;
 
     fn simple_combine(&mut self, other: &Self) {
@@ -32,12 +37,12 @@ impl DuckAggregateState for MeanState {
     }
 
     fn result(&self) -> DuckOptionResult<f64> {
-        nan_to_null(self.values.as_slice().mean())   // statrs 的 NAN 落成 SQL NULL
+        nan_to_null(S::eval(&self.values))  // statrs 的 NAN 落成 SQL NULL
     }
 }
 
-#[duck_aggregate_function]
-fn sr_mean(input: f64, state: &mut MeanState) {
+#[duck_aggregate_function(/* description / example */)]
+fn sr_mean(input: f64, state: &mut SummaryState<ArithmeticMean>) {
     state.values.push(input);
 }
 ```

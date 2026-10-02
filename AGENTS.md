@@ -169,6 +169,43 @@ duckfn 的属性宏默认拿 **Rust 函数名**当注册名，所以直接把函
 `overloads_name` 能把「同一名字下按参数个数/类型分派」的多个签名并成一个函数集，需要时再用
 （见 duckfn 的文档）。
 
+### statrs 包装的约定（参数形状 / 静态泛型 / NULL / 测试）
+
+**遇到多列输入，做成聚合函数，不要 `Vec` 参数 + 标量。**
+`SELECT sr_mean(x) FROM t GROUP BY g` 是数据库用户的默认写法；LIST + 标量会迫使每个调用点
+先 `list(x)`。另注意 DuckDB 的 `list()` 保留 NULL 元素，与聚合的 NULL 跳过语义不同 —— 进
+一步坐实了聚合优先。
+
+**两列输入（vecA、vecB）分两种情况**：
+- 有严格下标对应（协方差这类）→ 两个逐行参数 `f(x, y)`：按行配对，任一列 NULL 整行跳过，
+  statrs 对不等长会 panic 的那个 case 在配对形状下根本构造不出来（不用手工检查报错）；
+- 没有严格下标对应 → 不要让用户自己对齐两个列表；改收 label/value（分组键列 + 数值列），
+  聚合天然按分组建状态。
+
+**状态复用 + 静态泛型派发，不用 `macro_rules!`。**同形状的多个聚合只写一份状态
+（`SummaryState<S: Summary>` / `PairState<P: Pairwise>`），具体算式由类型参数在编译期派发
+（marker struct + 小 trait，一个泛型 `impl<S: Summary> DuckAggregateState for SummaryState<S>`
+全部接住）；注册函数就是 `fn sr_mean(input: f64, state: &mut SummaryState<ArithmeticMean>)` ——
+duckfn-macro 把 `&mut` 后面的类型整块当 `syn::Type` 内插，泛型实例化直接可用（形状参考
+ duckfn `ScalarFunctionAdapter` 的泛型派发）。属性宏生成的同形代码块是类型不安全、IDE 看不见的，
+除非逼不得已不写宏。
+
+**NULL / NAN 的界线（固定约定，不要逐函数重新发明）**：
+- SQL NULL 不进聚合状态 / 在标量里短路成 NULL（duckfn 默认，函数体不见 NULL）；
+- statrs 返回的 NAN（空组、样本不足、参数越界、无定义的统计量）一律经共享的
+  `functions/mod.rs::nan_to_null` 折成 SQL NULL —— NAN 永远不得作为值出现在结果里；
+- 参数**存在但非法**（std_dev ≤ 0、概率越界）是调用错误，报查询错误，不折成 NULL；
+- 无穷是合法结果，原样保留。
+
+**测试的期望值取 statrs 自己的用例，不要手算。**statrs 源码里的 doc example（都是 doctest）与
+文件尾部 `#[cfg(test)] mod tests`（如 `statistics/slice_statistics.rs` 的 `test_quantile_short`、
+`distribution/normal.rs` 的 `test_cdf` / `test_inverse_cdf`）全部有 assert 背书：
+- 每个包装函数的 `.test` 断言数 **不少于** statrs 对应该函数的用例数，且**包含它的全部**；
+- statrs 覆盖不到、我们这边才有的情况（空组、GROUP BY、NULL 跳过/配对、跨 DataChunk、
+  并行 `combine`、错误文案）在本仓库新建用例；
+- 极小值用科学计数法原样写期望（sqllogictest 的 R 列是浮点近似比较），别为了格式丢用例；
+- 手算曾经错过（协方差断言），所以只信 statrs 的 assert 与实跑输出。
+
 ### 文档站（docs/）
 
 `docs/` 是一份 Docusaurus 站点（英文 + 简体中文），**不是必须的**：不用就整个目录删掉，仓库里只有两处

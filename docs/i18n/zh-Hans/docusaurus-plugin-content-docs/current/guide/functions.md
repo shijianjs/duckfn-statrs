@@ -120,17 +120,49 @@ fn sr_quantile(input: f64, tau: f64, state: &mut QuantileState) {
 }
 ```
 
-均值 / 方差族就是同一个形状重复九遍、只差最后的算式，所以 `aggregate_summary.rs` 用一个
-`collect_aggregate!` 宏把「状态 + NAN→NULL 的 `result` + 行处理器」三件套一次生成。状态里同样可以
-放 `String`、`HashMap`、`Vec<…>`，或按分组键一格一位 —— 支持哪些形状见 duckfn 指南的聚合章节。
+均值 / 方差族共用一份状态，只换最后一步算式 —— 「算什么」是类型参数，在编译期静态派发，
+不是代码生成器：
+
+```rust
+trait Summary {
+    fn eval(values: &[f64]) -> f64;
+}
+
+#[derive(Default, Debug, Clone)]
+struct SummaryState<S: Summary> {
+    values: Vec<f64>,
+    _marker: PhantomData<S>,
+}
+
+impl<S: Summary> DuckAggregateState for SummaryState<S> {
+    type Output = f64;
+    fn simple_combine(&mut self, other: &Self) {
+        self.values.extend(other.values.iter().copied());
+    }
+    fn result(&self) -> DuckOptionResult<f64> {
+        super::nan_to_null(S::eval(&self.values))
+    }
+}
+
+#[duck_aggregate_function(/* ... */)]
+fn sr_mean(input: f64, state: &mut SummaryState<ArithmeticMean>) {
+    state.values.push(input);
+}
+```
+
+九个 marker 结构体、各一个 trait 实现、行处理器只有一行 —— 不用 `macro_rules!`：宏生成的代码
+IDE 看不见、类型也不安全，而 duckfn-macro 把 `&mut` 后面的类型整块当 `syn::Type` 内插，
+泛型实例化照样能注册。状态里同样可以放 `String`、`HashMap`、`Vec<…>`，或按分组键一格一位 ——
+支持哪些形状见 duckfn 指南的聚合章节。
 
 ## 加你自己的函数
 
 1. **选属性。** 标量、聚合、表函数、`COPY`、cast、SQL 宏、replacement scan：各有各的属性，
    也各只接受自己的参数。手册是 [duckfn 用户指南](https://shijianjs.github.io/duckfn/) ——
    直接翻到对应种类那一章。
-2. **抄最近的那一个**（`src/extension/functions/` 里），改逻辑，别从零发明签名。一个新的 statrs
-   包装通常就是多一个 `collect_aggregate!` 调用，换掉末尾的算式。
+2. **抄最近的那一个**（`src/extension/functions/` 里），改逻辑，别从零发明签名。给一列新增一个
+   statrs 包装，通常就是多一个 marker 结构体、一个 `Summary` 实现，加上共享 `SummaryState` 上
+   一行式的处理函数。
 3. **挂进模块树**：在 `src/extension/functions/mod.rs` 加 `mod my_function;`。crate root 不用动。
 4. **把文档元数据写进属性** —— `description`、`comment`、`example` / `examples`：
 

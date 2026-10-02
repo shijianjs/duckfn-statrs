@@ -128,10 +128,41 @@ fn sr_quantile(input: f64, tau: f64, state: &mut QuantileState) {
 }
 ```
 
-The mean / variance family is this same shape nine times over with a different final expression, so
-`aggregate_summary.rs` generates it from one `collect_aggregate!` macro (state + NAN-to-NULL `result` +
-row handler). A state may equally hold a `String`, a `HashMap`, a `Vec<…>`, or one slot per group key —
-see the aggregate chapter of the duckfn guide for the shapes it supports.
+The mean / variance family shares one state and swaps only the final expression — the "what to
+compute" is a type parameter, dispatched statically at compile time, not a code generator:
+
+```rust
+trait Summary {
+    fn eval(values: &[f64]) -> f64;
+}
+
+#[derive(Default, Debug, Clone)]
+struct SummaryState<S: Summary> {
+    values: Vec<f64>,
+    _marker: PhantomData<S>,
+}
+
+impl<S: Summary> DuckAggregateState for SummaryState<S> {
+    type Output = f64;
+    fn simple_combine(&mut self, other: &Self) {
+        self.values.extend(other.values.iter().copied());
+    }
+    fn result(&self) -> DuckOptionResult<f64> {
+        super::nan_to_null(S::eval(&self.values))
+    }
+}
+
+#[duck_aggregate_function(/* ... */)]
+fn sr_mean(input: f64, state: &mut SummaryState<ArithmeticMean>) {
+    state.values.push(input);
+}
+```
+
+Nine marker structs, one trait impl each, one-line handlers — no `macro_rules!`: generated code is
+invisible to the IDE and type-unsafe, and duckfn-macro interpolates the `&mut` target as a plain
+`syn::Type`, so a generic instantiation registers just as well. A state may equally hold a `String`,
+a `HashMap`, a `Vec<…>`, or one slot per group key — see the aggregate chapter of the duckfn guide
+for the shapes it supports.
 
 ## Adding your own
 
@@ -139,8 +170,8 @@ see the aggregate chapter of the duckfn guide for the shapes it supports.
    scan: each has one, and each accepts only its own arguments. The reference is
    [the duckfn user guide](https://shijianjs.github.io/duckfn/) — the chapter for that kind.
 2. **Copy the closest neighbour** from `src/extension/functions/` and change the logic, rather than
-   inventing a signature from scratch. A new statrs wrapper usually means a new `collect_aggregate!`
-   call with a different final expression.
+   inventing a signature from scratch. A new statrs wrapper over a column usually means a new marker
+   struct, one `Summary` impl, and a one-line handler on the shared `SummaryState`.
 3. **Attach it to the module tree**: add `mod my_function;` to `src/extension/functions/mod.rs`. The
    crate roots stay untouched.
 4. **Write the documentation metadata** on the attribute — `description`, `comment`, `example` /

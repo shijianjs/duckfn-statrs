@@ -16,17 +16,22 @@ with [duckfn](https://crates.io/crates/duckfn) attribute macros on top of
 already contains the build, test, documentation and release tooling, and DuckDB's C API is used
 headers-only, so nothing has to be built except the extension itself.
 
-Every computation is delegated to statrs: the extension re-implements no statistical formula. A
-typical registration is one row handler plus a state type — the shape `sr_mean` and friends are
-generated from:
+Every computation is delegated to statrs: the extension re-implements no statistical formula. The
+summary aggregates share one state — which statistic to compute is dispatched statically by a type
+parameter (no code generation, no `macro_rules!`):
 
 ```rust
-#[derive(Default, Debug, Clone)]
-struct MeanState {
-    values: Vec<f64>,
+trait Summary {
+    fn eval(values: &[f64]) -> f64;
 }
 
-impl DuckAggregateState for MeanState {
+#[derive(Default, Debug, Clone)]
+struct SummaryState<S: Summary> {
+    values: Vec<f64>,
+    _marker: PhantomData<S>,
+}
+
+impl<S: Summary> DuckAggregateState for SummaryState<S> {
     type Output = f64;
 
     fn simple_combine(&mut self, other: &Self) {
@@ -34,12 +39,12 @@ impl DuckAggregateState for MeanState {
     }
 
     fn result(&self) -> DuckOptionResult<f64> {
-        nan_to_null(self.values.as_slice().mean())   // statrs' NAN becomes SQL NULL
+        nan_to_null(S::eval(&self.values))  // statrs' NAN becomes SQL NULL
     }
 }
 
-#[duck_aggregate_function]
-fn sr_mean(input: f64, state: &mut MeanState) {
+#[duck_aggregate_function(/* description / example */)]
+fn sr_mean(input: f64, state: &mut SummaryState<ArithmeticMean>) {
     state.values.push(input);
 }
 ```
