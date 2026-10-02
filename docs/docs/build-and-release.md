@@ -39,7 +39,7 @@ Bash.
 | Command | What it does |
 | --- | --- |
 | `just build` | `cargo duckdb-ext build` |
-| `just sql "SELECT my_greet('world')"` | Build, then run one statement and exit |
+| `just sql "SELECT sr_mean(x) FROM range(10) t(x)"` | Build, then run one statement and exit |
 | `just repl` | A DuckDB REPL with the extension loaded |
 | `just lint` | `cargo clippy --all-targets -- -D warnings` |
 | `just test` | The official build and the sqllogictest run |

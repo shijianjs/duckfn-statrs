@@ -12,9 +12,10 @@ the expected result inline, so a test doubles as a worked example of the functio
 
 | File | What it covers |
 | --- | --- |
-| `duckfn_statrs.test` | Smoke test: the function is missing before `LOAD`, the sample functions exist after `require`. Also the smallest proof that the extension loads at all. |
-| `scalar_greet.test` | Scalars: ordinary values (non-ASCII included), a constant `NULL` folded to `NULL`, runtime `NULL` rows short-circuited, both `DuckOptionResult` paths (NULL and error), binder errors for wrong arity and type, inputs spanning several DataChunks. |
-| `aggregate_sum.test` | Aggregates: the return type, NULL rows skipped, an empty group yielding `NULL`, per-group results under `GROUP BY`, `combine` across DataChunks. |
+| `duckfn_statrs.test` | Smoke test: the function is missing before `LOAD`, the registered set exists after `require` — plus a census of `duckdb_functions()` (12 aggregates + 3 scalars under `sr_`). |
+| `aggregate_summary.test` | The statistics aggregates: expected values from statrs, NULL rows skipped, empty group → `NULL`, undefined statistics (single-value sample variance, out-of-range tau, negatives in the geometric / harmonic means) → `NULL`, `GROUP BY`, `combine` under `PRAGMA threads=4`, inputs spanning several DataChunks, binder errors. |
+| `aggregate_covariance.test` | The two-column aggregates: row pairing, a NULL in either column skipping the row, sample vs population at one pair (NULL vs 0), empty group, arity errors. |
+| `scalar_normal.test` | The distribution scalars: anchor values, the quantile/CDF round trip, NULL arguments short-circuited, invalid `std_dev` and out-of-range probability as query errors, per-column arguments, several DataChunks. |
 
 ## Running them
 
@@ -60,7 +61,7 @@ Python environment with `duckdb_sqllogictest` installed — `make configure` cre
 ```
 
 `--test-dir` is required: it is also the value of `__TEST_DIR__`, the directory a test writing files is
-given. To run a single file, add `--file-path test/sql/scalar_greet.test`.
+given. To run a single file, add `--file-path test/sql/aggregate_summary.test`.
 
 ## Conventions
 
@@ -70,7 +71,8 @@ given. To run a single file, add `--file-path test/sql/scalar_greet.test`.
   message is enough — there is no need to reproduce DuckDB's whole error string, and doing so ties the
   test to a message that may well change.
 - **Watch how values print.** A `DOUBLE` renders as `7.0`; when a test is about a number rather than a
-  type, cast it (`my_sum(x)::DECIMAL(10,1)`) so the expectation stays stable if the type changes.
+  type, cast it (`sr_mean(x)::DECIMAL(12,6)`) so the expectation stays stable if the type changes —
+  and take the expected digits from statrs' actual output, not from a hand computation.
 - **Divide the files by concern**, not by function count: behaviour in one file, error paths in
   another, and a `.test` that reaches for a community extension (for HTML parsing, say) kept separate,
   because it needs the network the first time.

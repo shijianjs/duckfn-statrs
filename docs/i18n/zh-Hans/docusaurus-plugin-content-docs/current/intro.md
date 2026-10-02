@@ -2,55 +2,70 @@
 title: 简介
 sidebar_position: 1
 slug: /intro
-description: 用 Rust 与 duckfn 写的 DuckDB 扩展：这个项目里有什么、怎么构建与发版、从哪里开始读。
+description: duckfn_statrs 把 Rust 统计库 statrs 包装成 DuckDB 函数——描述统计量是聚合函数，正态分布是标量函数。
 ---
 
 # 简介
 
-`duckfn_statrs` 是一个用 Rust 写的 DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)，
-建立在 [duckfn](https://crates.io/crates/duckfn) 之上：属性宏把普通的 Rust 函数变成扩展加载时注册进
-DuckDB 的 SQL 函数；DuckDB 的 C API 只用到头文件，所以除了扩展本身，没有任何东西需要编译。
+`duckfn_statrs` 是一个 DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)，
+把 Rust 统计计算库 [statrs](https://crates.io/crates/statrs) 包装成可以直接在 SQL 里调用的函数：
+描述统计量做成**聚合函数**（`SELECT sr_mean(x) FROM t GROUP BY g` 这样的写法），正态分布的
+pdf / cdf / 分位数做成**标量函数**（逐行求值）。代码用 [duckfn](https://crates.io/crates/duckfn)
+的属性宏写成，建立在 [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template)
+之上 —— 仓库里已经装好了构建、测试、文档与发版链路；DuckDB 的 C API 只用到头文件，所以除了扩展
+本身，没有任何东西需要编译。
 
-项目从 [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template) 起步，
-这份文档站就是它另一半：仓库里已经装好了构建、测试、文档与发版链路，下面几页讲怎么用。
+计算全部交给 statrs：本扩展不重新实现任何统计公式。一次典型的注册就是「一个行处理器 + 一个状态
+类型」—— `sr_mean` 们就是从下面这个形状生成出来的：
 
 ```rust
-use duckfn::{DuckOptionResult, duck_scalar_function};
+#[derive(Default, Debug, Clone)]
+struct MeanState {
+    values: Vec<f64>,
+}
 
-/// ```sql
-/// SELECT my_greet_checked('world');  -- Hello, world!
-/// ```
-#[duck_scalar_function]
-fn my_greet_checked(name: String) -> DuckOptionResult<String> {
-    if name.is_empty() {
-        return Ok(None);          // SQL NULL
+impl DuckAggregateState for MeanState {
+    type Output = f64;
+
+    fn simple_combine(&mut self, other: &Self) {
+        self.values.extend(other.values.iter().copied());
     }
-    Ok(Some(format!("Hello, {name}!")))
+
+    fn result(&self) -> DuckOptionResult<f64> {
+        nan_to_null(self.values.as_slice().mean())   // statrs 的 NAN 落成 SQL NULL
+    }
+}
+
+#[duck_aggregate_function]
+fn sr_mean(input: f64, state: &mut MeanState) {
+    state.values.push(input);
 }
 ```
 
-同一个函数的 SQL 一面。这个块会在你的浏览器里真跑：站点从仓库的最新 Release 预加载了这个扩展，
+同一批函数的 SQL 一面。这个块会在你的浏览器里真跑：站点从仓库的最新 Release 预加载了这个扩展，
 所以这里不用写 `LOAD`。
 
 ```sql {"type":"duckfn","show":"table"}
-SELECT name AS input, my_greet_checked(name) AS greeting
-FROM (VALUES ('world'), ('')) t(name);
+SELECT g, sr_mean(x) AS mean, sr_std_dev(x) AS std_dev
+FROM (VALUES (1, 1.0), (1, 2.0), (1, 3.0), (2, 10.0), (2, 20.0)) t(g, x)
+GROUP BY g ORDER BY g;
 ```
 
-:::note[这些页面本身也是模板的一部分]
-`docs/` 下的一切都是围绕示例函数写的起点。你的 API 长出自己的样子之后，把这些页面（以及它们的中文
-译文）改成对应的内容；也可以整个目录删掉 —— 仓库里没有别的东西依赖它。维护约定（目录、命令、翻译、
-部署）写在 `docs/README.md` 里。
-:::
+## NULL 语义
+
+整条规则一句话说完：**statrs 算不出的就是 SQL NULL，NULL 输入也永远不会悄悄变成一个数。**
+具体拆开：NULL 行不进聚合（SQL 聚合惯例，与 DuckDB 自带的 mean/stddev 一致）；statrs 对空组、
+单值的样本方差、越界的 `tau`、几何/调和平均里的负数返回的 NAN，统一折成 NULL。参数**存在但
+非法**（`std_dev <= 0`、概率不在 `[0, 1]` 内）是调用写错了，报查询错误，而不是被静默折成空。
 
 ## 仓库里有什么
 
 | 路径 | 是什么 |
 | --- | --- |
 | `src/extension/mod.rs` | 入口：`duckfn_entrypoint!("duckfn_statrs")` 与模块树。 |
-| `src/extension/functions/` | 注册进 DuckDB 的函数。这里有三个示例：`my_greet`、`my_greet_checked`、`my_sum`。 |
+| `src/extension/functions/` | 注册进 DuckDB 的函数：`aggregate_summary.rs`（统计量）、`aggregate_covariance.rs`（协方差）、`scalar_normal.rs`（正态分布）。 |
 | `src/extension/types/` | 面向 SQL 的类型放这里（STRUCT / ENUM 定义、`list<struct>` 行类型）。目前是空的。 |
-| `test/sql/` | SQLLogicTest 用例，每个示例函数一份，外加一份冒烟测试。 |
+| `test/sql/` | SQLLogicTest 用例，每个函数组一份，外加一份冒烟测试；期望值全部取自 statrs 的实际输出。 |
 | `Justfile` | 日常命令：构建、跑一条 SQL、REPL、测试、lint、发版。 |
 | `.github/workflows/` | 构建矩阵、版本 tag 上的 GitHub Release、以及这份站点的部署。 |
 | `community-extension/` | 注册 [社区扩展](https://duckdb.org/community_extensions/list_of_extensions) 需要的那两份文件。 |
@@ -58,10 +73,9 @@ FROM (VALUES ('world'), ('')) t(name);
 
 ## 接下来去哪
 
-- [快速开始](./getting-started/quick-start.md) —— 改扩展名、构建、加载、调用。
-- [目录结构](./getting-started/project-structure.md) —— 入口点、函数与类型各自放在哪，以及把它们绑在
-  一起的命名规则。
-- [编写函数](./guide/functions.md) —— 示例函数逐行拆解。
+- [快速开始](./getting-started/quick-start.md) —— 构建、加载、调用。
+- [项目结构](./getting-started/project-structure.md) —— 入口、函数、类型各在哪里，把它们拴在一起的命名规则。
+- [写函数](./guide/functions.md) —— 已注册的函数与各自用的形状。
 - [测试](./guide/testing.md) —— SQLLogicTest 用例与怎么跑。
-- [构建与发版](./build-and-release.md) —— 两条构建路径与发版流程。
-- [社区扩展](./community-extension.md) —— 发布到 DuckDB 的社区仓。
+- [构建与发版](./build-and-release.md) —— 构建路径与发版流程。
+- [社区扩展](./community-extension.md) —— 发布到 DuckDB 社区仓库。

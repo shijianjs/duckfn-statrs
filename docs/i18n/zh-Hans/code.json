@@ -561,7 +561,7 @@
     "message": "开始使用"
   },
   "homepage.tagline": {
-    "message": "用 Rust 编写的 DuckDB 扩展",
+    "message": "基于 Rust statrs 库的 DuckDB 统计函数",
     "description": "The tagline shown on the homepage hero"
   },
   "homepage.github": {
@@ -569,7 +569,7 @@
     "description": "Home page button linking to the repository"
   },
   "homepage.features.title": {
-    "message": "模板给了你什么",
+    "message": "这个扩展给了你什么",
     "description": "Home page section title above the feature cards"
   },
   "homepage.features.noGlue.title": {
@@ -593,7 +593,7 @@
     "description": "Home page feature card title"
   },
   "homepage.features.tests.details": {
-    "message": "test/sql 下已经有三份 SQLLogicTest 用例，CI 会为每个支持的平台构建并运行它们。",
+    "message": "test/sql 下已经有四份 SQLLogicTest 用例，CI 会为每个支持的平台构建并运行它们。",
     "description": "Home page feature card description"
   },
   "homepage.features.release.title": {
@@ -625,7 +625,7 @@
     "description": "Home page section title above the Rust and SQL code blocks"
   },
   "homepage.showcase.lead": {
-    "message": "属性宏会生成 FFI 包装层、列的读写与注册代码。左边这段是安全的 Rust，和写普通库没什么区别 —— 它就是模板自带的示例，不是示意图。",
+    "message": "属性宏会生成 FFI 包装层、列的读写与注册代码。左边这段是安全的 Rust，和写普通库没什么区别 —— 它就是本扩展自己的代码，不是示意图。",
     "description": "Home page paragraph introducing the Rust and SQL code blocks"
   },
   "homepage.showcase.caption": {
@@ -633,7 +633,7 @@
     "description": "Home page note under the SQL code block explaining the trailing comments"
   },
   "homepage.showcase.link": {
-    "message": "示例函数逐行拆解",
+    "message": "已注册的函数逐个拆解",
     "description": "Home page link to the functions guide"
   },
   "homepage.next.title": {
@@ -645,7 +645,7 @@
     "description": "Home page link card title"
   },
   "homepage.next.quickStart.details": {
-    "message": "改扩展名、构建、在 SQL 里调用示例函数。",
+    "message": "构建、加载，在 SQL 里直接调用统计量。",
     "description": "Home page link card description"
   },
   "homepage.next.structure.title": {
@@ -661,7 +661,7 @@
     "description": "Home page link card title"
   },
   "homepage.next.functions.details": {
-    "message": "示例函数逐行拆解，以及新增函数时该抄哪一段。",
+    "message": "已注册的 statrs 包装函数与各自用的形状，以及新增函数时该抄哪一段。",
     "description": "Home page link card description"
   },
   "homepage.next.release.title": {

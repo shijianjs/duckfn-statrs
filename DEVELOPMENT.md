@@ -25,16 +25,17 @@ src/extension/mod.rs  ->  duckfn_entrypoint!("duckfn_statrs");
 src/bin/duckfn.rs     duckfn CLI entry  ->  #[path] mod extension; + duckfn::cli::run(...)
                       (only serves `just docs_csv`; takes no part in running the extension)
 
-src/extension/functions/mod.rs  ->  mod aggregate_sum; mod scalar_greet;
+src/extension/functions/mod.rs  ->  mod aggregate_summary; mod aggregate_covariance; mod scalar_normal;
 src/extension/functions/
-    scalar_greet.rs     my_greet / my_greet_checked (two scalar return shapes)
-    aggregate_sum.rs    my_sum                      (aggregate state + output semantics)
+    aggregate_summary.rs    sr_mean / sr_median / sr_quantile / variance family   (collect + statrs at finalize)
+    aggregate_covariance.rs sr_covariance / sr_population_covariance              (two columns, row paired)
+    scalar_normal.rs        sr_normal_pdf / sr_normal_cdf / sr_normal_quantile    (scalar return shapes)
 src/extension/types/mod.rs
                         an empty slot for now: custom types (STRUCT / ENUM, the row type of a
                         list<struct> result, the options type of a DuckLazy argument) go in this
                         layer — attach a `mod` here once you have one
 
-test/sql/               one .test per sample function, plus a duckfn_statrs.test smoke test
+test/sql/               one .test per function group, plus a duckfn_statrs.test smoke test
 scripts/release.sh      releasing (bump / tag / dev)
 scripts/rename.sh       renaming the extension after cloning
 Justfile                shortcuts for the daily loop and for releasing
@@ -71,25 +72,25 @@ So the bin does `#[path = "../extension/mod.rs"] mod extension;` and compiles th
 which keeps the registrations in this crate. This is also how the duckfn skeleton's `src/bin/duckfn.rs`
 is written. The whole bin serves `just docs_csv` and nothing else.
 
-### One function per file, the prefix as a namespace
+### One file per function group, the prefix as a namespace
 
-Files under `functions/` are named "kind + what it does" (`scalar_greet.rs`, `aggregate_sum.rs`). When a
-feature outgrows a single file, split it into a subdirectory the way the duckfn example does
+Files under `functions/` are named "kind + what it does" (`aggregate_summary.rs`, `scalar_normal.rs`).
+When a feature outgrows a single file, split it into a subdirectory the way the duckfn example does
 (`functions/<feature>/mod.rs` plus one file per concern).
 
-Every registered name carries a short prefix (`my_` here); the reasoning is in AGENTS.md: community
+Every registered name carries a short prefix (`sr_` here); the reasoning is in AGENTS.md: community
 extensions almost never put the package name into function names, and a short prefix is enough to
 search `duckdb_functions()` by.
 
 ### The three scalar return shapes
 
-The macro generates different tail code per return type. The template writes the first two:
+The macro generates different tail code per return type. The distribution scalars use the second one:
 
 | Signature | Meaning |
 | --- | --- |
 | `-> T` | a plain value, never NULL |
 | `-> DuckOptionResult<T>` | nullable and fallible: `Ok(None)` is SQL NULL, `Err` fails the query |
-| `-> Option<T>` | nullable but unable to fail (not in the template; follow the same pattern) |
+| `-> Option<T>` | nullable but unable to fail (not used here; follow the same pattern) |
 
 Argument nullability is the other axis: with a `T` parameter the reader short-circuits NULL rows (the
 body never runs), while `Option<T>` lets NULL reach the body as `None` with the meaning up to you. The
@@ -104,16 +105,21 @@ implementation of `DuckAggregateState`:
 - `combine` / `simple_combine`: merge two states (this is what threads and group merging go through);
 - `result` / `simple_result`: turn a state into a value. Returning a value from `simple_result` means the
   result can never be NULL; a group that has to come back as NULL overrides `result` and returns
-  `Ok(None)` — which is exactly what `SumState` in `aggregate_sum.rs` does, counting the rows it saw so
-  "no input at all" is told apart from "input seen, the total is 0".
+  `Ok(None)` — which is exactly what the states in `aggregate_summary.rs` do: they collect the column,
+  hand it to statrs at finalize, and fold statrs' NAN (empty group, too few samples, undefined
+  statistic) into `Ok(None)` through the shared `nan_to_null`.
+
+The statistics are aggregates deliberately: `SELECT sr_mean(x) FROM t GROUP BY g` is the shape
+ database users already write, and the row-paired two-column signature gives `sr_covariance` the
+ NULL-skipping and pairing rules of SQL aggregates for free.
 
 `Output` decides the SQL return type: `i64` / `f64` / `String` / `Vec<...>` (that is, `list<...>`) and so
 on.
 
 ### `types/` is a slot waiting for you
 
-The two sample functions need no custom type, so `types/mod.rs` holds comments only. What goes in there
-are three kinds of thing:
+The statrs wrappers need no custom type — every argument and result is `DOUBLE` — so `types/mod.rs`
+holds comments only. What goes in there are three kinds of thing:
 
 - named types defined with `#[duck_struct]` / `#[duck_enum]` and registered into DuckDB at load time;
 - the row type of a `list<struct<...>>` result (a plain Rust struct deriving `DuckStruct`);
@@ -121,10 +127,10 @@ are three kinds of thing:
 
 Delete the whole directory if you never need it (and the `mod types;` line in `extension/mod.rs`).
 
-### What the template deliberately leaves out
+### What this extension deliberately leaves out
 
-The template demonstrates the **registration paths** and the **engineering loop**; none of the following
-is in it. Write them from duckfn's docs and example extension rather than from memory:
+The registered functions demonstrate the **scalar and aggregate paths** plus the statrs wrapping; none of
+the following is in it. Write them from duckfn's docs and example extension rather than from memory:
 
 - table functions / COPY / casts / replacement scans / SQL macros (one attribute macro each; see duckfn's
   `docs/docs/guide/` and its example extension under `src/extension/`);
@@ -147,15 +153,20 @@ is in it. Write them from duckfn's docs and example extension rather than from m
   (which gates the host file system `duckfn::duck_vfs`) sits in the unstable region and is not needed.
   The macros also generate a `SQL_NAME` constant per signature, and the `description` / `comment` /
   `example` attributes are the one source of the function-description CSV (see below).
+- [statrs](https://crates.io/crates/statrs): the statistical computing library this extension wraps —
+  every registered function delegates to it (`statistics` for the aggregates, `distribution` for the
+  normal). Pure Rust, so the wasm path keeps working. It requires Rust 1.89, which is why
+  `rust-version` sits above the template's 1.86; its default features (`nalgebra`, `rand`, `std`) can
+  be narrowed once nothing on the wrapped API needs them.
 - [quack-rs](https://crates.io/crates/quack-rs): the DuckDB C API bindings — the code expanded by
   `duckfn_entrypoint!` refers to them directly.
 - [libduckdb-sys](https://crates.io/crates/libduckdb-sys): headers only, with `loadable-extension`, which
   is what keeps a local DuckDB build unnecessary. The lower bound is `>=1.10500` (= DuckDB 1.5.0: the
   crate encodes a DuckDB version as `1.<major*10000 + minor*100 + patch>.0`, so 1.5.6 is `1.10506.0`).
 
-The sample functions need nothing else. For anything date/time related, enable duckfn's `chrono` feature
-and add `chrono` as a dependency (duckfn re-exports none of those crates); the two ready-made lines are
-at the bottom of Cargo.toml.
+Beyond the crates above no further dependencies are needed. For anything date/time related, enable
+duckfn's `chrono` feature and add `chrono` as a dependency (duckfn re-exports none of those crates);
+the two ready-made lines are at the bottom of Cargo.toml.
 
 ## Build
 
@@ -192,13 +203,13 @@ no `_set_description`, no `_add_example`. Without help, the `Added Functions` ta
 extension pages would be a bare list of names.
 
 The text therefore lives next to the function it describes, on the `#[duck_*]` attributes (see
-`functions/scalar_greet.rs` and `aggregate_sum.rs`):
+`functions/aggregate_summary.rs` and `scalar_normal.rs`):
 
 ```rust
-#[duck_scalar_function(
-    description = "Greets someone by name, the simplest possible scalar function",
-    comment = "…",
-    example = "SELECT my_greet('world')"
+#[duck_aggregate_function(
+    description = "Arithmetic mean of a DOUBLE column, NULL when no row is non-NULL",
+    comment = "SQL NULL rows are skipped; statrs' NAN for an empty group becomes SQL NULL",
+    example = "SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)"
 )]
 ```
 
@@ -260,13 +271,14 @@ just test                  # make configure + make debug + make test
 make debug && make test    # make test does not rebuild; rerun make debug after Rust changes
 ```
 
-The three files and what each covers:
+The four files and what each covers:
 
 | File | Coverage |
 | --- | --- |
-| `test/sql/duckfn_statrs.test` | smoke: the function is missing before `LOAD`, both sample functions exist after `require` (also the smallest proof that the extension loads at all) |
-| `test/sql/scalar_greet.test` | scalar: plain values (non-ASCII included), a constant NULL folded to NULL, runtime NULL rows short-circuited, both `DuckOptionResult` paths (NULL and error), binder errors for wrong arity and type, inputs spanning several DataChunks (`STANDARD_VECTOR_SIZE = 2048`) |
-| `test/sql/aggregate_sum.test` | aggregate: the return type, NULL rows skipped, an empty group yielding NULL, per-group results under `GROUP BY`, `combine` across DataChunks |
+| `test/sql/duckfn_statrs.test` | smoke: the function is missing before `LOAD`, the registered set exists after `require`, plus a `duckdb_functions()` census (12 aggregates + 3 scalars under `sr_`) |
+| `test/sql/aggregate_summary.test` | the statistics aggregates: values from statrs' actual output, NULL rows skipped, empty groups / single-value sample variance / out-of-range tau / negatives → NULL, `GROUP BY`, `combine` under `PRAGMA threads=4`, several DataChunks, binder errors |
+| `test/sql/aggregate_covariance.test` | the two-column aggregates: row pairing, a NULL in either column skipping the row, one pair (sample NULL vs population 0), empty group, arity errors |
+| `test/sql/scalar_normal.test` | the distribution scalars: anchor values, the quantile/CDF round trip, NULL arguments, invalid `std_dev` and out-of-range probability as errors, per-column arguments, several DataChunks |
 
 You do not have to go through `make` on every iteration (and on Windows that needs Git Bash anyway). The
 repository's own venv can drive the artifact directly:
@@ -276,7 +288,7 @@ repository's own venv can drive the artifact directly:
 ./configure/venv/bin/python -m duckdb_sqllogictest \
     --test-dir test/sql \
     --external-extension target/debug/duckfn_statrs.duckdb_extension
-# one file only: add --file-path test/sql/scalar_greet.test
+# one file only: add --file-path test/sql/aggregate_summary.test
 ```
 
 ```powershell
@@ -294,14 +306,18 @@ Before committing: `cargo clippy --all-targets -- -D warnings` (`just lint`).
 
 ## Next steps after cloning
 
+This repository has been through the list; the steps stay here for reference (the template flow, spelled
+out in AGENTS.md's "extension name and renaming"):
+
 1. `just rename <new-extension-name>` — rewrites the extension name in the five places plus the docs, and
    regenerates the `Cargo.lock` entry; the script ends by printing what still needs a human pass.
 2. `AGENTS.md`: fill in `{{PROJECT_GOAL}}`, and change the `my_` prefix in the naming convention to your
-   own.
-3. Replace the sample functions (`my_greet` / `my_greet_checked` / `my_sum`) and `test/sql/*.test` with
-   your API.
+   own (here it became `sr_`).
+3. Replace the sample functions with your API (here: the `sr_*` aggregates and distribution scalars,
+   together with `test/sql/*.test`).
 4. `community-extension/description.yml`: `extension.name` / `description` / `maintainers` / `repo` are
-   yours to fill in (the field-by-field reasoning is in that directory).
+   yours to fill in (the field-by-field reasoning is in that directory). The `repo.ref` commit SHA still
+   needs filling in at the first release.
 5. The copyright holder in `LICENSE`, and the duckfn version in `Cargo.toml`.
 6. Before the first release, make sure the repository has a `main` branch and an `origin` remote:
    `release_tag` pushes both `main` and the tag.

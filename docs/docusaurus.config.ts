@@ -68,7 +68,7 @@ const baseUrl = process.env.DOCS_BASE_URL ?? '/';
 
 const config: Config = {
   title: 'duckfn_statrs',
-  tagline: 'A DuckDB extension written in Rust',
+  tagline: 'Statistical functions for DuckDB, from the Rust statrs crate',
   favicon: 'img/logo.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future

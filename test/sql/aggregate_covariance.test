@@ -1,0 +1,51 @@
+# name: test/sql/aggregate_covariance.test
+# description: 协方差聚合：两列配对、NULL 整行跳过、样本/总体、配对不足时 NULL
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# 期望值取自 statrs 的实际输出，统一以 DECIMAL(12,6) 定点打印
+query RR
+SELECT sr_covariance(x, y)::DECIMAL(12,6),
+       sr_population_covariance(x, y)::DECIMAL(12,6)
+FROM (VALUES (0.0, -5.0), (3.0, 4.0), (-2.0, 10.0)) t(x, y);
+----
+-5.500000	-3.666667
+
+# 任何一列为 NULL 的行整行不进状态，两列保持配对：
+# 剩 (0,-5) 与 (-2,10) 两对，样本协方差 = -15，总体 = -7.5
+query RR
+SELECT sr_covariance(x, y)::DECIMAL(12,6),
+       sr_population_covariance(x, y)::DECIMAL(12,6)
+FROM (VALUES (0.0, -5.0), (3.0, NULL), (-2.0, 10.0)) t(x, y);
+----
+-15.000000	-7.500000
+
+# 只剩一对：样本协方差没有定义（NAN → NULL），总体协方差是实打实的 0
+query RR
+SELECT sr_covariance(x, y), sr_population_covariance(x, y)::DECIMAL(12,6)
+FROM (VALUES (0.0, -5.0)) t(x, y);
+----
+NULL	0.000000
+
+# 空组同样落 NULL
+query RR
+SELECT sr_covariance(x, y), sr_population_covariance(x, y)
+FROM (VALUES (1.0, 2.0)) t(x, y) WHERE 1 = 0;
+----
+NULL	NULL
+
+# 参数个数由 binder 拦下
+statement error
+SELECT sr_covariance(x) FROM (VALUES (1.0)) t(x);
+----
+Binder Error
+
+# GROUP BY：每组各自配对建状态
+query RI
+SELECT g, sr_covariance(x, y)::DECIMAL(12,6)
+FROM (VALUES (1, 0.0, -5.0), (1, 3.0, 4.0), (1, -2.0, 10.0), (2, 1.0, 2.0), (2, 3.0, 6.0)) t(g, x, y)
+GROUP BY g ORDER BY g;
+----
+1	-5.500000
+2	4.000000

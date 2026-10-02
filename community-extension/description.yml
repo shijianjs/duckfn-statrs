@@ -1,6 +1,6 @@
 extension:
   name: duckfn_statrs
-  description: Statistical functions from the Rust statrs crate - summary statistics over DOUBLE lists and the normal distribution
+  description: Statistical functions from the Rust statrs crate - summary statistics as aggregates over DOUBLE columns and the normal distribution
   version: 0.1.0
   language: Rust
   build: cargo
@@ -15,28 +15,29 @@ repo:
 
 docs:
   hello_world: |
-    -- Summary statistics take a LIST(DOUBLE)
-    SELECT stat_mean([1.0, 2.0, 3.0]);
+    -- Summary statistics are aggregates over a DOUBLE column
+    SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x);
     -- 2.0
 
-    SELECT stat_median(list(v) FILTER (WHERE v IS NOT NULL))
-    FROM (VALUES (1.0), (2.0), (NULL), (3.0), (100.0)) t(v);
-    -- 2.5
+    SELECT g, sr_median(x) FROM (VALUES (1, 3.0), (1, 1.0), (1, NULL), (2, 10.0)) t(g, x) GROUP BY g ORDER BY g;
+    -- 1  |  2.0
+    -- 2  |  10.0
 
-    -- Distribution functions take scalar parameters
-    SELECT stat_normal_quantile(0.975, 0.0, 1.0);
+    -- Distribution functions are scalars, evaluated row by row
+    SELECT sr_normal_quantile(0.975, 0.0, 1.0);
     -- 1.9599639845400538
   extended_description: |
-    Wraps the Rust statrs crate as DuckDB functions. Summary statistics take a `LIST(DOUBLE)` and
-    return a `DOUBLE`: means (arithmetic, geometric, harmonic, quadratic), median and quantiles,
-    sample and population variance / standard deviation, covariance. Distribution functions
-    (currently the normal: pdf, cdf, quantile) take scalar `DOUBLE` arguments.
+    Wraps the Rust statrs crate as DuckDB functions. Summary statistics are aggregates over a DOUBLE
+    column: means (arithmetic, geometric, harmonic, quadratic), median and quantiles
+    (`sr_quantile(x, 0.975)` - tau is the second, constant argument), sample and population variance /
+    standard deviation, covariance of two row-paired columns. Distribution functions (currently the
+    normal: pdf, cdf, quantile) are scalars over DOUBLE arguments.
 
-    NULL semantics: these are scalars, not aggregates - a NULL list, or a NULL element inside one,
-    yields a NULL row; skip NULLs while building the list with `list(x) FILTER (WHERE x IS NOT
-    NULL)`. A statistic statrs cannot define (empty list, variance of a single value, an
-    out-of-range tau) comes back as NULL; invalid distribution parameters (std_dev <= 0, a
-    probability outside [0, 1]) fail the query.
+    NULL semantics follow statrs and propagate to the SQL side: a NULL row never enters an aggregate
+    (the SQL aggregate convention - filter or join to decide otherwise); whatever statrs cannot define
+    (empty group, sample variance of one value, an out-of-range tau, negatives in the geometric /
+    harmonic means) comes back as NULL, never as a NAN value. A parameter that is present but invalid
+    (std_dev <= 0, a probability outside [0, 1]) fails the query.
 
     Requires **DuckDB 1.3 or newer**: the extension is built against DuckDB 1.5.6 headers but
     declares the C API floor it needs (v1.2.0), so one binary loads into 1.3.2 through 1.5.6 alike.

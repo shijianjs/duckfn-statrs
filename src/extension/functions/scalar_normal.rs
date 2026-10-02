@@ -1,17 +1,22 @@
 // ============================================================================
 // statrs::distribution 的首个包装：正态分布的 pdf / cdf / 分位数
 //
-// 分布类函数与统计量不同：参数本身可以非法（std_dev <= 0 时 `Normal::new` 返回 Err），
-// 这属于「调用写错了」而不是「结果为空」，所以报成查询错误而不是 NULL。
-// 每个标量行都要重新构造一次分布 —— statrs 的分布对象是廉价的结构体（几个 f64），
-// 直接在建好的对象上求值即可，不需要额外的缓存层。
+// 分布函数保持标量形态：它们本来就是逐行求值的（一个 x 进、一个概率/密度出），
+// 聚合形态反而不符合语义。
+//
+// NULL 语义：任一参数为 NULL 的行在参数读取层短路成 NULL —— 没有 x 或没有参数，
+// 就没有可算的值。参数**存在但非法**（std_dev <= 0、概率越界）不走 NULL：那是调用
+// 写错了，报成查询错误，而不是把错误静默折成空。
 //
 // The first wrapping of statrs::distribution: the normal pdf / cdf / quantile.
 //
-// Unlike the summary statistics, a distribution can be handed invalid parameters (std_dev <= 0
-// makes `Normal::new` return an Err) — that is a bad call rather than an empty result, so it
-// fails the query instead of yielding NULL. Constructing the distribution per row is fine: the
-// statrs objects are cheap structs of a few f64s.
+// Distribution functions stay scalar: they are per-row evaluations by nature (an x in, a
+// probability or density out) — an aggregate shape would not fit their semantics.
+//
+// NULL semantics: a row with a NULL in any argument is short-circuited to NULL by the argument
+// reader — no x or no parameters, nothing to evaluate. A parameter that is *present but invalid*
+// (std_dev <= 0, an out-of-range probability) is not NULL either: that is a bad call, so it fails
+// the query instead of being silently folded into emptiness.
 // ============================================================================
 
 use duckfn::{DuckOptionResult, duck_error, duck_scalar_function};
@@ -28,30 +33,30 @@ fn normal(fn_name: &str, mean: f64, std_dev: f64) -> Result<Normal, ExtensionErr
 /// 正态概率密度 `N(mean, std_dev)` 在 x 处的取值。
 ///
 /// ```sql
-/// SELECT stat_normal_pdf(0.0, 0.0, 1.0);  -- 0.3989422804014327
-/// SELECT stat_normal_pdf(0.0, 0.0, -1.0); -- 报错（std_dev 必须为正）
+/// SELECT sr_normal_pdf(0.0, 0.0, 1.0);   -- 0.3989422804014327
+/// SELECT sr_normal_pdf(0.0, 0.0, -1.0);  -- 报错（std_dev 必须为正）
 /// ```
 #[duck_scalar_function(
     description = "Normal (Gaussian) probability density at x, given mean and standard deviation",
-    example = "SELECT stat_normal_pdf(0.0, 0.0, 1.0)"
+    example = "SELECT sr_normal_pdf(0.0, 0.0, 1.0)"
 )]
-fn stat_normal_pdf(x: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
-    let normal = normal("stat_normal_pdf", mean, std_dev)?;
+fn sr_normal_pdf(x: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    let normal = normal("sr_normal_pdf", mean, std_dev)?;
     Ok(Some(normal.pdf(x)))
 }
 
 /// 正态累积分布函数 P(X <= x)。
 ///
 /// ```sql
-/// SELECT stat_normal_cdf(0.0, 0.0, 1.0);  -- 0.5
-/// SELECT stat_normal_cdf(1.96, 0.0, 1.0); -- 0.9750021048517796
+/// SELECT sr_normal_cdf(0.0, 0.0, 1.0);    -- 0.5
+/// SELECT sr_normal_cdf(1.96, 0.0, 1.0);   -- 0.9750021048529024
 /// ```
 #[duck_scalar_function(
     description = "Normal (Gaussian) cumulative distribution function P(X <= x)",
-    example = "SELECT stat_normal_cdf(1.96, 0.0, 1.0)"
+    example = "SELECT sr_normal_cdf(1.96, 0.0, 1.0)"
 )]
-fn stat_normal_cdf(x: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
-    let normal = normal("stat_normal_cdf", mean, std_dev)?;
+fn sr_normal_cdf(x: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    let normal = normal("sr_normal_cdf", mean, std_dev)?;
     Ok(Some(normal.cdf(x)))
 }
 
@@ -59,19 +64,19 @@ fn stat_normal_cdf(x: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
 /// p 须在 `[0, 1]` 内，越界报查询错误（statrs 会把它钳到端点，掩盖写错的参数）。
 ///
 /// ```sql
-/// SELECT stat_normal_quantile(0.975, 0.0, 1.0);  -- 1.959963984540054
+/// SELECT sr_normal_quantile(0.975, 0.0, 1.0);  -- 1.9599639845400538
 /// ```
 #[duck_scalar_function(
     description = "Normal (Gaussian) quantile function: the x whose CDF equals p, for p in [0, 1]",
     comment = "A probability outside [0, 1] is a query error rather than a clamped endpoint",
-    example = "SELECT stat_normal_quantile(0.975, 0.0, 1.0)"
+    example = "SELECT sr_normal_quantile(0.975, 0.0, 1.0)"
 )]
-fn stat_normal_quantile(p: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+fn sr_normal_quantile(p: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
     if !(0.0..=1.0).contains(&p) {
         return Err(duck_error(format!(
-            "stat_normal_quantile: the probability must be within [0, 1], got {p}"
+            "sr_normal_quantile: the probability must be within [0, 1], got {p}"
         )));
     }
-    let normal = normal("stat_normal_quantile", mean, std_dev)?;
+    let normal = normal("sr_normal_quantile", mean, std_dev)?;
     Ok(Some(normal.inverse_cdf(p)))
 }

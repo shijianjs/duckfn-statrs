@@ -114,34 +114,33 @@ function mountNextSteps(node: HTMLElement, content: NextStepsContent): void {
 
 /**
  * Kept out of the JSX below on purpose: a template literal written inline would
- * carry the JSX indentation into the rendered code block. The sample is the
- * template's own `my_greet_checked` (src/extension/functions/scalar_greet.rs),
- * trimmed to the parts worth showing.
+ * carry the JSX indentation into the rendered code block. The sample is
+ * `sr_normal_quantile` (src/extension/functions/scalar_normal.rs), trimmed to
+ * the parts worth showing.
  */
 const RUST_SAMPLE = `use duckfn::{DuckOptionResult, duck_error, duck_scalar_function};
 
 /// A DuckDB scalar function: one attribute, one ordinary Rust function.
 #[duck_scalar_function(
-    description = "Greets someone by name, returning NULL for an empty name",
-    example = "SELECT my_greet_checked('world')"
+    description = "Normal (Gaussian) quantile function: the x whose CDF equals p",
+    example = "SELECT sr_normal_quantile(0.975, 0.0, 1.0)"
 )]
-fn my_greet_checked(name: String) -> DuckOptionResult<String> {
-    if name.is_empty() {
-        return Ok(None);          // SQL NULL
+fn sr_normal_quantile(p: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    if !(0.0..=1.0).contains(&p) {
+        return Err(duck_error("the probability must be within [0, 1]"));  // fails the query
     }
-    if name.trim() != name {
-        return Err(duck_error("no surrounding whitespace"));  // fails the query
-    }
-    Ok(Some(format!("Hello, {name}!")))
+    let normal = normal("sr_normal_quantile", mean, std_dev)?;
+    Ok(Some(normal.inverse_cdf(p)))
 }`;
 
 /** The SQL half of the showcase: the whole interface, with no glue in sight. */
 const SQL_SAMPLE = `-- a locally built extension loads with -unsigned
 LOAD './target/debug/duckfn_statrs.duckdb_extension';
 
-SELECT my_greet_checked('world');  -- Hello, world!
-SELECT my_greet_checked('');       -- NULL
-SELECT my_greet_checked(' x ');    -- error: no surrounding whitespace`;
+SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x);   -- 2.0
+SELECT sr_normal_cdf(1.96, 0.0, 1.0);                       -- 0.9750021048529024
+SELECT sr_variance(x) FROM (VALUES (1.0)) t(x);             -- NULL (undefined in statrs)
+SELECT sr_normal_pdf(0.0, 0.0, -1.0);                       -- error: std_dev must be positive`;
 
 /**
  * The shields.io badges ask for `style=flat`, which is the rounded style; the
@@ -167,14 +166,14 @@ function badges(repoUrl: string): HeroBadge[] {
         ]
       : []),
     {
-      href: 'https://github.com/shijianjs/duckfn-extension-template/blob/main/LICENSE',
+      href: 'https://github.com/shijianjs/duckfn-statrs/blob/main/LICENSE',
       src: 'https://img.shields.io/badge/license-MIT-14459b.svg?style=flat',
       alt: 'MIT license',
     },
     {
       href: 'https://rust-lang.org',
-      src: 'https://img.shields.io/badge/Rust-1.86%2B-14459b.svg?style=flat',
-      alt: 'Rust 1.86 or newer',
+      src: 'https://img.shields.io/badge/Rust-1.89%2B-14459b.svg?style=flat',
+      alt: 'Rust 1.89 or newer',
     },
     {
       href: 'https://duckdb.org',
@@ -217,7 +216,7 @@ function featuresContent(): FeaturesContent {
     sectionTitle: translate({
       id: 'homepage.features.title',
       description: 'Home page section title above the feature cards',
-      message: 'What the template gives you',
+      message: 'What this extension gives you',
     }),
     items: [
       {
@@ -259,7 +258,7 @@ function featuresContent(): FeaturesContent {
           id: 'homepage.features.tests.details',
           description: 'Home page feature card description',
           message:
-            'SQLLogicTest files in test/sql with three examples already written, and a CI job that builds and runs them for every supported platform.',
+            'SQLLogicTest files in test/sql with four already written, and a CI job that builds and runs them for every supported platform.',
         }),
       },
       {
@@ -329,7 +328,7 @@ function nextStepsContent(
         details: translate({
           id: 'homepage.next.quickStart.details',
           description: 'Home page link card description',
-          message: 'Rename the template, build it and call the sample functions from SQL.',
+          message: 'Build the extension, load it and call the statistics from SQL.',
         }),
       },
       {
@@ -356,7 +355,7 @@ function nextStepsContent(
           id: 'homepage.next.functions.details',
           description: 'Home page link card description',
           message:
-            'The sample functions line by line, and what to copy when you add your own.',
+            'The registered statrs wrappers and the shapes they use, and what to copy when you add your own.',
         }),
       },
       {
@@ -393,12 +392,12 @@ function CodeShowcase(): ReactNode {
             description="Home page paragraph introducing the Rust and SQL code blocks">
             The attribute generates the FFI wrapper, the column readers and
             writers, and the registration code. Everything on the left is safe
-            Rust that you could have written for a plain library — it is the
-            template's own sample, not a sketch.
+            Rust that you could have written for a plain library — it is this
+            extension's own code, not a sketch.
           </Translate>
         </p>
         <div className={styles.codeGrid}>
-          <CodeBlock language="rust" title="src/extension/functions/scalar_greet.rs">
+          <CodeBlock language="rust" title="src/extension/functions/scalar_normal.rs">
             {RUST_SAMPLE}
           </CodeBlock>
           <div className={styles.codeColumn}>
@@ -421,7 +420,7 @@ function CodeShowcase(): ReactNode {
             <Translate
               id="homepage.showcase.link"
               description="Home page link to the functions guide">
-              The sample functions, line by line
+              The registered functions, one by one
             </Translate>
             {/* The official Iconify web component (registered by
                 registerDfkElements()); a string `icon` attribute is all it

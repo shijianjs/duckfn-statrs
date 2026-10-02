@@ -2,31 +2,15 @@
 
 # duckfn_statrs
 
-A DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development) written
-with [duckfn](https://crates.io/crates/duckfn): attribute macros turn ordinary Rust functions into DuckDB
-scalar / aggregate / table functions, and the C++ build is not involved at all (the C API is used
-headers-only, through DuckDB's API table).
+A DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development) that
+wraps the Rust statistical computing library [statrs](https://crates.io/crates/statrs) into functions
+callable straight from SQL: the descriptive statistics are **aggregate functions** (written as
+`SELECT sr_mean(x) FROM t GROUP BY g`), while the normal distribution's pdf / cdf / quantile are
+**scalar functions** (evaluated row by row). The extension is written with
+[duckfn](https://crates.io/crates/duckfn) attribute macros, and the C++ build is not involved at all.
 
-This repository is a **template**: [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template).
-It carries the full working loop — build, sqllogictest, docs export, release — around two sample
-functions, so a new extension starts from a green build instead of from an empty directory. A real
-extension written the same way: [duckfn_quantstats](https://github.com/shijianjs/duckfn-quantstats).
-
-## Starting a new extension from this template
-
-```shell
-git clone https://github.com/shijianjs/duckfn-extension-template my_new_extension
-cd my_new_extension
-rm -rf .git && git init    # optional: drop the template's history and start your own
-just rename my_new_extension
-```
-
-`just rename` (that is, `scripts/rename.sh`) rewrites every place the extension name has to match — the
-crate name and `[[example]] name`, `EXTENSION_NAME` in the Makefile, the entry-point symbol, the Justfile,
-the CI workflow and the docs — and regenerates the `Cargo.lock` entry. It ends by printing the few things
-left for a human, all of them listed in [DEVELOPMENT.md](DEVELOPMENT.md) (next steps) and
-[AGENTS.md](AGENTS.md) (conventions, including the `{{PROJECT_GOAL}}` placeholder).
-Replacing the two sample functions with your own API is one of them.
+Every computation is delegated to statrs — this extension re-implements no statistical formula; it
+only feeds SQL values in and hands SQL results back out.
 
 ## Quick start
 
@@ -35,65 +19,87 @@ cargo install cargo-duckdb-ext-tools   # once: a global cargo subcommand, no pro
 cargo duckdb-ext build                 # -> target/debug/duckfn_statrs.duckdb_extension
 ```
 
-Locally built extensions are unsigned, so DuckDB has to be started with `-unsigned`:
+Self-built artifacts are unsigned, so DuckDB needs `-unsigned` to load them:
 
 ```shell
 duckdb -unsigned -c "
 LOAD './target/debug/duckfn_statrs.duckdb_extension';
-SELECT my_greet('world');
--- Hello, world!
-SELECT my_sum(x) FROM (VALUES (1.5::DOUBLE), (2.5::DOUBLE), (3.0::DOUBLE)) t(x);
--- 7.0
+SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x);
+-- 2.0
+SELECT sr_normal_cdf(1.96, 0.0, 1.0);
+-- 0.9750021048529024
 "
 ```
 
-The `Justfile` wraps the same commands: `just build`, `just sql "SELECT my_greet('world')"`,
-`just repl` (a REPL with the extension already loaded).
+The `Justfile` wraps the same commands: `just build`, `just sql "SELECT sr_mean(x) FROM range(10) t(x)"`,
+`just repl` (a REPL with the extension loaded).
 
 ## Functions
 
-Two sample functions, one per registration path. They are meant to be replaced — see
-`src/extension/functions/`.
+Every registered name carries the `sr_` prefix, so the whole set is one `duckdb_functions()` filter away.
 
-| Function | Kind | Input → output |
-| --- | --- | --- |
-| `my_greet(name)` | scalar | `VARCHAR` → `VARCHAR`, never NULL |
-| `my_greet_checked(name)` | scalar | `VARCHAR` → `VARCHAR`, `NULL` for an empty name, an error for surrounding whitespace |
-| `my_sum(value)` | aggregate | `DOUBLE` → `DOUBLE`, NULLs skipped, `NULL` for an empty group |
+**Aggregates** (a DOUBLE column in, one DOUBLE out):
 
-Behaviour worth knowing, because it is duckfn's rule rather than this template's:
+| Function | Notes |
+| --- | --- |
+| `sr_mean(x)` | arithmetic mean |
+| `sr_geometric_mean(x)` | geometric mean (undefined with a negative value → `NULL`) |
+| `sr_harmonic_mean(x)` | harmonic mean (undefined with a negative value → `NULL`) |
+| `sr_quadratic_mean(x)` | quadratic mean (RMS) |
+| `sr_median(x)` | median (even lengths average the two middle values) |
+| `sr_quantile(x, tau)` | tau quantile; write tau as the second, constant argument: `sr_quantile(x, 0.975)` |
+| `sr_variance(x)` / `sr_std_dev(x)` | sample variance / standard deviation (Bessel-corrected, `NULL` under two values) |
+| `sr_population_variance(x)` / `sr_population_std_dev(x)` | population variance / standard deviation (dividing by N) |
+| `sr_covariance(x, y)` / `sr_population_covariance(x, y)` | sample / population covariance of two row-paired columns |
 
-- a non-`Option` argument short-circuits NULL to SQL NULL — the function body never runs for that row;
-  write the parameter as `Option<T>` to see the NULL and decide its meaning yourself;
-- `-> DuckOptionResult<T>` is how a scalar function returns NULL (`Ok(None)`) or fails the query (`Err`);
-- an aggregate is "a function with a `&mut` state parameter": the state's `Output` decides the SQL
-  return type, and `result` decides whether the group yields a value or NULL.
+**Scalars** (the normal distribution, row by row):
 
-## Build from source
+| Function | Notes |
+| --- | --- |
+| `sr_normal_pdf(x, mean, std_dev)` | probability density |
+| `sr_normal_cdf(x, mean, std_dev)` | cumulative distribution P(X ≤ x) |
+| `sr_normal_quantile(p, mean, std_dev)` | quantile function (the inverse CDF) |
+
+## NULL and error semantics
+
+Everything follows statrs and propagates to the SQL side:
+
+- **NULL inputs**: a NULL row never enters an aggregate's state (the SQL aggregate convention, same
+  as DuckDB's own `mean`/`stddev`); in a scalar, a row with a NULL in any argument short-circuits to
+  `NULL`. For the covariances a NULL in either column skips the whole row, keeping the two columns paired.
+- **What statrs cannot define** (an empty group, sample variance of one value, an out-of-range tau, a
+  negative value in the geometric/harmonic means) comes back as NAN, and the extension folds every NAN
+  into `NULL` — a NAN never reaches the user as a value.
+- **A parameter that is present but invalid** (`std_dev <= 0`, a probability outside `[0, 1]`) is a bad
+  call: it fails the query instead of being silently folded into emptiness.
+
+## Building from source
 
 Two build paths, deliberately kept in sync:
 
 ```shell
-cargo duckdb-ext build   # fast loop, no make; -> target/debug/duckfn_statrs.duckdb_extension
-make configure           # once: builds configure/venv (Python + the sqllogictest runner)
-make debug               # the official template path; -> build/debug/extension/duckfn_statrs/...
+cargo duckdb-ext build   # day-to-day, no make -> target/debug/duckfn_statrs.duckdb_extension
+make configure           # once: the configure/venv (Python + the sqllogictest runner)
+make debug               # the official-template path -> build/debug/extension/duckfn_statrs/...
 ```
 
-`make release` is the optimized version of the same flow. On Windows `make` has to run inside Git Bash.
+`make release` is the same flow with optimizations. On Windows `make` needs Git Bash.
 The `Justfile` wraps both (`just build`, `just ci-build`, `just test`, `just ci-release`).
 
 ## Testing
 
-Tests are SQLLogicTest files under `test/sql/`:
+The SQLLogicTest files live under `test/sql/`, one per function group:
+`aggregate_summary.test` (the statistics aggregates), `aggregate_covariance.test`,
+`scalar_normal.test` (the normal distribution), `duckfn_statrs.test` (smoke + the registration
+census). Every expected value is statrs' actual output, not a hand-computed approximation.
 
 ```shell
 just test          # make configure + make debug + make test
-just ci-build      # just the official build, without running the tests
+just ci-build      # the official build only, no tests
 ```
 
-`make test` does not rebuild, so run `just ci-build` (or `make debug`) first after touching Rust code.
-See [DEVELOPMENT.md](DEVELOPMENT.md) for the faster iteration loop (running the runner straight against
-`target/debug/*.duckdb_extension`) and for what the test files cover.
+`make test` does not rebuild: run `just ci-build` (or `make debug`) after changing Rust.
+Faster iteration loops are in [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## WebAssembly
 
@@ -102,47 +108,48 @@ just config_env   # once: pin the toolchain and add the wasm target
 just build_wasm
 ```
 
-The wasm build uses `src/wasm_lib.rs` (a `staticlib` mirror of `src/lib.rs`); the two crate roots must
-always declare the same set of `mod`s.
+The wasm build goes through `src/wasm_lib.rs` (the `staticlib` mirror of `src/lib.rs`); both crate
+roots must always declare the same `mod` list. statrs is pure Rust, so it rides along fine.
 
 ## Documentation site
 
-The repository carries a [Docusaurus](https://docusaurus.io/) site in `docs/`, in English and
-Simplified Chinese, with a workflow that publishes it to GitHub Pages on every version tag:
+The repository carries a [Docusaurus](https://docusaurus.io/) site (`docs/`, English + Simplified
+Chinese), published to GitHub Pages on every version tag:
 
 ```shell
 just docs_install    # once
-just docs_start      # dev server at http://localhost:3000
-just docs_build      # the check that matters: onBrokenLinks is set to throw
+just docs_start      # local preview at http://localhost:3000
+just docs_build      # the one that matters: onBrokenLinks throws, a broken link fails the build
 ```
 
-The template's pages describe the sample functions; rewrite them (and their translations under
-`docs/i18n/zh-Hans/`) as your API grows, or delete `docs/` — nothing else depends on it. The pages
-carry runnable SQL blocks (powered by [`duckfn-docs-kit`](https://www.npmjs.com/package/duckfn-docs-kit))
-that call the extension right in the browser; `cd docs && npm test` re-runs them. The conventions —
-layout, commands, translation workflow, deployment, the `{{EXTENSION_VERSION}}` version placeholder —
-are in [`docs/README.md`](docs/README.md).
+Pages carry runnable SQL blocks (powered by
+[`duckfn-docs-kit`](https://www.npmjs.com/package/duckfn-docs-kit)) that call this extension right in
+the browser; `cd docs && npm test` re-runs them. Conventions (layout, commands, translation flow,
+deployment, the `{{EXTENSION_VERSION}}` placeholder) are in [`docs/README.md`](docs/README.md).
 
-## Installing the released extension
+## Installing a released extension
 
-Releases are GitHub Releases carrying the build matrices' `.duckdb_extension` files, one per platform:
+Releases ship the `.duckdb_extension` built for each platform:
 
 ```shell
 duckdb -unsigned -c "
-LOAD 'https://github.com/<owner>/<repo>/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
+LOAD 'https://github.com/shijianjs/duckfn-statrs/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
 "
 ```
 
-Publishing to DuckDB's [community extensions](https://duckdb.org/community_extensions/list_of_extensions)
-makes it `INSTALL duckfn_statrs FROM community` instead; the two files that requires are prepared in
-[`community-extension/`](community-extension/AGENTS.md).
+Once registered in the [community extensions](https://duckdb.org/community_extensions/list_of_extensions),
+this becomes `INSTALL duckfn_statrs FROM community`; the two files that submission needs are staged
+under [`community-extension/`](community-extension/AGENTS.md).
 
 ## Documentation
 
-| File | What is in it |
+| File | Contents |
 | --- | --- |
 | [AGENTS.md](AGENTS.md) | conventions, the duckfn knowledge map, the release flow |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | directory layout, skeleton trade-offs, build & test, docs export |
-| [docs/README.md](docs/README.md) | the documentation site: layout, commands, translations, deployment |
-| [DEVELOPMENT.zh.md](DEVELOPMENT.zh.md) | the same, in Chinese |
-| [README.zh.md](README.zh.md) | this file, in Chinese |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | layout, design trade-offs, build & test, description export |
+| [docs/README.md](docs/README.md) | the documentation site: layout, commands, translation, deployment |
+| [README.zh.md](README.zh.md) | this file, in Simplified Chinese |
+
+This repository started from [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template);
+the repository conventions (the five places the extension name must match, `just rename`, the shared
+justfile, the release flow) are documented in [AGENTS.md](AGENTS.md).

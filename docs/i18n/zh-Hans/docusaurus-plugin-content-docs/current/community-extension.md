@@ -31,10 +31,10 @@ LOAD duckfn_statrs;
 `example`，也就是说它紧挨着被描述的函数：
 
 ```rust
-#[duck_scalar_function(
-    description = "Greets someone by name, the simplest possible scalar function",
-    comment = "…",
-    example = "SELECT my_greet('world')"
+#[duck_aggregate_function(
+    description = "Arithmetic mean of a DOUBLE column, NULL when no row is non-NULL",
+    comment = "SQL NULL rows are skipped; statrs' NAN for an empty group becomes SQL NULL",
+    example = "SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)"
 )]
 ```
 

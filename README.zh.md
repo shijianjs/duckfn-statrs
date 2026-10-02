@@ -2,29 +2,14 @@
 
 # duckfn_statrs
 
-一个用 [duckfn](https://crates.io/crates/duckfn) 写的 DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)：
-属性宏把普通的 Rust 函数变成 DuckDB 的标量 / 聚合 / 表函数，全程不碰 C++ 构建（只经 DuckDB 的 API
-函数表使用 C API，不链接库）。
+DuckDB 的 [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)，
+把 Rust 统计计算库 [statrs](https://crates.io/crates/statrs) 包装成可以直接在 SQL 里调用的函数：
+描述统计量做成**聚合函数**（`SELECT sr_mean(x) FROM t GROUP BY g` 这样的写法），正态分布的
+pdf / cdf / 分位数做成**标量函数**（逐行求值）。扩展用 [duckfn](https://crates.io/crates/duckfn)
+的属性宏写成，全程不碰 C++ 构建。
 
-本仓库是一份**模板**：[duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template)。
-它把完整的开发闭环 —— 构建、sqllogictest、函数描述导出、发版 —— 都装在两个示例函数周围，新扩展从
-「一次就能编过、就能跑测试」的状态起步，而不是从空目录起步。同一种写法写出来的真实扩展见
-[duckfn_quantstats](https://github.com/shijianjs/duckfn-quantstats)。
-
-## 用这份模板开一个新扩展
-
-```shell
-git clone https://github.com/shijianjs/duckfn-extension-template my_new_extension
-cd my_new_extension
-rm -rf .git && git init    # 可选：丢掉模板的历史，从头开始自己的仓库
-just rename my_new_extension
-```
-
-`just rename`（即 `scripts/rename.sh`）会把扩展名必须一致的地方一次改齐 —— crate 名与
-`[[example]] name`、Makefile 的 `EXTENSION_NAME`、入口点符号、Justfile、CI 工作流，以及文档里的路径
-示例 —— 并按新包名重写 `Cargo.lock` 里那一条。脚本末尾会打印剩下需要人工过一遍的事情，清单在
-[DEVELOPMENT.zh.md](DEVELOPMENT.zh.md)（下一步）与 [AGENTS.md](AGENTS.md)（约定，含 `{{PROJECT_GOAL}}`
-占位符）里。把两个示例函数换成你自己的 API 就是其中一条。
+计算本身全部交给 statrs —— 本扩展不重新实现任何统计公式，只负责把 SQL 的值送进去、把结果按
+SQL 的语义送出来。
 
 ## 快速上手
 
@@ -38,33 +23,52 @@ cargo duckdb-ext build                 # -> target/debug/duckfn_statrs.duckdb_ex
 ```shell
 duckdb -unsigned -c "
 LOAD './target/debug/duckfn_statrs.duckdb_extension';
-SELECT my_greet('world');
--- Hello, world!
-SELECT my_sum(x) FROM (VALUES (1.5::DOUBLE), (2.5::DOUBLE), (3.0::DOUBLE)) t(x);
--- 7.0
+SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x);
+-- 2.0
+SELECT sr_normal_cdf(1.96, 0.0, 1.0);
+-- 0.9750021048529024
 "
 ```
 
-`Justfile` 把同样的命令包了一层：`just build`、`just sql "SELECT my_greet('world')"`、
+`Justfile` 把同样的命令包了一层：`just build`、`just sql "SELECT sr_mean(x) FROM range(10) t(x)"`、
 `just repl`（已 LOAD 扩展的 REPL）。
 
 ## 函数
 
-两个示例函数，各演示一条注册路径。它们是给你替换的，代码在 `src/extension/functions/`。
+注册名统一带 `sr_` 前缀，在 `duckdb_functions()` 里可以按前缀整组检索。
 
-| 函数 | 类别 | 入参 → 出参 |
-| --- | --- | --- |
-| `my_greet(name)` | 标量 | `VARCHAR` → `VARCHAR`，永不为 NULL |
-| `my_greet_checked(name)` | 标量 | `VARCHAR` → `VARCHAR`，空串回 `NULL`，首尾空格报错 |
-| `my_sum(value)` | 聚合 | `DOUBLE` → `DOUBLE`，跳过 NULL，空组回 `NULL` |
+**聚合函数**（DOUBLE 列进、一个 DOUBLE 出）：
 
-下面这些行为值得先知道，它们是 duckfn 的规则而不是本模板的：
+| 函数 | 说明 |
+| --- | --- |
+| `sr_mean(x)` | 算术平均 |
+| `sr_geometric_mean(x)` | 几何平均（含负数时未定义 → `NULL`） |
+| `sr_harmonic_mean(x)` | 调和平均（含负数时未定义 → `NULL`） |
+| `sr_quadratic_mean(x)` | 平方均值（RMS） |
+| `sr_median(x)` | 中位数（偶数个取中间两数的平均） |
+| `sr_quantile(x, tau)` | tau 分位数，tau 写成第二个常量参数，如 `sr_quantile(x, 0.975)` |
+| `sr_variance(x)` / `sr_std_dev(x)` | 样本方差 / 标准差（Bessel 修正，不足 2 个值 → `NULL`） |
+| `sr_population_variance(x)` / `sr_population_std_dev(x)` | 总体方差 / 标准差（除以 N） |
+| `sr_covariance(x, y)` / `sr_population_covariance(x, y)` | 两列按行配对的样本 / 总体协方差 |
 
-- 入参写成不可空的 `T` 时，NULL 行被短路成 SQL NULL —— 函数体根本不会执行到那一行；想让 NULL 进函数体
-  自己决定语义，把参数写成 `Option<T>`；
-- 标量函数要返回 NULL（`Ok(None)`）或让查询失败（`Err`），用 `-> DuckOptionResult<T>`；
-- 聚合函数就是「多一个 `&mut` 状态参数的函数」：状态的 `Output` 决定 SQL 返回类型，`result` 决定这一组
-  是出值还是出 NULL。
+**标量函数**（正态分布，逐行求值）：
+
+| 函数 | 说明 |
+| --- | --- |
+| `sr_normal_pdf(x, mean, std_dev)` | 概率密度 |
+| `sr_normal_cdf(x, mean, std_dev)` | 累积分布 P(X ≤ x) |
+| `sr_normal_quantile(p, mean, std_dev)` | 分位数函数（CDF 的反函数） |
+
+## NULL 与错误语义
+
+一律对齐 statrs，向 SQL 用户侧传播：
+
+- **NULL 输入**：聚合里 NULL 行不进状态（SQL 聚合惯例，与 DuckDB 自带的 `mean`/`stddev` 一致）；
+  标量里任一参数为 NULL 的行短路成 `NULL`。协方差的任何一列为 NULL 的行整行跳过，两列保持配对。
+- **statrs 算不出的**（空组、单值的样本方差、越界的 tau、几何/调和平均遇到负数）返回 NAN，
+  扩展统一折成 `NULL` —— NAN 永远不会作为值出现在结果里。
+- **参数存在但非法**（`std_dev <= 0`、概率不在 `[0, 1]` 内）是调用写错了，报查询错误，
+  不会静默折成空。
 
 ## 从源码构建
 
@@ -81,7 +85,10 @@ make debug               # 官方模板那条路 -> build/debug/extension/duckfn
 
 ## 测试
 
-测试用 SQLLogicTest 格式写在 `test/sql/` 下：
+测试用 SQLLogicTest 格式写在 `test/sql/` 下，按函数组分文件：
+`aggregate_summary.test`（统计量聚合）、`aggregate_covariance.test`（协方差）、
+`scalar_normal.test`（正态分布）、`duckfn_statrs.test`（冒烟 + 注册清单）。
+期望值全部取自 statrs 的实际输出，不是手算的近似。
 
 ```shell
 just test          # make configure + make debug + make test
@@ -89,8 +96,7 @@ just ci-build      # 只做官方构建，不跑测试
 ```
 
 `make test` 不会自动重新构建，改完 Rust 先跑 `just ci-build`（或 `make debug`）。
-更快的迭代方式（拿运行器直接跑 `target/debug/*.duckdb_extension`）与各测试文件覆盖什么，
-见 [DEVELOPMENT.zh.md](DEVELOPMENT.zh.md)。
+更快的迭代方式见 [DEVELOPMENT.zh.md](DEVELOPMENT.zh.md)。
 
 ## WebAssembly
 
@@ -100,7 +106,7 @@ just build_wasm
 ```
 
 wasm 构建走 `src/wasm_lib.rs`（`src/lib.rs` 的 `staticlib` 镜像），两个 crate root 必须始终声明同一组
-`mod`。
+`mod`。statrs 是纯 Rust 实现，不碍这条路。
 
 ## 文档站
 
@@ -113,11 +119,9 @@ just docs_start      # 本地预览 http://localhost:3000
 just docs_build      # 真正该跑的那一条：onBrokenLinks 设为 throw，链接断了就构建失败
 ```
 
-模板里的页面写的是示例函数；你的 API 长出自己的样子之后，把这些页面（以及 `docs/i18n/zh-Hans/` 下的译文）
-改掉，或者直接删掉 `docs/` —— 仓库里没有别的东西依赖它。页面里带着可运行的 SQL 块（由
-[`duckfn-docs-kit`](https://www.npmjs.com/package/duckfn-docs-kit) 提供），在浏览器里直接调用本扩展；
-`cd docs && npm test` 会把它们重跑一遍。约定（目录、命令、翻译流程、部署、`{{EXTENSION_VERSION}}`
-版本占位符）写在 [`docs/README.md`](docs/README.md) 里。
+页面里带着可运行的 SQL 块（由 [`duckfn-docs-kit`](https://www.npmjs.com/package/duckfn-docs-kit) 提供），
+在浏览器里直接调用本扩展；`cd docs && npm test` 会把它们重跑一遍。约定（目录、命令、翻译流程、部署、
+`{{EXTENSION_VERSION}}` 版本占位符）写在 [`docs/README.md`](docs/README.md) 里。
 
 ## 安装已发布的扩展
 
@@ -125,7 +129,7 @@ just docs_build      # 真正该跑的那一条：onBrokenLinks 设为 throw，�
 
 ```shell
 duckdb -unsigned -c "
-LOAD 'https://github.com/<owner>/<repo>/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
+LOAD 'https://github.com/shijianjs/duckfn-statrs/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
 "
 ```
 
@@ -142,3 +146,6 @@ LOAD 'https://github.com/<owner>/<repo>/releases/latest/download/duckfn_statrs-w
 | [docs/README.md](docs/README.md) | 文档站：目录、命令、翻译流程、部署 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 同上，英文 |
 | [README.md](README.md) | 本文件，英文 |
+
+本仓库来自 [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template)，
+仓库约定（扩展名五处一致、`just rename`、共享 justfile、发版流程）见 [AGENTS.md](AGENTS.md)。

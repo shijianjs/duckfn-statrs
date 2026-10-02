@@ -13,9 +13,10 @@ src/extension/mod.rs   ->  duckfn_entrypoint!("duckfn_statrs"); + mod functions;
 src/bin/duckfn.rs      duckfn CLI entry   ->  #[path] mod extension; + duckfn::cli::run(...)
 
 src/extension/functions/
-    mod.rs             mod aggregate_sum; mod scalar_greet;
-    scalar_greet.rs    my_greet / my_greet_checked
-    aggregate_sum.rs   my_sum
+    mod.rs             mod aggregate_summary; mod aggregate_covariance; mod scalar_normal;
+    aggregate_summary.rs  sr_mean / sr_median / sr_quantile / the variance family
+    aggregate_covariance.rs  sr_covariance / sr_population_covariance
+    scalar_normal.rs   sr_normal_pdf / sr_normal_cdf / sr_normal_quantile
 src/extension/types/
     mod.rs             an empty slot: SQL-facing types go here
 
@@ -66,7 +67,7 @@ and the exported CSV comes out empty — silently.
 | Rule | Why |
 | --- | --- |
 | The extension name is lowercase with underscores, and identical in five places. | It is the entry-point symbol and the artifact file name; DuckDB looks the symbol up by the file name. `just rename` writes all five. |
-| Every registered SQL name carries one short prefix (`my_` here). | DuckDB has no namespaces, and community extensions almost never put the package name into function names. See the conventions in `AGENTS.md`. |
+| Every registered SQL name carries one short prefix (`sr_` here). | DuckDB has no namespaces, and community extensions almost never put the package name into function names. See the conventions in `AGENTS.md`. |
 | `src/lib.rs` and `src/wasm_lib.rs` always declare the same set of `mod`s. | Otherwise the wasm build fails to compile the module tree. |
 | Temporary files (scripts, data, logs) go to `target/`. | `target/` is git-ignored and never pollutes the tracked tree. |
 | Text files use LF. | The repository stores LF; the `.gitattributes` normalization relies on it. |

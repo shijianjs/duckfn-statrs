@@ -13,9 +13,10 @@ src/extension/mod.rs   ->  duckfn_entrypoint!("duckfn_statrs"); + mod functions;
 src/bin/duckfn.rs      duckfn CLI 入口  ->  #[path] mod extension; + duckfn::cli::run(...)
 
 src/extension/functions/
-    mod.rs             mod aggregate_sum; mod scalar_greet;
-    scalar_greet.rs    my_greet / my_greet_checked
-    aggregate_sum.rs   my_sum
+    mod.rs             mod aggregate_summary; mod aggregate_covariance; mod scalar_normal;
+    aggregate_summary.rs  sr_mean / sr_median / sr_quantile / 方差族
+    aggregate_covariance.rs  sr_covariance / sr_population_covariance
+    scalar_normal.rs   sr_normal_pdf / sr_normal_cdf / sr_normal_quantile
 src/extension/types/
     mod.rs             空的槽：面向 SQL 的类型放这一层
 
@@ -60,7 +61,7 @@ flowchart LR
 | 规则 | 为什么 |
 | --- | --- |
 | 扩展名全小写、只含下划线，且五处一致。 | 它既是入口点符号，也是产物文件名；DuckDB 是按文件名去找符号的。`just rename` 负责写全这五处。 |
-| 每个注册进 SQL 的名字共用一个短前缀（模板里是 `my_`）。 | DuckDB 没有命名空间，而社区扩展几乎都不把包名写进函数名。约定见 `AGENTS.md`。 |
+| 每个注册进 SQL 的名字共用一个短前缀（本项目是 `sr_`）。 | DuckDB 没有命名空间，而社区扩展几乎都不把包名写进函数名。约定见 `AGENTS.md`。 |
 | `src/lib.rs` 与 `src/wasm_lib.rs` 始终声明同一组 `mod`。 | 否则 wasm 构建编不出这棵模块树。 |
 | 临时文件（脚本、数据、日志）放 `target/`。 | `target/` 已被 git 忽略，不会污染被跟踪的目录。 |
 | 文本文件一律 LF。 | 仓库按 LF 入库，`.gitattributes` 的归一化依赖这一点。 |

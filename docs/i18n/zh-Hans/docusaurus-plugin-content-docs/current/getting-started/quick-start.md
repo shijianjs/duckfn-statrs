@@ -1,23 +1,22 @@
 ---
 title: 快速开始
 sidebar_position: 1
-description: 改扩展名、用 cargo 构建出 .duckdb_extension、加载进 DuckDB，然后调用示例函数。
+description: 用 cargo 构建出 .duckdb_extension、加载进 DuckDB，然后调用这些 statrs 包装函数。
 ---
 
 # 快速开始
 
-整页就是四步：
+整页就是三步：
 
 ```mermaid
 flowchart LR
-    rename["just rename"] --> build["just build"]
-    build --> load["用 -unsigned<br/>LOAD 产物"]
+    build["just build"] --> load["用 -unsigned<br/>LOAD 产物"]
     load --> call["在 SQL 里<br/>调用函数"]
 ```
 
 ## 前置条件
 
-- **Rust** 1.86 或更新（`Cargo.toml` 里的 `rust-version`）。
+- **Rust** 1.89 或更新（`Cargo.toml` 里的 `rust-version`；statrs 把模板的 1.86 下限抬了上去）。
 - **[just](https://github.com/casey/just)** 与 **cargo-duckdb-ext-tools** —— recipe 会调用它们：
 
   ```shell
@@ -29,18 +28,7 @@ flowchart LR
 - 可选：**make**（Windows 上要在 Git Bash 里跑）与 Python —— CI 用的那套官方构建 / 测试流程需要它们，
   cargo 那条路不需要。
 
-## 1. 改扩展名
-
-```shell
-just rename csv_stats
-```
-
-`scripts/rename.sh` 会把扩展名必须一致的五处一次改齐 —— `Cargo.toml`（`[package] name` 与
-`[[example]] name`）、Makefile 的 `EXTENSION_NAME`、`src/extension/mod.rs` 里的入口点符号、Justfile、
-CI 工作流 —— 以及文档里出现的每一处，并按新包名重写 `Cargo.lock`。它最后会打印还需要人工过一遍的清单，
-示例函数是其中主要的一项。
-
-## 2. 构建
+## 1. 构建
 
 ```shell
 just build          # = cargo duckdb-ext build
@@ -49,7 +37,7 @@ just build          # = cargo duckdb-ext build
 产物是 `target/debug/duckfn_statrs.duckdb_extension`。没有 C++ 这一步，也不需要本地编译 DuckDB：扩展
 只用到 DuckDB 的头文件，加载时通过它的 API 表分发。
 
-## 3. 加载并调用
+## 2. 加载并调用
 
 ```shell
 just repl           # 已经 LOAD 好扩展的 DuckDB REPL
@@ -60,35 +48,44 @@ just repl           # 已经 LOAD 好扩展的 DuckDB REPL
 duckdb -unsigned -c "LOAD './target/debug/duckfn_statrs.duckdb_extension';"
 ```
 
-下面是几个示例函数，就地就能跑 —— 站点从仓库的最新 Release 预加载了这个扩展，这里不用写 `LOAD`
+下面这些函数就地就能跑 —— 站点从仓库的最新 Release 预加载了这个扩展，这里不用写 `LOAD`
 （本地自己构建的产物仍然要加 `-unsigned`，见下面的几个坑）。点任意块上的 **执行** 即可。
 
 ```sql {"type":"duckfn","show":"table"}
-SELECT name AS input, my_greet_checked(name) AS greeting
-FROM (VALUES ('world'), ('')) t(name);
+-- 统计量是聚合函数：一列进，每个分组一个值出。
+SELECT g, sr_mean(x) AS mean, sr_std_dev(x) AS std_dev, sr_median(x) AS median
+FROM (VALUES (1, 1.0), (1, 2.0), (1, 3.0), (2, 10.0), (2, 20.0), (2, NULL)) t(g, x)
+GROUP BY g
+ORDER BY g;
 ```
 
 ```sql {"type":"duckfn","show":"table"}
--- my_sum 跳过 NULL；一组里一个有效值都没有时结果是 NULL 而不是 0。
-SELECT grp, my_sum(x) AS total
-FROM (VALUES ('rows', 1.5::DOUBLE), ('rows', 2.5), ('all NULL', NULL::DOUBLE)) t(grp, x)
+-- statrs 算不出单值的样本方差：结果是 NULL 而不是 0。
+SELECT grp, sr_variance(x) AS variance
+FROM (VALUES ('two', 1.5::DOUBLE), ('two', 2.5), ('one', NULL::DOUBLE), ('one', 3.0)) t(grp, x)
 GROUP BY grp
 ORDER BY grp;
+```
+
+```sql {"type":"duckfn","show":"table"}
+-- 分布函数是标量，逐行求值。
+SELECT x, sr_normal_cdf(x, 0.0, 1.0) AS cdf
+FROM (VALUES (-1.96::DOUBLE), (0.0), (1.96)) t(x);
 ```
 
 失败路径同样是个可运行块 —— 它自己声明了「应该失败」：
 
 ```sql {"type":"duckfn","expect":"error"}
-SELECT my_greet_checked(' x ');    -- 报错：首尾不允许有空格
+SELECT sr_normal_pdf(0.0, 0.0, -1.0);    -- 报错：std_dev 必须为正
 ```
 
 不进 REPL、只跑一条语句：
 
 ```shell
-just sql "SELECT my_greet('world')"
+just sql "SELECT sr_mean(x) FROM range(10) t(x)"
 ```
 
-## 4. 跑测试
+## 3. 跑测试
 
 ```shell
 just test           # make configure + make debug + make test

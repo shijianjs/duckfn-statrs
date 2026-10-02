@@ -1,7 +1,7 @@
 ---
 title: Writing functions
 sidebar_position: 1
-description: The sample scalar and aggregate functions line by line, the rules duckfn applies to arguments and return values, and what to copy when you add your own.
+description: The registered statrs wrappers and the shapes they use, the rules duckfn applies to arguments and return values, and what to copy when you add your own.
 ---
 
 # Writing functions
@@ -20,16 +20,19 @@ flowchart LR
     cdylib --> load["LOAD in DuckDB"]
 ```
 
-## The samples
+## What this extension registers
 
 | Function | Kind | Signature | Behaviour |
 | --- | --- | --- | --- |
-| `my_greet` | scalar | `VARCHAR -> VARCHAR` | Never NULL; the simplest possible shape. |
-| `my_greet_checked` | scalar | `VARCHAR -> VARCHAR` | `NULL` for an empty name, an error for surrounding whitespace. |
-| `my_sum` | aggregate | `DOUBLE -> DOUBLE` | Skips NULL inputs, `NULL` for a group with no valid row. |
+| `sr_mean` and the mean / variance family | aggregate | `DOUBLE -> DOUBLE` | The state collects the column; statrs computes at finalize. |
+| `sr_quantile` | aggregate | `(DOUBLE, DOUBLE) -> DOUBLE` | tau is the second, per-row-but-constant argument, kept in the state. |
+| `sr_covariance` / `sr_population_covariance` | aggregate | `(DOUBLE, DOUBLE) -> DOUBLE` | Two columns paired row by row; a NULL in either skips the row. |
+| `sr_normal_pdf` / `sr_normal_cdf` / `sr_normal_quantile` | scalar | `3 × DOUBLE -> DOUBLE` | Row by row; invalid parameters fail the query. |
 
-All three live in `src/extension/functions/`, one file per function (or per small group of related
-ones).
+The code lives in `src/extension/functions/`, one file per group: `aggregate_summary.rs`,
+`aggregate_covariance.rs`, `scalar_normal.rs`. Statistics are aggregates on purpose —
+`SELECT sr_mean(x) FROM t GROUP BY g` is the shape database users already write; a LIST + scalar form
+would force a `list(x)` in front of every call.
 
 ## Scalars: three return shapes
 
@@ -45,20 +48,18 @@ The macro generates different code per return type:
 use duckfn::{DuckOptionResult, duck_error, duck_scalar_function};
 
 #[duck_scalar_function(
-    description = "Greets someone by name, returning NULL for an empty name and failing on whitespace",
-    comment = "The nullable-and-fallible return shape: Ok(None) is SQL NULL, Err fails the query",
-    example = "SELECT my_greet_checked('')"
+    description = "Normal (Gaussian) quantile function: the x whose CDF equals p, for p in [0, 1]",
+    comment = "A probability outside [0, 1] is a query error rather than a clamped endpoint",
+    example = "SELECT sr_normal_quantile(0.975, 0.0, 1.0)"
 )]
-fn my_greet_checked(name: String) -> DuckOptionResult<String> {
-    if name.is_empty() {
-        return Ok(None);
+fn sr_normal_quantile(p: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    if !(0.0..=1.0).contains(&p) {
+        return Err(duck_error(format!(
+            "sr_normal_quantile: the probability must be within [0, 1], got {p}"
+        )));
     }
-    if name.trim() != name {
-        return Err(duck_error(
-            "my_greet_checked: the name must not have surrounding whitespace",
-        ));
-    }
-    Ok(Some(format!("Hello, {name}!")))
+    let normal = normal("sr_normal_quantile", mean, std_dev)?;
+    Ok(Some(normal.inverse_cdf(p)))
 }
 ```
 
@@ -66,17 +67,20 @@ fn my_greet_checked(name: String) -> DuckOptionResult<String> {
 
 Argument nullability is decided by the parameter type, and it applies to aggregates too:
 
-- **`name: String`** — a NULL input row is short-circuited to SQL `NULL` by duckfn's argument reader;
-  the body never runs for that row. This is what you want most of the time.
-- **`name: Option<String>`** — NULL reaches the body as `None` and its meaning is yours to decide
-  (return NULL, substitute a default, count NULLs, …).
+- **`p: f64`** — a NULL input row is short-circuited to SQL `NULL` by duckfn's argument reader; the
+  body never runs for that row. In an aggregate the row simply does not enter the state. This is what
+  you want most of the time.
+- **`p: Option<f64>`** — NULL reaches the body as `None` and its meaning is yours to decide (return
+  NULL, substitute a default, count NULLs, …).
 
 ### Errors and panics
 
 Return `Err(duck_error("…"))` for a value the function cannot handle; that fails the query with your
 message. A `panic!` in the body is caught and reported as a DuckDB error rather than unwinding across
 the FFI boundary. Error messages are user-facing: write them in English, and prefix them with the
-function name so a report makes sense on its own.
+function name so a report makes sense on its own. In this extension the line between error and NULL is
+deliberate: *statrs cannot define it* → NULL (via `nan_to_null`), *the call is wrong* (std_dev ≤ 0, a
+probability out of range) → error.
 
 ## Aggregates: per-row inputs plus a state
 
@@ -90,42 +94,53 @@ implementation of `DuckAggregateState`:
   never-NULL value; override `result` and return `Ok(None)` when a group has to come back as SQL NULL.
 - `Output` decides the SQL return type: `i64`, `f64`, `String`, `Vec<…>` (that is, `list<…>`) and so on.
 
+The quantile state shows the two moving parts — collected data, and the constant argument read once
+per row:
+
 ```rust
 #[derive(Default, Debug, Clone)]
-struct SumState {
-    total: f64,
-    rows: i64,
+struct QuantileState {
+    values: Vec<f64>,
+    tau: Option<f64>,
 }
 
-impl DuckAggregateState for SumState {
+impl DuckAggregateState for QuantileState {
     type Output = f64;
 
     fn simple_combine(&mut self, other: &Self) {
-        self.total += other.total;
-        self.rows += other.rows;
+        self.values.extend(other.values.iter().copied());
+        self.tau = self.tau.or(other.tau);      // the constant is the same on every row
     }
 
     fn result(&self) -> DuckOptionResult<f64> {
-        if self.rows == 0 {
-            Ok(None)          // no row at all -> SQL NULL, not 0
-        } else {
-            Ok(Some(self.total))
-        }
+        let Some(tau) = self.tau else {
+            return Ok(None);                    // empty group -> SQL NULL
+        };
+        let mut data = Data::new(self.values.clone());
+        super::nan_to_null(data.quantile(tau))  // statrs' NAN -> SQL NULL
     }
+}
+
+#[duck_aggregate_function(/* description / comment / example */)]
+fn sr_quantile(input: f64, tau: f64, state: &mut QuantileState) {
+    state.values.push(input);
+    state.tau = Some(tau);
 }
 ```
 
-`SumState` counts the rows it saw so "no input at all" is told apart from "input seen, the total is
-0". A state may equally hold a `String`, a `HashMap`, a `Vec<…>`, or one slot per group key — see the
-aggregate chapter of the duckfn guide for the shapes it supports.
+The mean / variance family is this same shape nine times over with a different final expression, so
+`aggregate_summary.rs` generates it from one `collect_aggregate!` macro (state + NAN-to-NULL `result` +
+row handler). A state may equally hold a `String`, a `HashMap`, a `Vec<…>`, or one slot per group key —
+see the aggregate chapter of the duckfn guide for the shapes it supports.
 
 ## Adding your own
 
 1. **Pick the attribute.** Scalar, aggregate, table function, `COPY`, cast, SQL macro or replacement
    scan: each has one, and each accepts only its own arguments. The reference is
    [the duckfn user guide](https://shijianjs.github.io/duckfn/) — the chapter for that kind.
-2. **Copy the closest sample** from `src/extension/functions/` and change the logic, rather than
-   inventing a signature from scratch.
+2. **Copy the closest neighbour** from `src/extension/functions/` and change the logic, rather than
+   inventing a signature from scratch. A new statrs wrapper usually means a new `collect_aggregate!`
+   call with a different final expression.
 3. **Attach it to the module tree**: add `mod my_function;` to `src/extension/functions/mod.rs`. The
    crate roots stay untouched.
 4. **Write the documentation metadata** on the attribute — `description`, `comment`, `example` /
@@ -135,7 +150,7 @@ aggregate chapter of the duckfn guide for the shapes it supports.
    #[duck_scalar_function(
        description = "One line for the function table of the community-extension page",
        comment = "The detail that does not fit the one-liner",
-       example = "SELECT my_greet('world')"
+       example = "SELECT sr_normal_pdf(0.0, 0.0, 1.0)"
    )]
    ```
 
@@ -143,16 +158,18 @@ aggregate chapter of the duckfn guide for the shapes it supports.
    source for the `Added Functions` table on the community-extension page. `just docs_csv` exports it
    to `target/function_descriptions.csv` (see [Community extensions](../community-extension.md)).
    Write it in English — it is pasted onto that page as it is.
-5. **Cover it with a test** (see [Testing](./testing.md)) and run `just lint`.
+5. **Cover it with a test** (see [Testing](./testing.md)) and run `just lint`. Take the expected values
+   from statrs' actual output, not from a hand computation.
 
 ### Names
 
-Every SQL name carries one short prefix (`my_` in this template), and the part after it should read
-like what the function does. A prefixed name is also what users type, so resist `my_ext_my_thing`.
+Every SQL name carries the short prefix `sr_`, and the part after it should read like what the function
+does. A prefixed name is also what users type, so resist `duckfn_statrs_sr_mean`.
 
-The attribute registers the **Rust function name** by default, which is why the samples are called
-`my_greet` and `my_sum`. When one name needs several signatures (different argument types or counts),
-`overloads_name = "…"` merges them into one function set instead of registering each separately.
+The attribute registers the **Rust function name** by default, which is why the functions are called
+`sr_mean` and `sr_normal_pdf`. When one name needs several signatures (different argument types or
+counts), `overloads_name = "…"` merges them into one function set instead of registering each
+separately.
 
 The macro also generates a `SQL_NAME` constant per signature. Once a name appears in several places —
 error prefixes, log lines, hints — read that constant rather than repeating the literal; the price is
@@ -162,6 +179,6 @@ visibility.
 ### Options arguments
 
 A configuration argument (`DuckLazy<T>`) is parsed once and read inside the function, so per-row
-parsing does not show up in profiles. The template does not use one; the pattern (a named STRUCT type,
+parsing does not show up in profiles. This extension does not use one; the pattern (a named STRUCT type,
 created at load time) is documented in the duckfn guide and used throughout
 [duckfn_quantstats](https://github.com/shijianjs/duckfn-quantstats).

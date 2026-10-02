@@ -1,23 +1,23 @@
 ---
 title: Quick start
 sidebar_position: 1
-description: Rename the extension, build the .duckdb_extension with cargo, load it into DuckDB and call the sample functions.
+description: Build the .duckdb_extension with cargo, load it into DuckDB and call the statrs-backed functions.
 ---
 
 # Quick start
 
-The whole page in four steps:
+The whole page in three steps:
 
 ```mermaid
 flowchart LR
-    rename["just rename"] --> build["just build"]
-    build --> load["LOAD the artifact<br/>with -unsigned"]
+    build["just build"] --> load["LOAD the artifact<br/>with -unsigned"]
     load --> call["Call the functions<br/>from SQL"]
 ```
 
 ## Prerequisites
 
-- **Rust** 1.86 or newer (`rust-version` in `Cargo.toml`).
+- **Rust** 1.89 or newer (`rust-version` in `Cargo.toml`; statrs pulls the floor up from the
+  template's 1.86).
 - **[just](https://github.com/casey/just)** and **cargo-duckdb-ext-tools** — the two tools the recipes
   call:
 
@@ -30,19 +30,7 @@ flowchart LR
 - Optional: **make** (inside Git Bash on Windows) and Python for the official build/test flow the CI
   uses — `just ci-build` and `just test` need them, the cargo path does not.
 
-## 1. Rename the extension
-
-```shell
-just rename csv_stats
-```
-
-`scripts/rename.sh` rewrites the five places the extension name has to match — `Cargo.toml`
-(`[package] name` and `[[example]] name`), `EXTENSION_NAME` in the Makefile, the entry-point symbol in
-`src/extension/mod.rs`, the Justfile and the CI workflow — plus every occurrence in the docs, and
-regenerates the `Cargo.lock` entry. It finishes by printing what still needs a human pass; the sample
-functions are the main item.
-
-## 2. Build
+## 1. Build
 
 ```shell
 just build          # = cargo duckdb-ext build
@@ -52,7 +40,7 @@ The artifact is `target/debug/duckfn_statrs.duckdb_extension`. There is no C++ s
 build: the extension is compiled against DuckDB's headers and dispatches through its API table when it
 is loaded.
 
-## 3. Load and call it
+## 2. Load and call it
 
 ```shell
 just repl           # a DuckDB REPL with the extension already loaded
@@ -63,36 +51,45 @@ just repl           # a DuckDB REPL with the extension already loaded
 duckdb -unsigned -c "LOAD './target/debug/duckfn_statrs.duckdb_extension';"
 ```
 
-The sample functions, running right here — the site preloads the extension from the repository's latest
+The functions, running right here — the site preloads the extension from the repository's latest
 release, so no local `LOAD` is needed here (a hand-built extension still needs `-unsigned`; see the
 traps below). Click **Run** on any block.
 
 ```sql {"type":"duckfn","show":"table"}
-SELECT name AS input, my_greet_checked(name) AS greeting
-FROM (VALUES ('world'), ('')) t(name);
+-- The summary statistics are aggregates: a column in, one value out per group.
+SELECT g, sr_mean(x) AS mean, sr_std_dev(x) AS std_dev, sr_median(x) AS median
+FROM (VALUES (1, 1.0), (1, 2.0), (1, 3.0), (2, 10.0), (2, 20.0), (2, NULL)) t(g, x)
+GROUP BY g
+ORDER BY g;
 ```
 
 ```sql {"type":"duckfn","show":"table"}
--- my_sum skips NULLs, and a group with no value at all is NULL rather than 0.
-SELECT grp, my_sum(x) AS total
-FROM (VALUES ('rows', 1.5::DOUBLE), ('rows', 2.5), ('all NULL', NULL::DOUBLE)) t(grp, x)
+-- statrs cannot define the sample variance of one value: the result is NULL, not 0.
+SELECT grp, sr_variance(x) AS variance
+FROM (VALUES ('two', 1.5::DOUBLE), ('two', 2.5), ('one', NULL::DOUBLE), ('one', 3.0)) t(grp, x)
 GROUP BY grp
 ORDER BY grp;
+```
+
+```sql {"type":"duckfn","show":"table"}
+-- Distribution functions are scalars, evaluated row by row.
+SELECT x, sr_normal_cdf(x, 0.0, 1.0) AS cdf
+FROM (VALUES (-1.96::DOUBLE), (0.0), (1.96)) t(x);
 ```
 
 The failure path is a runnable block too — it declares that it is supposed to fail:
 
 ```sql {"type":"duckfn","expect":"error"}
-SELECT my_greet_checked(' x ');    -- error: no surrounding whitespace
+SELECT sr_normal_pdf(0.0, 0.0, -1.0);    -- error: std_dev must be positive
 ```
 
 A single query from the command line, without a REPL:
 
 ```shell
-just sql "SELECT my_greet('world')"
+just sql "SELECT sr_mean(x) FROM range(10) t(x)"
 ```
 
-## 4. Run the tests
+## 3. Run the tests
 
 ```shell
 just test           # make configure + make debug + make test

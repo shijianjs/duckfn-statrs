@@ -2,59 +2,74 @@
 title: Introduction
 sidebar_position: 1
 slug: /intro
-description: A DuckDB extension written in Rust with duckfn — what the project contains, how it is built and released, and where to start reading.
+description: duckfn_statrs wraps the Rust statrs crate as DuckDB functions — aggregates for summary statistics, scalars for the normal distribution.
 ---
 
 # Introduction
 
 `duckfn_statrs` is a DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)
-written in Rust on top of [duckfn](https://crates.io/crates/duckfn). Attribute macros turn ordinary Rust
-functions into the SQL functions DuckDB registers when the extension is loaded; DuckDB's C API is used
+that wraps the Rust statistical computing library [statrs](https://crates.io/crates/statrs) into SQL
+functions. The summary statistics are **aggregates** over a DOUBLE column (`SELECT sr_mean(x) FROM t
+GROUP BY g`), and the normal distribution's pdf / cdf / quantile are **scalars**. The code is written
+with [duckfn](https://crates.io/crates/duckfn) attribute macros on top of
+[duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template) — the repository
+already contains the build, test, documentation and release tooling, and DuckDB's C API is used
 headers-only, so nothing has to be built except the extension itself.
 
-The project started from
-[duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template), which is this
-documentation site's other half: the repository already contains the build, test, documentation and
-release tooling, and the pages here describe how to use it.
+Every computation is delegated to statrs: the extension re-implements no statistical formula. A
+typical registration is one row handler plus a state type — the shape `sr_mean` and friends are
+generated from:
 
 ```rust
-use duckfn::{DuckOptionResult, duck_scalar_function};
+#[derive(Default, Debug, Clone)]
+struct MeanState {
+    values: Vec<f64>,
+}
 
-/// ```sql
-/// SELECT my_greet_checked('world');  -- Hello, world!
-/// ```
-#[duck_scalar_function]
-fn my_greet_checked(name: String) -> DuckOptionResult<String> {
-    if name.is_empty() {
-        return Ok(None);          // SQL NULL
+impl DuckAggregateState for MeanState {
+    type Output = f64;
+
+    fn simple_combine(&mut self, other: &Self) {
+        self.values.extend(other.values.iter().copied());
     }
-    Ok(Some(format!("Hello, {name}!")))
+
+    fn result(&self) -> DuckOptionResult<f64> {
+        nan_to_null(self.values.as_slice().mean())   // statrs' NAN becomes SQL NULL
+    }
+}
+
+#[duck_aggregate_function]
+fn sr_mean(input: f64, state: &mut MeanState) {
+    state.values.push(input);
 }
 ```
 
-The same function from SQL. This block runs in your browser: the site preloads the extension from the
+The same functions from SQL. This block runs in your browser: the site preloads the extension from the
 repository's latest release, so there is no `LOAD` to write here.
 
 ```sql {"type":"duckfn","show":"table"}
-SELECT name AS input, my_greet_checked(name) AS greeting
-FROM (VALUES ('world'), ('')) t(name);
+SELECT g, sr_mean(x) AS mean, sr_std_dev(x) AS std_dev
+FROM (VALUES (1, 1.0), (1, 2.0), (1, 3.0), (2, 10.0), (2, 20.0)) t(g, x)
+GROUP BY g ORDER BY g;
 ```
 
-:::note[The pages themselves are part of the template]
-Everything under `docs/` is a starting point written for the sample functions. Rewrite these pages (and
-their Chinese translations) as your own API grows, or delete the whole directory — nothing else in the
-repository depends on it. The maintenance conventions (layout, commands, translations, deployment) are
-in `docs/README.md`.
-:::
+## NULL semantics
+
+One rule covers the whole extension: **whatever statrs cannot define comes back as SQL NULL, and a
+NULL input never silently produces a number.** Concretely: NULL rows never enter an aggregate (the
+SQL aggregate convention); the NAN statrs returns for an empty group, sample variance of a single
+value, an out-of-range `tau`, or a negative value in the geometric / harmonic means is folded into
+NULL. A parameter that is present but *invalid* (`std_dev <= 0`, a probability outside `[0, 1]`) is a
+bad call, so it fails the query instead of being hidden as emptiness.
 
 ## What is in the box
 
 | Path | What it is |
 | --- | --- |
 | `src/extension/mod.rs` | The entry point: `duckfn_entrypoint!("duckfn_statrs")` plus the module tree. |
-| `src/extension/functions/` | The registered functions. Three samples live here: `my_greet`, `my_greet_checked`, `my_sum`. |
+| `src/extension/functions/` | The registered functions: `aggregate_summary.rs` (the statistics), `aggregate_covariance.rs`, `scalar_normal.rs` (the distribution). |
 | `src/extension/types/` | Where SQL-facing types go (STRUCT/ENUM definitions, `list<struct>` row types). Empty for now. |
-| `test/sql/` | SQLLogicTest files, one per sample function plus a smoke test. |
+| `test/sql/` | SQLLogicTest files, one per function group plus a smoke test; expectations are statrs' actual output. |
 | `Justfile` | The everyday commands: build, run SQL, repl, test, lint, release. |
 | `.github/workflows/` | The build matrix, the GitHub Release on a version tag, and this site's deployment. |
 | `community-extension/` | The two files a [community extension](https://duckdb.org/community_extensions/list_of_extensions) registration needs. |
@@ -62,10 +77,10 @@ in `docs/README.md`.
 
 ## Where to go next
 
-- [Quick start](./getting-started/quick-start.md) — rename the template, build it, load it, call it.
+- [Quick start](./getting-started/quick-start.md) — build it, load it, call it.
 - [Project structure](./getting-started/project-structure.md) — where the entry point, the functions and
   the types live, and the naming rules that hold them together.
-- [Writing functions](./guide/functions.md) — the sample functions line by line.
+- [Writing functions](./guide/functions.md) — the registered functions and the shapes they use.
 - [Testing](./guide/testing.md) — the SQLLogicTest files and how to run them.
 - [Build and release](./build-and-release.md) — the build paths and the release flow.
 - [Community extensions](./community-extension.md) — publishing to DuckDB's community repository.

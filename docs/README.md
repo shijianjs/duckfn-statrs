@@ -71,8 +71,9 @@ editor with a Run button, running in DuckDB-Wasm in the reader's browser.
 
 ````md
 ```sql {"type":"duckfn","show":"table"}
-SELECT name, my_greet_checked(name) AS greeting
-FROM (VALUES ('world'), ('')) t(name);
+SELECT g, sr_mean(x) AS mean, sr_median(x) AS median
+FROM (VALUES (1, 1.0), (1, 2.0), (1, 3.0), (2, 10.0)) t(g, x)
+GROUP BY g;
 ```
 ````
 

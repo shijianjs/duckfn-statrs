@@ -1,39 +1,45 @@
-# name: test/sql/stat_normal.test
-# description: statrs 正态分布包装：pdf / cdf / 分位数，非法参数走错误路径
+# name: test/sql/scalar_normal.test
+# description: statrs 正态分布标量包装：pdf / cdf / 分位数、NULL 短路、非法参数报错
 # group: [duckfn_statrs]
 
 require duckfn_statrs
 
 # 标准正态的几个锚点值（期望值取自 statrs 的实际输出，统一以 DECIMAL(12,6) 定点打印）
 query RRRR
-SELECT stat_normal_pdf(0.0, 0.0, 1.0)::DECIMAL(12,6),
-       stat_normal_cdf(0.0, 0.0, 1.0)::DECIMAL(12,6),
-       stat_normal_cdf(1.96, 0.0, 1.0)::DECIMAL(12,6),
-       stat_normal_quantile(0.975, 0.0, 1.0)::DECIMAL(12,6);
+SELECT sr_normal_pdf(0.0, 0.0, 1.0)::DECIMAL(12,6),
+       sr_normal_cdf(0.0, 0.0, 1.0)::DECIMAL(12,6),
+       sr_normal_cdf(1.96, 0.0, 1.0)::DECIMAL(12,6),
+       sr_normal_quantile(0.975, 0.0, 1.0)::DECIMAL(12,6);
 ----
 0.398942	0.500000	0.975002	1.959964
 
 # 分位数是 CDF 的反函数：q = quantile(p) 处再取 cdf 应回到 p
 query R
-SELECT round(stat_normal_cdf(stat_normal_quantile(0.975, 2.0, 3.0), 2.0, 3.0), 9);
+SELECT round(sr_normal_cdf(sr_normal_quantile(0.975, 2.0, 3.0), 2.0, 3.0), 9);
 ----
 0.975
 
+# 任一参数为 NULL：整行短路成 NULL，函数体不执行
+query R
+SELECT sr_normal_cdf(NULL, 0.0, 1.0);
+----
+NULL
+
 # std_dev 非法（<= 0 或 NaN）由 Normal::new 拒绝，报成查询错误
 statement error
-SELECT stat_normal_pdf(0.0, 0.0, -1.0);
+SELECT sr_normal_pdf(0.0, 0.0, -1.0);
 ----
 Standard deviation is NaN, zero or less than zero
 
 # 概率越界同样报错，而不是被钳到端点
 statement error
-SELECT stat_normal_quantile(1.5, 0.0, 1.0);
+SELECT sr_normal_quantile(1.5, 0.0, 1.0);
 ----
 the probability must be within [0, 1], got 1.5
 
 # 参数可以来自列，逐行求值
 query R
-SELECT stat_normal_cdf(x, mu, sd)::DECIMAL(10,8)
+SELECT sr_normal_cdf(x, mu, sd)::DECIMAL(10,8)
 FROM (VALUES (0.0, 0.0, 1.0), (1.0, 0.0, 1.0), (7.5, 5.0, 2.5)) t(x, mu, sd)
 ORDER BY x;
 ----
@@ -43,6 +49,6 @@ ORDER BY x;
 
 # 跨多个 DataChunk（STANDARD_VECTOR_SIZE = 2048）
 query II
-SELECT count(*), count(stat_normal_pdf(x::DOUBLE, 0.0, 1.0)) FROM range(3000) t(x);
+SELECT count(*), count(sr_normal_pdf(x::DOUBLE, 0.0, 1.0)) FROM range(3000) t(x);
 ----
 3000	3000
