@@ -1,6 +1,6 @@
 [package]
 name = "duckfn_statrs"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2024"
 # statrs 0.19（及其拉进的 nalgebra 0.35）要求 Rust 1.89，把模板原本的 1.86 下限抬上去了；
 # 降 statrs 版本前先想清楚要放弃哪些 API。
