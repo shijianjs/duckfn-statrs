@@ -69,23 +69,29 @@ include extension-ci-tools/makefiles/c_api_extensions/rust.Makefile
 
 # 覆盖 base.Makefile 的 wasm 链接：把 `-O3` 换成 `-O0`。
 #
-# 原因：官方 CI 钉死 emsdk 3.1.71（其 binaryen/wasm-opt 是 v120）。statrs 0.19 走 Rust≥1.89 编译，
-# 产出的 wasm 模块需要 `call-indirect-overlong` 这个较新的提案（252 个函数 + nalgebra 单态化出海量
-# 函数类型，由 wasm-ld 判定实际需要）。v120 的 wasm-opt 不认识对应的新 `--enable-*` 旗标，`-O3` 那步
-# 优化会直接 `Unknown option` 失败。wasm-opt 只是优化器：`-O0` 跳过它，wasm-ld 的产物本身合法、
-# DuckDB-Wasm 能加载运行，只是未经体积优化。这个模块用这套 binaryen 本来也无法优化。
-# 等 DuckDB 把钉死的 emsdk 升到 binaryen 支持 call-indirect-overlong 的版本，就该把这两条删掉退回 -O3。
+# 必须和 base 一样套 `ifneq ($(DUCKDB_WASM_PLATFORM),)` 守卫：base 只在 wasm 平台把 link_wasm_* 定义成
+# emcc 命令，原生平台走 else 分支得到**空的** link_wasm_*。若无条件重定义，会把原生那条空目标也改成
+# emcc，于是 linux/macos/windows 构建时报 `emcc: command not found`（Error 127）。
 #
-# Override base.Makefile's wasm link: `-O3` -> `-O0`. CI pins emsdk 3.1.71 (binaryen v120); statrs 0.19 on
-# Rust>=1.89 emits a module that needs `call-indirect-overlong`, which v120's wasm-opt cannot parse, so the
-# `-O3` post-link optimization fails with `Unknown option`. wasm-opt is only an optimizer; `-O0` skips it and
-# wasm-ld's output is a valid, loadable module (just unoptimized). Delete these two once DuckDB bumps the
-# pinned emsdk to a binaryen that supports call-indirect-overlong, to go back to `-O3`.
+# 换 -O0 的原因：官方 CI 钉死 emsdk 3.1.71（binaryen/wasm-opt v120）。statrs 0.19 走 Rust>=1.89，
+# 产出的 wasm 模块需要 `call-indirect-overlong` 这个较新的提案（252 个函数 + nalgebra 单态化出海量
+# 函数类型，由 wasm-ld 判定实际需要）。v120 的 wasm-opt 解析不了、`-O3` 优化步直接 `Unknown option` 失败。
+# wasm-opt 只是优化器：`-O0` 跳过它，wasm-ld 的产物本身合法、DuckDB-Wasm 能加载运行，只是未经体积优化。
+# 等 DuckDB 把钉死的 emsdk 升到 binaryen 支持 call-indirect-overlong 的版本，就该删掉这个守卫块退回 -O3。
+#
+# Same `ifneq` guard as base.Makefile: base only defines link_wasm_* as emcc for wasm platforms and leaves
+# them empty for native, so an unconditional redefinition would make native builds call `emcc` (command not
+# found, Error 127). The `-O0` swap: CI pins emsdk 3.1.71 (binaryen v120); statrs 0.19 on Rust>=1.89 emits a
+# module needing `call-indirect-overlong`, which v120's wasm-opt cannot parse, so the `-O3` post-link step
+# fails. wasm-opt is only an optimizer; `-O0` skips it and wasm-ld's output stays valid and loadable.
+# Delete this whole guarded block to go back to `-O3` once the pinned emsdk's binaryen supports the feature.
+ifneq ($(DUCKDB_WASM_PLATFORM),)
 link_wasm_debug:
 	emcc $(EXTENSION_BUILD_PATH)/debug/$(EXTENSION_LIB_FILENAME) -o $(EXTENSION_BUILD_PATH)/debug/$(EXTENSION_FILENAME_NO_METADATA) -O0 -g -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS="_$(EXTENSION_NAME)_init_c_api"
 
 link_wasm_release:
 	emcc $(EXTENSION_BUILD_PATH)/release/$(EXTENSION_LIB_FILENAME) -o $(EXTENSION_BUILD_PATH)/release/$(EXTENSION_FILENAME_NO_METADATA) -O0 -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS="_$(EXTENSION_NAME)_init_c_api"
+endif
 
 configure: venv platform extension_version
 
