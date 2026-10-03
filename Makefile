@@ -67,6 +67,26 @@ all: configure debug
 include extension-ci-tools/makefiles/c_api_extensions/base.Makefile
 include extension-ci-tools/makefiles/c_api_extensions/rust.Makefile
 
+# 覆盖 base.Makefile 的 wasm 链接：把 `-O3` 换成 `-O0`。
+#
+# 原因：官方 CI 钉死 emsdk 3.1.71（其 binaryen/wasm-opt 是 v120）。statrs 0.19 走 Rust≥1.89 编译，
+# 产出的 wasm 模块需要 `call-indirect-overlong` 这个较新的提案（252 个函数 + nalgebra 单态化出海量
+# 函数类型，由 wasm-ld 判定实际需要）。v120 的 wasm-opt 不认识对应的新 `--enable-*` 旗标，`-O3` 那步
+# 优化会直接 `Unknown option` 失败。wasm-opt 只是优化器：`-O0` 跳过它，wasm-ld 的产物本身合法、
+# DuckDB-Wasm 能加载运行，只是未经体积优化。这个模块用这套 binaryen 本来也无法优化。
+# 等 DuckDB 把钉死的 emsdk 升到 binaryen 支持 call-indirect-overlong 的版本，就该把这两条删掉退回 -O3。
+#
+# Override base.Makefile's wasm link: `-O3` -> `-O0`. CI pins emsdk 3.1.71 (binaryen v120); statrs 0.19 on
+# Rust>=1.89 emits a module that needs `call-indirect-overlong`, which v120's wasm-opt cannot parse, so the
+# `-O3` post-link optimization fails with `Unknown option`. wasm-opt is only an optimizer; `-O0` skips it and
+# wasm-ld's output is a valid, loadable module (just unoptimized). Delete these two once DuckDB bumps the
+# pinned emsdk to a binaryen that supports call-indirect-overlong, to go back to `-O3`.
+link_wasm_debug:
+	emcc $(EXTENSION_BUILD_PATH)/debug/$(EXTENSION_LIB_FILENAME) -o $(EXTENSION_BUILD_PATH)/debug/$(EXTENSION_FILENAME_NO_METADATA) -O0 -g -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS="_$(EXTENSION_NAME)_init_c_api"
+
+link_wasm_release:
+	emcc $(EXTENSION_BUILD_PATH)/release/$(EXTENSION_LIB_FILENAME) -o $(EXTENSION_BUILD_PATH)/release/$(EXTENSION_FILENAME_NO_METADATA) -O0 -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS="_$(EXTENSION_NAME)_init_c_api"
+
 configure: venv platform extension_version
 
 debug: build_extension_library_debug build_extension_with_metadata_debug
