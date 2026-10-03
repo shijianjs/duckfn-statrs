@@ -1,0 +1,83 @@
+# name: test/sql/distribution/continuous_shape.test
+# description: 形状/速率族连续分布（gamma / erlang / chi / chi_squared / exp /
+#   inverse_gamma / pareto / weibull / beta / fisher_snedecor）。锚点取各分布 doc
+#   example 的解析精确点（如 Exp::cdf(1|0.5) = 1 - e^-0.5）+ 实跑输出；与
+#   statistics/function 两层互证（Gamma CDF = 正则化不完全 Gamma 等）。
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# 指数分布：cdf = 1 - e^(-rate·x)，与 sf 互补
+query RRR
+SELECT sr_exp_cdf(1.0, 0.5)::DECIMAL(12,8), sr_exp_sf(1.0, 0.5)::DECIMAL(12,8),
+       sr_exp_quantile(0.5, 2.0)::DECIMAL(12,8)
+----
+0.39346934	0.60653066	0.34657359
+
+# Gamma CDF 与 function 层的正则化不完全 Gamma 同一数值：cdf(x|a,rate) = P(a, rate·x) = P(2, 2)
+query RR
+SELECT sr_gamma_cdf(1.0, 2.0, 2.0)::DECIMAL(12,8), sr_gamma_lower_regularized(2.0, 2.0)::DECIMAL(12,8)
+----
+0.59399415	0.59399415
+
+# Beta CDF 即正则化不完全 Beta；pdf(0.5|2,3) = 1.5（解析值，浮点尾差由 DECIMAL 吸收）
+query RR
+SELECT sr_beta_pdf(0.5, 2.0, 3.0)::DECIMAL(12,6), sr_beta_cdf(0.5, 2.0, 3.0)::DECIMAL(12,8)
+----
+1.500000	0.68750000
+
+# 卡方：chi_squared_cdf 由 doc 锚点（9.23635, df=3）实测；Chi 是根卡方分布、独立验证
+query RR
+SELECT sr_chi_squared_cdf(9.23635, 3.0)::DECIMAL(12,8), sr_chi_cdf(1.0, 1.0)::DECIMAL(12,8)
+----
+0.97369194	0.68268949
+
+# Chi(1) 是 |N(0,1)|：与正态互证 P(|Z| <= 1) = 2Φ(1) - 1
+query RR
+SELECT sr_chi_cdf(1.0, 1.0)::DECIMAL(12,8), (2 * sr_normal_cdf(1.0, 0.0, 1.0) - 1)::DECIMAL(12,8)
+----
+0.68268949	0.68268949
+
+# Erlang（整数 shape）：cdf(1|shape2,rate2) = 1 - e^-2(1+2) 的级数形式，取实跑值
+query R
+SELECT sr_erlang_cdf(1.0, 2.0, 2.0)::DECIMAL(12,8)
+----
+0.59399415
+
+# Pareto：cdf(x) = 1 - (x_m/x)^α → cdf(2|1,2) = 0.75 解析精确
+query R
+SELECT sr_pareto_cdf(2.0, 1.0, 2.0)
+----
+0.75
+
+# Weibull：pdf(1|1,1) = e^-1；inverse_gamma / fisher_snedecor 实跑锚点
+query RRR
+SELECT sr_weibull_cdf(1.0, 1.0, 1.0)::DECIMAL(12,8),
+       sr_inverse_gamma_pdf(1.0, 2.0, 2.0)::DECIMAL(12,8),
+       sr_fisher_snedecor_cdf(1.0, 2.0, 3.0)::DECIMAL(12,8)
+----
+0.63212056	0.54134113	0.53524200
+
+# ln 层与主层互证：ln(pdf) = ln_pdf（gamma 一例，pdf(1|2,2)=4e⁻²）
+query RR
+SELECT sr_gamma_ln_pdf(1.0, 2.0, 2.0)::DECIMAL(12,8), ln(sr_gamma_pdf(1.0, 2.0, 2.0))::DECIMAL(12,8)
+----
+-0.61370564	-0.61370564
+
+# 非法构造参数报查询错误（statrs 各 *Error 的 Display 文案）
+statement error
+SELECT sr_gamma_pdf(1.0, 2.0, -0.5)
+----
+Rate is NaN zero, or less than zero.
+
+# 整数参数校验（Erlang shape、Chi freedom）：3.5 这种「写错的整数」报错
+statement error
+SELECT sr_erlang_pdf(1.0, 2.5, 2.0)
+----
+sr_erlang_pdf: expected a non-negative whole number, got 2.5
+
+# quantile 概率越界
+statement error
+SELECT sr_beta_quantile(1.5, 2.0, 3.0)
+----
+the probability must be within [0, 1], got 1.5

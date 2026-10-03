@@ -1,0 +1,24 @@
+# name: test/sql/consts.test
+# description: statrs::consts 的常量标量函数。期望值即 statrs 源码中的常量字面量
+#   （DECIMAL 定点展示截断到源码给定的位数），证明 SQL 侧与 statrs 内部用的是同一份数。
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# statrs::consts 源码字面量：SQRT_2PI = 2.506628274631000502415...、LN_PI = 1.144729885849400174...、
+# EULER_MASCHERONI = 0.577215664901532860606...
+query RRR
+SELECT sr_sqrt_2pi()::DECIMAL(18,15), sr_ln_pi()::DECIMAL(18,15), sr_euler_mascheroni()::DECIMAL(18,15);
+----
+2.506628274631001	1.144729885849400	0.577215664901533
+
+query RRR
+SELECT sr_ln_sqrt_2pi()::DECIMAL(18,15), sr_ln_sqrt_2pie()::DECIMAL(18,15),
+       sr_ln_2_sqrt_e_over_pi()::DECIMAL(18,15);
+----
+0.918938533204673	1.418938533204673	0.620782237635245
+
+query R
+SELECT sr_2_sqrt_e_over_pi()::DECIMAL(18,15);
+----
+1.860382734205266

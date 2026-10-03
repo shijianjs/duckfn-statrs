@@ -53,7 +53,7 @@ GROUP BY g ORDER BY g;
 | 路径 | 是什么 |
 | --- | --- |
 | `src/extension/mod.rs` | 入口：`duckfn_entrypoint!("duckfn_statrs")` 与模块树。 |
-| `src/extension/functions/` | 注册进 DuckDB 的函数：`aggregate_summary.rs`（统计量）、`aggregate_covariance.rs`（协方差）、`scalar_normal.rs`（正态分布）。 |
+| `src/extension/functions/` | 注册进 DuckDB 的函数，目录与 statrs 模块树同构：`consts.rs`、`function.rs`、`statistics/`（聚合）、`distribution/`（27 个一元分布，标量）；对应表与有意未包装清单在其 `mod.rs` 头注释里。 |
 | `src/extension/types/` | 面向 SQL 的类型放这里（STRUCT / ENUM 定义、`list<struct>` 行类型）。目前是空的。 |
 | `test/sql/` | SQLLogicTest 用例，每个函数组一份，外加一份冒烟测试；期望值全部取自 statrs 的实际输出。 |
 | `Justfile` | 日常命令：构建、跑一条 SQL、REPL、测试、lint、发版。 |

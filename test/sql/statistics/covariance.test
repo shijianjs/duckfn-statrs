@@ -1,14 +1,12 @@
-# name: test/sql/aggregate_covariance.test
+# name: test/sql/statistics/covariance.test
 # description: 协方差聚合。主锚点取 statrs 0.19.1 statistics.rs 的 covariance /
 #   population_covariance doc example（z1=[0,3,-2], z2=[-5,4,10] -> -5.5 与 -11/3）；
-#   官方的「NAN 输入」用例在 SQL 侧对应 NULL 整行跳过（本仓库形状特有），
-#   其余（单对、空组、GROUP BY、binder）为本仓库新增用例。
+#   官方「NAN 输入」用例在 SQL 侧对应 NULL 整行跳过，其余为本仓库新增用例。
 # group: [duckfn_statrs]
 
 require duckfn_statrs
 
-# 官方 doc example：z1 = [0, 3, -2], z2 = [-5, 4, 10] -> covariance -5.5、population_covariance -11/3
-# 期望值取自 statrs 的实际输出，统一以 DECIMAL(12,6) 定点打印
+# 官方 doc example：covariance -5.5、population_covariance -11/3
 query RR
 SELECT sr_covariance(x, y)::DECIMAL(12,6),
        sr_population_covariance(x, y)::DECIMAL(12,6)

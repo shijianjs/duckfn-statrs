@@ -9,10 +9,11 @@ AGENTS.md（duckfn-extension-template 自带的那一份）：克隆模板后**�
 
 ## 项目事实（唯一需要人维护的一段）
 
-- 这个扩展做什么：把 [statrs](https://crates.io/crates/statrs) 包装成 DuckDB 函数 ——
-  统计量一律做成**聚合函数**（`SELECT sr_mean(x) FROM t GROUP BY g` 这类写法，一列进一个值出，
-  不要 LIST+标量），分布类才保持标量（逐行求值：`sr_normal_pdf(x, mean, std_dev)`）。
-  新增包装以 src/extension/functions/ 里的现有文件为例。
+- 这个扩展做什么：把 [statrs](https://crates.io/crates/statrs) **整体**包装成 DuckDB 函数（当前
+  22 个聚合 + 166 个标量）：统计量一律聚合函数（`SELECT sr_mean(x) FROM t GROUP BY g`），
+  分布/特殊函数/常量一律标量（逐行求值，对外只有 DOUBLE）。代码目录与 statrs 模块树同构
+  （functions/{consts,function,statistics,distribution}/），对应表与未包装清单（多元/Categorical、
+  采样器、KDE、假设检验 stats_tests 待做）写在各 mod.rs 头注释里。
 - 本仓库来自 [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template)：
   克隆后第一件事是 `just rename <新扩展名>`（见下面「扩展名与改名」）。
 

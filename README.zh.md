@@ -35,29 +35,30 @@ SELECT sr_normal_cdf(1.96, 0.0, 1.0);
 
 ## 函数
 
-注册名统一带 `sr_` 前缀，在 `duckdb_functions()` 里可以按前缀整组检索。
+注册名统一带 `sr_` 前缀，在 `duckdb_functions()` 里可以按前缀整组检索；代码目录与 statrs 的
+模块树同构（`functions/{consts,function,statistics,distribution}/`），对应关系见
+`src/extension/functions/mod.rs` 头注释。当前 22 个聚合 + 166 个标量，按族概括：
 
-**聚合函数**（DOUBLE 列进、一个 DOUBLE 出）：
+**聚合函数**（一列 DOUBLE 进、一个 DOUBLE 出，`auto_collect` 形态）：
 
-| 函数 | 说明 |
+| 族 | 函数 |
 | --- | --- |
-| `sr_mean(x)` | 算术平均 |
-| `sr_geometric_mean(x)` | 几何平均（含负数时未定义 → `NULL`） |
-| `sr_harmonic_mean(x)` | 调和平均（含负数时未定义 → `NULL`） |
-| `sr_quadratic_mean(x)` | 平方均值（RMS） |
-| `sr_median(x)` | 中位数（偶数个取中间两数的平均） |
-| `sr_quantile(x, tau)` | tau 分位数，tau 写成第二个常量参数，如 `sr_quantile(x, 0.975)` |
-| `sr_variance(x)` / `sr_std_dev(x)` | 样本方差 / 标准差（Bessel 修正，不足 2 个值 → `NULL`） |
-| `sr_population_variance(x)` / `sr_population_std_dev(x)` | 总体方差 / 标准差（除以 N） |
-| `sr_covariance(x, y)` / `sr_population_covariance(x, y)` | 两列按行配对的样本 / 总体协方差 |
+| 集中趋势 | `sr_mean` / `sr_geometric_mean` / `sr_harmonic_mean` / `sr_quadratic_mean` |
+| 顺序统计量 | `sr_median` / `sr_quantile(x, tau)` / `sr_order_statistic(x, k)` / `sr_percentile(x, p)` / `sr_lower_quartile` / `sr_upper_quartile` / `sr_interquartile_range` / `sr_ranks(x, method)`（出 LIST） |
+| 离散程度 | `sr_variance` / `sr_std_dev` / `sr_population_variance` / `sr_population_std_dev` |
+| 极值与配对 | `sr_min` / `sr_max` / `sr_abs_min` / `sr_abs_max`；`sr_covariance(x, y)` / `sr_population_covariance(x, y)` |
 
-**标量函数**（正态分布，逐行求值）：
+**标量函数**（逐行求值，参数与返回全部是 DOUBLE）：
 
-| 函数 | 说明 |
+| 族 | 函数 |
 | --- | --- |
-| `sr_normal_pdf(x, mean, std_dev)` | 概率密度 |
-| `sr_normal_cdf(x, mean, std_dev)` | 累积分布 P(X ≤ x) |
-| `sr_normal_quantile(p, mean, std_dev)` | 分位数函数（CDF 的反函数） |
+| 连续分布（20 种） | 每分布 `sr_<分布>_pdf / ln_pdf / cdf / sf / quantile`（normal、log_normal、beta、gamma、chi_squared、students_t、uniform、weibull、pareto…） |
+| 离散分布（7 种） | 每分布 `sr_<分布>_pmf / ln_pmf / cdf / sf / quantile`（binomial、poisson、geometric、hypergeometric…） |
+| 特殊函数 | `sr_erf` / `sr_erfc` / `sr_gamma` / `sr_ln_gamma` / `sr_digamma` / `sr_beta` / `sr_beta_regularized` / 不完全 Gamma 四变体 / `sr_factorial` / `sr_choose` / `sr_harmonic` / `sr_logistic` / `sr_logit`… |
+| 常量 | `sr_sqrt_2pi()` / `sr_euler_mascheroni()` 等（statrs::consts） |
+
+statrs 中有意不包装的部分（多元/Categorical 分布、采样器、KDE、假设检验模块）与理由，
+记在 `src/extension/functions/mod.rs` 与 `distribution/mod.rs` 的头注释里。
 
 ## NULL 与错误语义
 

@@ -23,11 +23,15 @@ src/extension/mod.rs  ->  duckfn_entrypoint!("duckfn_statrs");
 src/bin/duckfn.rs     duckfn CLI 入口  ->  #[path] mod extension; + duckfn::cli::run(...)
                       （只服务 `just docs_csv` 导出函数描述 CSV，不参与插件运行）
 
-src/extension/functions/mod.rs  ->  mod aggregate_summary; mod aggregate_covariance; mod scalar_normal;
+src/extension/functions/mod.rs  ->  与 statrs 模块树的对应表 + 共享 helper（nan_to_null / as_u64）
 src/extension/functions/
-    aggregate_summary.rs     sr_mean / sr_median / sr_quantile / 方差族  （收齐整列、finalize 交给 statrs）
-    aggregate_covariance.rs  sr_covariance / sr_population_covariance    （两列按行配对）
-    scalar_normal.rs         sr_normal_pdf / sr_normal_cdf / 分位数       （标量返回形状）
+    consts.rs    sr_sqrt_2pi 等            （statrs::consts，零参标量）
+    function.rs  sr_erf / sr_gamma / sr_beta / sr_choose / sr_harmonic / sr_logistic 等
+                                     （statrs::function）
+    statistics/  summary.rs（mean … abs_max）/ covariance.rs / order.rs（median … ranks）
+                                     （statrs::statistics，全是 auto_collect 聚合）
+    distribution/  continuous_location_scale.rs / continuous_shape.rs / discrete.rs
+                                     （27 个一元分布 × pdf|pmf/ln/cdf/sf/quantile，标量）
 src/extension/types/mod.rs
                         目前是空的占位：自定义类型（STRUCT / ENUM / list<struct> 行类型 /
                         DuckLazy 参数的配置类型）都放这一层，用到了再往里挂 `mod`

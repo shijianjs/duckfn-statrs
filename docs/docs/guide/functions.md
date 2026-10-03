@@ -22,15 +22,17 @@ flowchart LR
 
 ## What this extension registers
 
-| Function | Kind | Signature | Behaviour |
+| Family | Kind | Shape | Notes |
 | --- | --- | --- | --- |
-| `sr_mean` and the mean / variance family | aggregate | `DOUBLE -> DOUBLE` | `auto_collect` gathers the column; the function delegates to statrs once at finalize. |
-| `sr_quantile` | aggregate | `(DOUBLE, DOUBLE) -> DOUBLE` | tau is the second, per-row-but-constant argument, kept in the state. |
-| `sr_covariance` / `sr_population_covariance` | aggregate | `(DOUBLE, DOUBLE) -> DOUBLE` | Two columns paired row by row; a NULL in either skips the row. |
-| `sr_normal_pdf` / `sr_normal_cdf` / `sr_normal_quantile` | scalar | `3 × DOUBLE -> DOUBLE` | Row by row; invalid parameters fail the query. |
+| Statistics (`statistics/`) | aggregate | one/two DOUBLE columns -> DOUBLE | means, order statistics (median / quantile / percentile / ranks), variance families, covariance; `auto_collect`, NULL rows skipped, undefined statistics -> NULL. |
+| Continuous distributions (`distribution/`) | scalar | DOUBLE in -> DOUBLE out | 20 distributions × `sr_<dist>_pdf / ln_pdf / cdf / sf / quantile`; invalid parameters fail the query. |
+| Discrete distributions (`distribution/`) | scalar | DOUBLE in -> DOUBLE out | 7 distributions × `pmf / ln_pmf / cdf / sf / quantile`; integer slots take whole-number DOUBLE literals (validated, never rounded). |
+| Special functions (`function.rs`) | scalar | DOUBLE in -> DOUBLE out | erf / gamma / beta families, factorials and binomial coefficients, harmonic numbers, logistic and logit. |
+| Constants (`consts.rs`) | scalar | () -> DOUBLE | statrs::consts as zero-argument functions. |
 
-The code lives in `src/extension/functions/`, one file per group: `aggregate_summary.rs`,
-`aggregate_covariance.rs`, `scalar_normal.rs`. Statistics are aggregates on purpose —
+The code lives in `src/extension/functions/`, its tree mirroring statrs' modules
+(`consts.rs`, `function.rs`, `statistics/`, `distribution/`); the correspondence table and the list of
+deliberate exclusions sit in the `mod.rs` headers. Statistics are aggregates on purpose —
 `SELECT sr_mean(x) FROM t GROUP BY g` is the shape database users already write; a LIST + scalar form
 would force a `list(x)` in front of every call.
 

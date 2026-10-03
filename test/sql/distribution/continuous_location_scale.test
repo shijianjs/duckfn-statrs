@@ -1,0 +1,154 @@
+# name: test/sql/distribution/continuous_location_scale.test
+# description: 位置-尺度族连续分布。Normal 锚点取 statrs 0.19.1 distribution/normal.rs 的
+#   官方测试（test_pdf / test_cdf / test_inverse_cdf，断言自带 epsilon，sqllogictest 的
+#   R 列同为浮点近似比较）；其余分布取各自 doc example 的精确点 + 实跑输出。
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# ============================================================================
+# Normal：官方 test_pdf（N(10,0.1) 与 N(-5,1)、N(0,10)、N(10,100)、std_dev=inf）
+# ============================================================================
+query RRRR
+SELECT sr_normal_pdf(8.5, 10.0, 0.1), sr_normal_pdf(9.8, 10.0, 0.1),
+       sr_normal_pdf(10.0, 10.0, 0.1), sr_normal_pdf(10.2, 10.0, 0.1)
+----
+5.530709549844416159162e-49	0.5399096651318805195056	3.989422804014326779399	0.5399096651318805195056
+
+query RRRR
+SELECT sr_normal_pdf(-10.0, -5.0, 1.0), sr_normal_pdf(-7.5, -5.0, 1.0),
+       sr_normal_pdf(-5.0, -5.0, 1.0), sr_normal_pdf(-2.5, -5.0, 1.0)
+----
+1.486719514734297707908e-6	0.01752830049356853736216	0.3989422804014326779399	0.01752830049356853736216
+
+query RRR
+SELECT sr_normal_pdf(-5.0, 0.0, 10.0), sr_normal_pdf(0.0, 0.0, 10.0), sr_normal_pdf(5.0, 0.0, 10.0)
+----
+0.03520653267642994777747	0.03989422804014326779399	0.03520653267642994777747
+
+query RRR
+SELECT sr_normal_pdf(-5.0, -5.0, 'infinity'::DOUBLE), sr_normal_pdf(0.0, -5.0, 'infinity'::DOUBLE),
+       sr_normal_pdf(100.0, -5.0, 'infinity'::DOUBLE)
+----
+0.0	0.0	0.0
+
+# ln_pdf 与 pdf 互证（doc：pdf(1|N(0,1)) = 0.2419707245191433497978）
+query RR
+SELECT sr_normal_ln_pdf(1.0, 0.0, 1.0), ln(sr_normal_pdf(1.0, 0.0, 1.0))
+----
+-1.4189385332046725	-1.4189385332046725
+
+# ============================================================================
+# Normal：官方 test_cdf（N(5,2)）
+# ============================================================================
+query R
+SELECT sr_normal_cdf('-infinity'::DOUBLE, 5.0, 2.0)
+----
+0.0
+
+query RRR
+SELECT sr_normal_cdf(-2.0, 5.0, 2.0), sr_normal_cdf(0.0, 5.0, 2.0), sr_normal_cdf(4.0, 5.0, 2.0)
+----
+0.0002326290790	0.006209665325	0.30853753872598689636229538939166226011639782444542207
+
+query RRR
+SELECT sr_normal_cdf(5.0, 5.0, 2.0), sr_normal_cdf(6.0, 5.0, 2.0), sr_normal_cdf(10.0, 5.0, 2.0)
+----
+0.5	0.69146246127401310363770461060833773988360217555457859	0.993790334674
+
+# sf 与 cdf 互补（官方 test_sf：N(5,2) 的 4/5/6）
+query RRR
+SELECT sr_normal_sf(4.0, 5.0, 2.0), sr_normal_sf(5.0, 5.0, 2.0), sr_normal_sf(6.0, 5.0, 2.0)
+----
+0.6914624612740131	0.5	0.3085375387259869
+
+# ============================================================================
+# Normal：官方 test_inverse_cdf（N(5,2)，有限项 + p=0/1 的 ±inf 端点）
+# ============================================================================
+query RR
+SELECT sr_normal_quantile(0.0002326290790355250363499258867279847735487493358890356, 5.0, 2.0),
+       sr_normal_quantile(0.30853753872598689636229538939166226011639782444542207, 5.0, 2.0)
+----
+-2.0	4.0
+
+query RRR
+SELECT sr_normal_quantile(0.5, 5.0, 2.0), sr_normal_quantile(0.0, 5.0, 2.0), sr_normal_quantile(1.0, 5.0, 2.0)
+----
+5.0	-inf	inf
+
+# 概率越界是调用错误（本仓库约定：不钳位）
+statement error
+SELECT sr_normal_quantile(1.5, 0.0, 1.0)
+----
+the probability must be within [0, 1], got 1.5
+
+# std_dev 非法（statrs Normal::new 的拒绝）
+statement error
+SELECT sr_normal_pdf(0.0, 0.0, -1.0)
+----
+Standard deviation is NaN, zero or less than zero
+
+# ============================================================================
+# 其余位置-尺度分布：doc 精确点 + 互证（Φ、柯西、拉普拉斯、Gumbel 分位点等）
+# ============================================================================
+
+# LogNormal：x=1、ln x=0 → 密度即 N(0,1) 在 0 处的值 / |x|；CDF(1)=0.5
+query RR
+SELECT sr_log_normal_pdf(1.0, 0.0, 1.0)::DECIMAL(12,8), sr_log_normal_cdf(1.0, 0.0, 1.0)
+----
+0.39894228	0.5
+
+# Cauchy：CDF(x) = 1/2 + arctan(x)/π → cdf(1)=0.75、quantile(0.75)=1
+query RR
+SELECT sr_cauchy_cdf(1.0, 0.0, 1.0)::DECIMAL(12,8), sr_cauchy_quantile(0.75, 0.0, 1.0)::DECIMAL(12,8)
+----
+0.75000000	1.00000000
+
+# Laplace：cdf(1|0,1) = 1 - e^-1/2；与 sf 互补
+query RR
+SELECT sr_laplace_cdf(1.0, 0.0, 1.0)::DECIMAL(12,8),
+       (sr_laplace_cdf(1.0, 0.0, 1.0) + sr_laplace_sf(1.0, 0.0, 1.0))::DECIMAL(12,8)
+----
+0.81606028	1.00000000
+
+# Gumbel：cdf(0|0,1) = e^-1；weibull 的 pdf(1|1,1) 亦为 e^-1（跨分布互证）
+query RR
+SELECT sr_gumbel_cdf(0.0, 0.0, 1.0)::DECIMAL(12,8), sr_weibull_pdf(1.0, 1.0, 1.0)::DECIMAL(12,8)
+----
+0.36787944	0.36787944
+
+# Uniform：pdf/cdf/quantile 的均匀分布解析值
+query RRR
+SELECT sr_uniform_pdf(0.5, 0.0, 1.0), sr_uniform_cdf(0.5, 0.0, 1.0), sr_uniform_quantile(0.25, 0.0, 1.0)
+----
+1.0	0.5	0.25
+
+# Triangular：对称三角 cdf(mode)=0.5
+query R
+SELECT sr_triangular_cdf(1.0, 0.0, 2.0, 1.0)
+----
+0.5
+
+# StudentsT：关于位置对称 → cdf(location)=0.5
+query R
+SELECT sr_students_t_cdf(0.0, 0.0, 1.0, 2.0)
+----
+0.5
+
+# Levy：cdf(1|0,1) 实测锤点（旁边放 erfc(1) 作同族特殊函数的对照，两者并非相等关系）
+query RR
+SELECT sr_levy_cdf(1.0, 0.0, 1.0)::DECIMAL(12,8), sr_erfc(1.0)::DECIMAL(12,8)
+----
+0.31731051	0.15729921
+
+# Dirac：退化分布只给 cdf/sf/quantile
+query RRR
+SELECT sr_dirac_cdf(1.0, 1.0), sr_dirac_sf(0.5, 1.0), sr_dirac_quantile(0.5, 3.0)
+----
+1.0	1.0	3.0
+
+# 任一参数 NULL → 整行 NULL（标量短路）
+query R
+SELECT sr_normal_cdf(NULL, 0.0, 1.0)
+----
+NULL

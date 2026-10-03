@@ -57,7 +57,7 @@ bad call, so it fails the query instead of being hidden as emptiness.
 | Path | What it is |
 | --- | --- |
 | `src/extension/mod.rs` | The entry point: `duckfn_entrypoint!("duckfn_statrs")` plus the module tree. |
-| `src/extension/functions/` | The registered functions: `aggregate_summary.rs` (the statistics), `aggregate_covariance.rs`, `scalar_normal.rs` (the distribution). |
+| `src/extension/functions/` | The registered functions, tree mirroring statrs' modules: `consts.rs`, `function.rs`, `statistics/` (aggregates), `distribution/` (27 univariate distributions as scalars); the correspondence table and the deliberate exclusions are in its `mod.rs`. |
 | `src/extension/types/` | Where SQL-facing types go (STRUCT/ENUM definitions, `list<struct>` row types). Empty for now. |
 | `test/sql/` | SQLLogicTest files, one per function group plus a smoke test; expectations are statrs' actual output. |
 | `Justfile` | The everyday commands: build, run SQL, repl, test, lint, release. |

@@ -21,16 +21,18 @@ flowchart LR
 
 ## 这个扩展注册了什么
 
-| 函数 | 类别 | 签名 | 行为 |
+| 族 | 类别 | 形状 | 说明 |
 | --- | --- | --- | --- |
-| `sr_mean` 及均值 / 方差族 | 聚合 | `DOUBLE -> DOUBLE` | `auto_collect` 收集整列，函数在 finalize 时一次性委托给 statrs。 |
-| `sr_quantile` | 聚合 | `(DOUBLE, DOUBLE) -> DOUBLE` | tau 是第二个参数（`DuckFirst` 每查询常量）。 |
-| `sr_covariance` / `sr_population_covariance` | 聚合 | `(DOUBLE, DOUBLE) -> DOUBLE` | 两列按行配对；任一列为 NULL 的行整行跳过。 |
-| `sr_normal_pdf` / `sr_normal_cdf` / `sr_normal_quantile` | 标量 | `3 × DOUBLE -> DOUBLE` | 逐行求值；非法参数报查询错误。 |
+| 统计量（`statistics/`） | 聚合 | 一/两列 DOUBLE -> DOUBLE | 均值族、顺序统计量（中位数/分位数/百分位/秩）、方差族、协方差；`auto_collect`，NULL 行跳过，算不出的出 NULL。 |
+| 连续分布（`distribution/`） | 标量 | DOUBLE -> DOUBLE | 20 种分布 × `sr_<分布>_pdf / ln_pdf / cdf / sf / quantile`；非法参数报查询错误。 |
+| 离散分布（`distribution/`） | 标量 | DOUBLE -> DOUBLE | 7 种分布 × `pmf / ln_pmf / cdf / sf / quantile`；整数槽位吃整数值 DOUBLE 字面量（校验，不四舍五入）。 |
+| 特殊函数（`function.rs`） | 标量 | DOUBLE -> DOUBLE | erf / gamma / beta 族，阶乘与二项系数，调和数，logistic 与 logit。 |
+| 常量（`consts.rs`） | 标量 | () -> DOUBLE | statrs::consts 的零参函数。 |
 
-代码在 `src/extension/functions/`，一个函数组一个文件：`aggregate_summary.rs`、
-`aggregate_covariance.rs`、`scalar_normal.rs`。统计量刻意做成聚合 —— `SELECT sr_mean(x) FROM t
-GROUP BY g` 就是数据库用户本来就会写的形状；换成 LIST + 标量，每个调用点前都得先 `list(x)`。
+代码在 `src/extension/functions/`，目录与 statrs 模块树同构（`consts.rs`、`function.rs`、
+`statistics/`、`distribution/`）；对应表与有意未包装的清单写在各 `mod.rs` 头注释里。统计量
+刻意做成聚合 —— `SELECT sr_mean(x) FROM t GROUP BY g` 就是数据库用户本来就会写的形状；
+换成 LIST + 标量，每个调用点前都得先 `list(x)`。
 
 ## 标量：三种返回形状
 

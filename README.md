@@ -36,29 +36,32 @@ The `Justfile` wraps the same commands: `just build`, `just sql "SELECT sr_mean(
 
 ## Functions
 
-Every registered name carries the `sr_` prefix, so the whole set is one `duckdb_functions()` filter away.
+Every registered name carries the `sr_` prefix, so the whole set is one `duckdb_functions()` filter
+away; the code tree mirrors statrs' module tree (`functions/{consts,function,statistics,distribution}/`)
+and the correspondence table is in `src/extension/functions/mod.rs`. Currently 22 aggregates +
+166 scalars, by family:
 
-**Aggregates** (a DOUBLE column in, one DOUBLE out):
+**Aggregates** (a DOUBLE column in, one DOUBLE out, all `auto_collect`):
 
-| Function | Notes |
+| Family | Functions |
 | --- | --- |
-| `sr_mean(x)` | arithmetic mean |
-| `sr_geometric_mean(x)` | geometric mean (undefined with a negative value → `NULL`) |
-| `sr_harmonic_mean(x)` | harmonic mean (undefined with a negative value → `NULL`) |
-| `sr_quadratic_mean(x)` | quadratic mean (RMS) |
-| `sr_median(x)` | median (even lengths average the two middle values) |
-| `sr_quantile(x, tau)` | tau quantile; write tau as the second, constant argument: `sr_quantile(x, 0.975)` |
-| `sr_variance(x)` / `sr_std_dev(x)` | sample variance / standard deviation (Bessel-corrected, `NULL` under two values) |
-| `sr_population_variance(x)` / `sr_population_std_dev(x)` | population variance / standard deviation (dividing by N) |
-| `sr_covariance(x, y)` / `sr_population_covariance(x, y)` | sample / population covariance of two row-paired columns |
+| Central tendency | `sr_mean` / `sr_geometric_mean` / `sr_harmonic_mean` / `sr_quadratic_mean` |
+| Order statistics | `sr_median` / `sr_quantile(x, tau)` / `sr_order_statistic(x, k)` / `sr_percentile(x, p)` / `sr_lower_quartile` / `sr_upper_quartile` / `sr_interquartile_range` / `sr_ranks(x, method)` (returns LIST) |
+| Dispersion | `sr_variance` / `sr_std_dev` / `sr_population_variance` / `sr_population_std_dev` |
+| Extremes & pairing | `sr_min` / `sr_max` / `sr_abs_min` / `sr_abs_max`; `sr_covariance(x, y)` / `sr_population_covariance(x, y)` |
 
-**Scalars** (the normal distribution, row by row):
+**Scalars** (row by row, every parameter and result is DOUBLE):
 
-| Function | Notes |
+| Family | Functions |
 | --- | --- |
-| `sr_normal_pdf(x, mean, std_dev)` | probability density |
-| `sr_normal_cdf(x, mean, std_dev)` | cumulative distribution P(X ≤ x) |
-| `sr_normal_quantile(p, mean, std_dev)` | quantile function (the inverse CDF) |
+| Continuous distributions (20) | per distribution `sr_<dist>_pdf / ln_pdf / cdf / sf / quantile` (normal, log_normal, beta, gamma, chi_squared, students_t, uniform, weibull, pareto, …) |
+| Discrete distributions (7) | per distribution `sr_<dist>_pmf / ln_pmf / cdf / sf / quantile` (binomial, poisson, geometric, hypergeometric, …) |
+| Special functions | `sr_erf` / `sr_erfc` / `sr_gamma` / `sr_ln_gamma` / `sr_digamma` / `sr_beta` / `sr_beta_regularized` / the four incomplete-Gamma variants / `sr_factorial` / `sr_choose` / `sr_harmonic` / `sr_logistic` / `sr_logit` … |
+| Constants | `sr_sqrt_2pi()` / `sr_euler_mascheroni()` and friends (statrs::consts) |
+
+What statrs deliberately does not wrap (multivariate / Categorical, samplers, KDE, the hypothesis
+test module) and why are recorded in the headers of `src/extension/functions/mod.rs` and
+`distribution/mod.rs`.
 
 ## NULL and error semantics
 

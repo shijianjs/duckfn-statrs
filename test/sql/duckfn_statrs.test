@@ -16,20 +16,21 @@ SELECT sr_mean(x)::DECIMAL(10,1) FROM (VALUES (1.0), (2.0), (3.0)) t(x);
 ----
 2.0
 
-# 首批注册的是 12 个聚合统计量 + 3 个正态分布标量函数
+# 当前注册的是 22 个聚合（统计量 + 协方差 + 顺序）+ 166 个标量（分布/特殊函数/常量），
+# 与 statrs 模块树的对应关系见 functions/mod.rs 头注释
 query I
 SELECT count(*) FROM duckdb_functions() WHERE starts_with(function_name, 'sr_');
 ----
-15
+188
 
 query I
 SELECT count(*) FROM duckdb_functions()
 WHERE starts_with(function_name, 'sr_') AND function_type = 'aggregate';
 ----
-12
+22
 
 query I
 SELECT count(*) FROM duckdb_functions()
 WHERE starts_with(function_name, 'sr_') AND function_type = 'scalar';
 ----
-3
+166

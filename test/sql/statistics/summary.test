@@ -1,0 +1,111 @@
+# name: test/sql/statistics/summary.test
+# description: statrs::statistics::Statistics 聚合包装。期望值取自 statrs 0.19.1 的官方
+#   doc example（statistics.rs / iter_statistics.rs / slice_statistics.rs 的断言数据
+#   z=[0,3,-2]、[1,2,3]、含 0 组等）；SQL 侧情况（空组、NULL 跳过、GROUP BY、并行
+#   combine）为本仓库新增用例。顺序统计量见 order.test，协方差见 covariance.test。
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# ============================================================================
+# 官方 doc example：z = [0, 3, -2]（mean 1/3、variance 19/3、std_dev sqrt(19/3)、
+# population_variance 38/9、population_std_dev sqrt(38/9)、quadratic_mean 2.08167）
+# ============================================================================
+query RRRRRR
+SELECT sr_mean(x)::DECIMAL(12,6),
+       sr_variance(x)::DECIMAL(12,6),
+       sr_std_dev(x)::DECIMAL(12,6),
+       sr_population_variance(x)::DECIMAL(12,6),
+       sr_population_std_dev(x)::DECIMAL(12,6),
+       sr_quadratic_mean(x)::DECIMAL(12,6)
+FROM (VALUES (0.0), (3.0), (-2.0)) t(x);
+----
+0.333333	6.333333	2.516611	4.222222	2.054805	2.081666
+
+# ============================================================================
+# 官方 doc example：geometric / harmonic（[1,2,3] 与「含 0 出 0」、负数无定义）
+# ============================================================================
+query RR
+SELECT sr_geometric_mean(x)::DECIMAL(12,6), sr_harmonic_mean(x)::DECIMAL(12,6)
+FROM (VALUES (1.0), (2.0), (3.0)) t(x);
+----
+1.817121	1.636364
+
+query RR
+SELECT sr_geometric_mean(x)::DECIMAL(12,6), sr_harmonic_mean(x)::DECIMAL(12,6)
+FROM (VALUES (0.0), (3.0), (2.0)) t(x);
+----
+0.000000	0.000000
+
+query RR
+SELECT sr_geometric_mean(x), sr_harmonic_mean(x)
+FROM (VALUES (-1.0), (2.0)) t(x);
+----
+NULL	NULL
+
+# ============================================================================
+# 官方 doc example：min / max / abs_min / abs_max（z = [0, 3, -2]、[0,3,-8]）
+# ============================================================================
+query RRRR
+SELECT sr_min(x), sr_max(x), sr_abs_min(x), sr_abs_max(x)
+FROM (VALUES (0.0), (3.0), (-2.0)) t(x);
+----
+-2.0	3.0	0.0	3.0
+
+query R
+SELECT sr_abs_max(x) FROM (VALUES (0.0), (3.0), (-8.0)) t(x);
+----
+8.0
+
+# ============================================================================
+# 以下为本仓库新增用例（statrs 没有 SQL 形态的对应）
+# ============================================================================
+
+# 空组：test_empty_data_returns_nan 的 SQL 对应
+query RRRRRR
+SELECT sr_mean(x), sr_variance(x), sr_population_variance(x), sr_min(x), sr_max(x), sr_quadratic_mean(x)
+FROM (VALUES (1.0)) t(x) WHERE 1 = 0;
+----
+NULL	NULL	NULL	NULL	NULL	NULL
+
+# SQL NULL 行不进状态：(1, NULL, 3) 算的是 [1, 3]
+query RRR
+SELECT sr_mean(x)::DECIMAL(12,6), sr_variance(x)::DECIMAL(12,6), sr_std_dev(x)::DECIMAL(12,6)
+FROM (VALUES (1.0), (NULL), (3.0)) t(x);
+----
+2.000000	2.000000	1.414214
+
+# 单值没有样本方差/标准差（statrs NAN → NULL）
+query RR
+SELECT sr_variance(x), sr_std_dev(x) FROM (VALUES (1.0), (NULL)) t(x);
+----
+NULL	NULL
+
+# GROUP BY：每个分组各自建状态
+query RI
+SELECT g, sr_mean(x)::DECIMAL(12,6) FROM (VALUES (1, 1.0), (1, 3.0), (2, 10.0)) t(g, x)
+GROUP BY g ORDER BY g;
+----
+1	2.000000
+2	10.000000
+
+# 入参类型由 binder 拦下
+statement error
+SELECT sr_mean('a') FROM (VALUES ('x')) t(x);
+----
+Binder Error
+
+# 并行聚合的 combine 与单线程一致
+statement ok
+PRAGMA threads=4;
+
+query R
+SELECT sr_mean(x::DOUBLE)::DECIMAL(12,6) FROM range(100000) t(x);
+----
+49999.500000
+
+# 输入跨多个 DataChunk（STANDARD_VECTOR_SIZE = 2048）
+query R
+SELECT sr_std_dev(x::DOUBLE)::DECIMAL(10,4) FROM range(3000) t(x);
+----
+866.1697

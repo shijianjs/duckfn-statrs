@@ -27,17 +27,21 @@ docs:
     SELECT sr_normal_quantile(0.975, 0.0, 1.0);
     -- 1.9599639845400538
   extended_description: |
-    Wraps the Rust statrs crate as DuckDB functions. Summary statistics are aggregates over a DOUBLE
-    column: means (arithmetic, geometric, harmonic, quadratic), median and quantiles
-    (`sr_quantile(x, 0.975)` - tau is the second, constant argument), sample and population variance /
-    standard deviation, covariance of two row-paired columns. Distribution functions (currently the
-    normal: pdf, cdf, quantile) are scalars over DOUBLE arguments.
+    Wraps the Rust statrs crate as DuckDB functions - currently 22 aggregates and 166 scalars,
+    covering statrs' statistics, function (special functions), distribution (27 univariate
+    distributions) and consts modules. Summary statistics are aggregates over DOUBLE columns
+    (means, median/quantiles/percentiles/ranks, sample and population variance, covariance of two
+    row-paired columns). Distribution functions are scalars: pdf|pmf / ln_pdf|ln_pmf / cdf / sf /
+    quantile per distribution, every parameter DOUBLE (integer parameters like binomial n are
+    whole-number literals, validated - not rounded). Constants (sqrt(2*pi), Euler-Mascheroni, ...)
+    are zero-argument scalars. Multivariate distributions, Categorical, samplers and KDE are
+    deliberately not wrapped (vector/matrix parameters do not fit the DOUBLE-only surface).
 
-    NULL semantics follow statrs and propagate to the SQL side: a NULL row never enters an aggregate
-    (the SQL aggregate convention - filter or join to decide otherwise); whatever statrs cannot define
-    (empty group, sample variance of one value, an out-of-range tau, negatives in the geometric /
-    harmonic means) comes back as NULL, never as a NAN value. A parameter that is present but invalid
-    (std_dev <= 0, a probability outside [0, 1]) fails the query.
+    NULL semantics follow statrs and propagate to the SQL side: a NULL row never enters an
+    aggregate; whatever statrs cannot define (empty group, sample variance of one value, an
+    out-of-range tau, negatives in the geometric / harmonic means) comes back as NULL, never as a
+    NAN value. A parameter that is present but invalid (std_dev <= 0, a probability outside [0, 1],
+    a non-integer where statrs wants one) fails the query.
 
     Requires **DuckDB 1.3 or newer**: the extension is built against DuckDB 1.5.6 headers but
     declares the C API floor it needs (v1.2.0), so one binary loads into 1.3.2 through 1.5.6 alike.

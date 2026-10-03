@@ -1,0 +1,121 @@
+# name: test/sql/statistics/order.test
+# description: statrs::statistics::OrderStatistics 聚合包装。锚点取自 statrs 0.19.1
+#   statistics/slice_statistics.rs::tests（test_order_statistic_short、test_quantile_short）
+#   与 order_statistics.rs / slice_statistics.rs 的 doc example；ranks 取
+#   test_ranks / order_statistics.rs 的 doc example。
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# ============================================================================
+# 官方 doc example（order_statistics.rs）：y = [2, 1, 3, 4]
+# lower_quartile 1.416666666666666、upper_quartile 3.5833333333333333、
+# interquartile_range 2.166666666666667
+# ============================================================================
+query RRR
+SELECT sr_lower_quartile(x), sr_upper_quartile(x), sr_interquartile_range(x)
+FROM (VALUES (2.0), (1.0), (3.0), (4.0)) t(x);
+----
+1.4166666666666665	3.5833333333333335	2.166666666666667
+
+# ============================================================================
+# 官方 doc example：median y = [0, 3, -2] -> 0；偶数个 [1,2,3,4] -> 2.5（约定用例）
+# 官方 test_order_statistic_short 的九个值 -> median 1.0
+# ============================================================================
+query R
+SELECT sr_median(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x);
+----
+0.0
+
+query R
+SELECT sr_median(x) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x);
+----
+2.5
+
+query R
+SELECT sr_median(x)
+FROM (VALUES (-1.0), (5.0), (0.0), (-3.0), (10.0), (-0.5), (4.0), (1.0), (6.0)) t(x);
+----
+1.0
+
+# ============================================================================
+# 官方 test_quantile_short，data = [-1, 5, 0, -3, 10, -0.5, 4, 0.2, 1, 6]（全部 10 项）
+# statrs 断言自带 epsilon（1e-15 级），R 列同为浮点近似比较；期望值即官方字面量
+# ============================================================================
+query RRRRR
+SELECT sr_quantile(x, 0.0), sr_quantile(x, 0.2), sr_quantile(x, 0.5),
+       sr_quantile(x, 0.7), sr_quantile(x, 1.0)
+FROM (VALUES (-1.0), (5.0), (0.0), (-3.0), (10.0), (-0.5), (4.0), (0.2), (1.0), (6.0)) t(x);
+----
+-3.0	-0.8	0.6	4.566666666666667	10.0
+
+query RRRRR
+SELECT sr_quantile(x, 0.01), sr_quantile(x, 0.2), sr_quantile(x, 0.325),
+       sr_quantile(x, 0.52), sr_quantile(x, 0.99)
+FROM (VALUES (-1.0), (5.0), (0.0), (-3.0), (10.0), (-0.5), (4.0), (0.2), (1.0), (6.0)) t(x);
+----
+-3.0	-0.8	-0.15416666666666667	0.7653333333333333	10.0
+
+# 越界 tau：statrs 给 NAN（test_quantile_short 的范围守卫），折成 NULL
+query RR
+SELECT sr_quantile(x, 1.5), sr_quantile(x, -0.1) FROM (VALUES (1.0), (2.0)) t(x);
+----
+NULL	NULL
+
+# ============================================================================
+# 官方 doc example / tests：order_statistic 与 percentile
+# order_statistic_short data 的第 2 小 = -1.0；order=10（超出 9 个数据）= NAN → NULL
+# percentile doc：[1,5,3,4,10,9,6,7,8,2] 的 p50 = 5.5、p100 = 10、p105 → NULL
+# ============================================================================
+query RR
+SELECT sr_order_statistic(x, 2.0), sr_order_statistic(x, 10.0)
+FROM (VALUES (-1.0), (5.0), (0.0), (-3.0), (10.0), (-0.5), (4.0), (1.0), (6.0)) t(x);
+----
+-1.0	NULL
+
+query RR
+SELECT sr_percentile(x, 50.0), sr_percentile(x, 100.0)
+FROM (VALUES (1.0), (5.0), (3.0), (4.0), (10.0), (9.0), (6.0), (7.0), (8.0), (2.0)) t(x);
+----
+5.5	10.0
+
+query R
+SELECT sr_percentile(x, 105.0) FROM (VALUES (1.0), (2.0)) t(x);
+----
+NULL
+
+# 「写错的整数」报错而不是四舍五入
+statement error
+SELECT sr_order_statistic(x, 2.5) FROM (VALUES (1.0), (2.0)) t(x);
+----
+expected a non-negative whole number, got 2.5
+
+# ============================================================================
+# 官方 doc example（order_statistics.rs::ranks）：[1,3,2,2] 的 Average 秩
+# [1, 4, 2.5, 2.5]、Min 秩 [1, 4, 2, 2]
+# ============================================================================
+query RR
+SELECT sr_ranks(x, 1.0), sr_ranks(x, 2.0)
+FROM (VALUES (1.0), (3.0), (2.0), (2.0)) t(x);
+----
+[1.0, 4.0, 2.5, 2.5]	[1.0, 4.0, 2.0, 2.0]
+
+# 空组 → NULL；tie-breaker 编码越界是调用错误
+query R
+SELECT sr_ranks(x, 1.0) FROM (VALUES (1.0)) t(x) WHERE 1 = 0;
+----
+NULL
+
+statement error
+SELECT sr_ranks(x, 9.0) FROM (VALUES (1.0)) t(x);
+----
+the tie-breaker method must be 1 (average), 2 (min), 3 (max) or 4 (first), got 9
+
+# 并行 combine：四分位距在 threads=4 下与单线程一致（实跑值，不手算）
+statement ok
+PRAGMA threads=4;
+
+query R
+SELECT sr_interquartile_range(x::DOUBLE)::DECIMAL(18,6) FROM range(3000) t(x);
+----
+1500.166667

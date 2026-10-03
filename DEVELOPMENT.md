@@ -25,11 +25,16 @@ src/extension/mod.rs  ->  duckfn_entrypoint!("duckfn_statrs");
 src/bin/duckfn.rs     duckfn CLI entry  ->  #[path] mod extension; + duckfn::cli::run(...)
                       (only serves `just docs_csv`; takes no part in running the extension)
 
-src/extension/functions/mod.rs  ->  mod aggregate_summary; mod aggregate_covariance; mod scalar_normal;
+src/extension/functions/mod.rs  ->  correspondence table with statrs' module tree + shared helpers
 src/extension/functions/
-    aggregate_summary.rs    sr_mean / sr_median / sr_quantile / variance family   (collect + statrs at finalize)
-    aggregate_covariance.rs sr_covariance / sr_population_covariance              (two columns, row paired)
-    scalar_normal.rs        sr_normal_pdf / sr_normal_cdf / sr_normal_quantile    (scalar return shapes)
+    consts.rs    sr_sqrt_2pi …            (statrs::consts, zero-arg scalars)
+    function.rs  sr_erf / sr_gamma / sr_beta / sr_choose / sr_harmonic / sr_logistic …
+                                     (statrs::function)
+    statistics/  summary.rs (mean … abs_max) / covariance.rs / order.rs (median … ranks)
+                                     (statrs::statistics, all auto_collect aggregates)
+    distribution/  continuous_location_scale.rs / continuous_shape.rs / discrete.rs
+                                     (27 univariate distributions × pdf|pmf/ln/cdf/sf/quantile,
+                                      scalars)
 src/extension/types/mod.rs
                         an empty slot for now: custom types (STRUCT / ENUM, the row type of a
                         list<struct> result, the options type of a DuckLazy argument) go in this
