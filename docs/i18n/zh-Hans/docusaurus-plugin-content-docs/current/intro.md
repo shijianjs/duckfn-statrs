@@ -15,35 +15,20 @@ pdf / cdf / 分位数做成**标量函数**（逐行求值）。代码用 [duckf
 之上 —— 仓库里已经装好了构建、测试、文档与发版链路；DuckDB 的 C API 只用到头文件，所以除了扩展
 本身，没有任何东西需要编译。
 
-计算全部交给 statrs：本扩展不重新实现任何统计公式。汇总类聚合共用一份状态 ——
-算哪个统计量由类型参数在编译期静态派发（不生成代码、不用 `macro_rules!`）：
+计算全部交给 statrs：本扩展不重新实现任何统计公式。汇总类聚合只差一个
+`#[duck_aggregate_function(auto_collect = true)]` 属性 —— 被注解的函数本身*就是* finalize
+处理器，`Vec<T>` 参数就是逐行收集的列，状态由宏生成（duckfn 0.0.18+）：
 
 ```rust
-trait Summary {
-    fn eval(values: &[f64]) -> f64;
-}
+use duckfn::{DuckOptionResult, duck_aggregate_function};
 
-#[derive(Default, Debug, Clone)]
-struct SummaryState<S: Summary> {
-    values: Vec<f64>,
-    _marker: PhantomData<S>,
-}
-
-impl<S: Summary> DuckAggregateState for SummaryState<S> {
-    type Output = f64;
-
-    fn simple_combine(&mut self, other: &Self) {
-        self.values.extend(other.values.iter().copied());
-    }
-
-    fn result(&self) -> DuckOptionResult<f64> {
-        nan_to_null(S::eval(&self.values))  // statrs 的 NAN 落成 SQL NULL
-    }
-}
-
-#[duck_aggregate_function(/* description / example */)]
-fn sr_mean(input: f64, state: &mut SummaryState<ArithmeticMean>) {
-    state.values.push(input);
+#[duck_aggregate_function(
+    auto_collect = true,
+    description = "Arithmetic mean of a DOUBLE column, NULL when no row is non-NULL",
+    example = "SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)"
+)]
+fn sr_mean(values: Vec<f64>) -> DuckOptionResult<f64> {
+    nan_to_null(values.mean())  // statrs 的 NAN 落成 SQL NULL
 }
 ```
 

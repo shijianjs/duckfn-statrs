@@ -93,9 +93,12 @@ community-extension/    社区扩展注册的两份文件与流程说明
 
 - `combine` / `simple_combine`：合并两个状态（多线程与 group 归并都走它）；
 - `result` / `simple_result`：状态出结果。只在 `simple_result` 里返回一个值时，结果永不为 NULL；
-  空组要回 NULL 就得覆盖 `result` 返回 `Ok(None)` —— `aggregate_summary.rs` 里的状态正是这么做的：
-  它们收集整列、finalize 时交给 statrs，再把 statrs 的 NAN（空组、样本不足、无定义的统计量）经
-  共享的 `nan_to_null` 折成 `Ok(None)`。
+  空组要回 NULL 就得覆盖 `result` 返回 `Ok(None)`。
+
+本扩展里这些都不手写：每个统计量都是一个 `#[duck_aggregate_function(auto_collect = true)]`
+函数（duckfn 0.0.18 起）—— 被注解函数**就是** finalize 处理器（`Vec<f64>` 参数是收集好的列，
+`DuckFirst<f64>` 是每查询常量），状态、合并的 `simple_combine` 与把 statrs 的 NAN（空组、
+样本不足、无定义的统计量）经共享的 `nan_to_null` 折成 SQL NULL 的 `result` 都由宏生成。
 
 统计量做成聚合是刻意选择：`SELECT sr_mean(x) FROM t GROUP BY g` 就是数据库用户本来就会写的形状；
 两列按行配对的签名又免费把 SQL 聚合的 NULL 跳过与配对规则送给了 `sr_covariance`。

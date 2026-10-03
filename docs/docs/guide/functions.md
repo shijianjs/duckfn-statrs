@@ -24,7 +24,7 @@ flowchart LR
 
 | Function | Kind | Signature | Behaviour |
 | --- | --- | --- | --- |
-| `sr_mean` and the mean / variance family | aggregate | `DOUBLE -> DOUBLE` | The state collects the column; statrs computes at finalize. |
+| `sr_mean` and the mean / variance family | aggregate | `DOUBLE -> DOUBLE` | `auto_collect` gathers the column; the function delegates to statrs once at finalize. |
 | `sr_quantile` | aggregate | `(DOUBLE, DOUBLE) -> DOUBLE` | tau is the second, per-row-but-constant argument, kept in the state. |
 | `sr_covariance` / `sr_population_covariance` | aggregate | `(DOUBLE, DOUBLE) -> DOUBLE` | Two columns paired row by row; a NULL in either skips the row. |
 | `sr_normal_pdf` / `sr_normal_cdf` / `sr_normal_quantile` | scalar | `3 × DOUBLE -> DOUBLE` | Row by row; invalid parameters fail the query. |
@@ -82,10 +82,10 @@ function name so a report makes sense on its own. In this extension the line bet
 deliberate: *statrs cannot define it* → NULL (via `nan_to_null`), *the call is wrong* (std_dev ≤ 0, a
 probability out of range) → error.
 
-## Aggregates: per-row inputs plus a state
+## Aggregates: collect with `auto_collect`
 
-An aggregate signature is "the input columns plus one `&mut` state parameter" (in any position). The
-state needs `Default + Clone + Debug` — the wrapper struct the macro generates derives them — and an
+The underlying machinery (from the duckfn aggregate guide): an aggregate is "per-row inputs plus
+a `&mut` state" (the state may sit anywhere), the state needs `Default + Clone + Debug` and an
 implementation of `DuckAggregateState`:
 
 - `combine` / `simple_combine` merges two states. This is what threads and group merging go through,
@@ -94,75 +94,33 @@ implementation of `DuckAggregateState`:
   never-NULL value; override `result` and return `Ok(None)` when a group has to come back as SQL NULL.
 - `Output` decides the SQL return type: `i64`, `f64`, `String`, `Vec<…>` (that is, `list<…>`) and so on.
 
-The quantile state shows the two moving parts — collected data, and the constant argument read once
-per row:
+This extension never writes any of that by hand. "Collect the columns, compute once at finalize" is
+the shape of every statistic here, and that is exactly what
+`#[duck_aggregate_function(auto_collect = true)]` (duckfn 0.0.18+) generates: the annotated function
+*is* the finalize handler — a `Vec<T>` parameter is a column collected across rows, a `DuckFirst<T>`
+parameter is a per-query constant resolved once, and the return value follows the scalar rules
+(`-> T`, `-> Option<T>`, `-> DuckOptionResult<T>`). The macro builds the state, the merging
+`simple_combine` and the NULL-valued `result` underneath:
 
 ```rust
-#[derive(Default, Debug, Clone)]
-struct QuantileState {
-    values: Vec<f64>,
-    tau: Option<f64>,
-}
-
-impl DuckAggregateState for QuantileState {
-    type Output = f64;
-
-    fn simple_combine(&mut self, other: &Self) {
-        self.values.extend(other.values.iter().copied());
-        self.tau = self.tau.or(other.tau);      // the constant is the same on every row
-    }
-
-    fn result(&self) -> DuckOptionResult<f64> {
-        let Some(tau) = self.tau else {
-            return Ok(None);                    // empty group -> SQL NULL
-        };
-        let mut data = Data::new(self.values.clone());
-        super::nan_to_null(data.quantile(tau))  // statrs' NAN -> SQL NULL
-    }
-}
-
-#[duck_aggregate_function(/* description / comment / example */)]
-fn sr_quantile(input: f64, tau: f64, state: &mut QuantileState) {
-    state.values.push(input);
-    state.tau = Some(tau);
+#[duck_aggregate_function(
+    auto_collect = true,
+    description = "Tau quantile of a DOUBLE column, tau as the second (constant) argument, NULL when empty or tau is not in [0, 1]",
+    example = "SELECT sr_quantile(x, 0.5) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)"
+)]
+fn sr_quantile(values: Vec<f64>, tau: DuckFirst<f64>) -> DuckOptionResult<f64> {
+    let mut data = Data::new(values);
+    super::nan_to_null(data.quantile(tau))   // statrs' NAN -> SQL NULL
 }
 ```
 
-The mean / variance family shares one state and swaps only the final expression — the "what to
-compute" is a type parameter, dispatched statically at compile time, not a code generator:
-
-```rust
-trait Summary {
-    fn eval(values: &[f64]) -> f64;
-}
-
-#[derive(Default, Debug, Clone)]
-struct SummaryState<S: Summary> {
-    values: Vec<f64>,
-    _marker: PhantomData<S>,
-}
-
-impl<S: Summary> DuckAggregateState for SummaryState<S> {
-    type Output = f64;
-    fn simple_combine(&mut self, other: &Self) {
-        self.values.extend(other.values.iter().copied());
-    }
-    fn result(&self) -> DuckOptionResult<f64> {
-        super::nan_to_null(S::eval(&self.values))
-    }
-}
-
-#[duck_aggregate_function(/* ... */)]
-fn sr_mean(input: f64, state: &mut SummaryState<ArithmeticMean>) {
-    state.values.push(input);
-}
-```
-
-Nine marker structs, one trait impl each, one-line handlers — no `macro_rules!`: generated code is
-invisible to the IDE and type-unsafe, and duckfn-macro interpolates the `&mut` target as a plain
-`syn::Type`, so a generic instantiation registers just as well. A state may equally hold a `String`,
-a `HashMap`, a `Vec<…>`, or one slot per group key — see the aggregate chapter of the duckfn guide
-for the shapes it supports.
+The NULL rules come from the same machinery: a NULL in any non-`Option` column drops the whole row
+from the collection — which is what keeps `sr_covariance`'s two `Vec<f64>` parameters paired without
+any length check — and an empty group with a non-nullable `DuckFirst<T>` has no value to resolve, so
+`auto_collect` reports NULL for that group instead of calling the function. Parallel `combine`,
+structured outputs and `overloads_name` all keep working; when a genuinely custom state shape is
+needed, the hand-written form above is still the fallback (see the aggregate chapter of the duckfn
+guide).
 
 ## Adding your own
 
@@ -170,8 +128,9 @@ for the shapes it supports.
    scan: each has one, and each accepts only its own arguments. The reference is
    [the duckfn user guide](https://shijianjs.github.io/duckfn/) — the chapter for that kind.
 2. **Copy the closest neighbour** from `src/extension/functions/` and change the logic, rather than
-   inventing a signature from scratch. A new statrs wrapper over a column usually means a new marker
-   struct, one `Summary` impl, and a one-line handler on the shared `SummaryState`.
+   inventing a signature from scratch. A new statrs wrapper over a column is usually just a new
+   `auto_collect = true` aggregate taking the column as `Vec<f64>` (columns to pair: a second
+   `Vec<f64>`) and delegating to statrs once.
 3. **Attach it to the module tree**: add `mod my_function;` to `src/extension/functions/mod.rs`. The
    crate roots stay untouched.
 4. **Write the documentation metadata** on the attribute — `description`, `comment`, `example` /

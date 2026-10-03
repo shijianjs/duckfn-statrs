@@ -169,7 +169,7 @@ duckfn 的属性宏默认拿 **Rust 函数名**当注册名，所以直接把函
 `overloads_name` 能把「同一名字下按参数个数/类型分派」的多个签名并成一个函数集，需要时再用
 （见 duckfn 的文档）。
 
-### statrs 包装的约定（参数形状 / 静态泛型 / NULL / 测试）
+### statrs 包装的约定（参数形状 / auto_collect / NULL / 测试）
 
 **遇到多列输入，做成聚合函数，不要 `Vec` 参数 + 标量。**
 `SELECT sr_mean(x) FROM t GROUP BY g` 是数据库用户的默认写法；LIST + 标量会迫使每个调用点
@@ -182,13 +182,14 @@ duckfn 的属性宏默认拿 **Rust 函数名**当注册名，所以直接把函
 - 没有严格下标对应 → 不要让用户自己对齐两个列表；改收 label/value（分组键列 + 数值列），
   聚合天然按分组建状态。
 
-**状态复用 + 静态泛型派发，不用 `macro_rules!`。**同形状的多个聚合只写一份状态
-（`SummaryState<S: Summary>` / `PairState<P: Pairwise>`），具体算式由类型参数在编译期派发
-（marker struct + 小 trait，一个泛型 `impl<S: Summary> DuckAggregateState for SummaryState<S>`
-全部接住）；注册函数就是 `fn sr_mean(input: f64, state: &mut SummaryState<ArithmeticMean>)` ——
-duckfn-macro 把 `&mut` 后面的类型整块当 `syn::Type` 内插，泛型实例化直接可用（形状参考
- duckfn `ScalarFunctionAdapter` 的泛型派发）。属性宏生成的同形代码块是类型不安全、IDE 看不见的，
-除非逼不得已不写宏。
+**收集类聚合一律用 `#[duck_aggregate_function(auto_collect = true)]`（duckfn 0.0.18 起）。**
+被注解函数**就是** finalize 处理器：`Vec<T>` 参数是逐行收集的列（要配对就再加一个 `Vec<f64>`），
+`DuckFirst<T>` 参数是每查询解析一次的常量，返回值沿用标量规则；状态、`simple_combine`、`result`
+全由宏生成 —— **不写状态结构体、marker 类型或 `DuckAggregateState` impl**，也不写 `macro_rules!`。
+非 `Option` 列的 NULL 整行不进收集（协方差的配对因此免费），空组配上非空 `DuckFirst<T>` 直接报
+NULL 不调函数。真需要自定义状态形状时才手写回退：一份泛型状态 + 类型参数静态派发
+（marker struct + 小 trait；duckfn-macro 把 `&mut` 后的类型整块当 `syn::Type` 内插，泛型实例化
+照样能注册，形状参考 duckfn 的 `ScalarFunctionAdapter`）。
 
 **NULL / NAN 的界线（固定约定，不要逐函数重新发明）**：
 - SQL NULL 不进聚合状态 / 在标量里短路成 NULL（duckfn 默认，函数体不见 NULL）；

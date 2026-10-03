@@ -17,35 +17,20 @@ already contains the build, test, documentation and release tooling, and DuckDB'
 headers-only, so nothing has to be built except the extension itself.
 
 Every computation is delegated to statrs: the extension re-implements no statistical formula. The
-summary aggregates share one state — which statistic to compute is dispatched statically by a type
-parameter (no code generation, no `macro_rules!`):
+summary aggregates are one `#[duck_aggregate_function(auto_collect = true)]` attribute away — the
+annotated function *is* the finalize handler, a `Vec<T>` parameter is the collected column, and the
+macro builds the state (duckfn 0.0.18+):
 
 ```rust
-trait Summary {
-    fn eval(values: &[f64]) -> f64;
-}
+use duckfn::{DuckOptionResult, duck_aggregate_function};
 
-#[derive(Default, Debug, Clone)]
-struct SummaryState<S: Summary> {
-    values: Vec<f64>,
-    _marker: PhantomData<S>,
-}
-
-impl<S: Summary> DuckAggregateState for SummaryState<S> {
-    type Output = f64;
-
-    fn simple_combine(&mut self, other: &Self) {
-        self.values.extend(other.values.iter().copied());
-    }
-
-    fn result(&self) -> DuckOptionResult<f64> {
-        nan_to_null(S::eval(&self.values))  // statrs' NAN becomes SQL NULL
-    }
-}
-
-#[duck_aggregate_function(/* description / example */)]
-fn sr_mean(input: f64, state: &mut SummaryState<ArithmeticMean>) {
-    state.values.push(input);
+#[duck_aggregate_function(
+    auto_collect = true,
+    description = "Arithmetic mean of a DOUBLE column, NULL when no row is non-NULL",
+    example = "SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)"
+)]
+fn sr_mean(values: Vec<f64>) -> DuckOptionResult<f64> {
+    nan_to_null(values.mean())  // statrs' NAN becomes SQL NULL
 }
 ```
 

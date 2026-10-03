@@ -105,9 +105,14 @@ implementation of `DuckAggregateState`:
 - `combine` / `simple_combine`: merge two states (this is what threads and group merging go through);
 - `result` / `simple_result`: turn a state into a value. Returning a value from `simple_result` means the
   result can never be NULL; a group that has to come back as NULL overrides `result` and returns
-  `Ok(None)` — which is exactly what the states in `aggregate_summary.rs` do: they collect the column,
-  hand it to statrs at finalize, and fold statrs' NAN (empty group, too few samples, undefined
-  statistic) into `Ok(None)` through the shared `nan_to_null`.
+  `Ok(None)`.
+
+None of this is written by hand here: every statistic is a
+`#[duck_aggregate_function(auto_collect = true)]` function (duckfn 0.0.18+) — the annotated function
+*is* the finalize handler (`Vec<f64>` parameters are the collected columns, `DuckFirst<f64>` a
+per-query constant), and the macro generates the state, the merging `simple_combine` and the
+`result` that folds statrs' NAN (empty group, too few samples, undefined statistic) into SQL NULL
+through the shared `nan_to_null`.
 
 The statistics are aggregates deliberately: `SELECT sr_mean(x) FROM t GROUP BY g` is the shape
  database users already write, and the row-paired two-column signature gives `sr_covariance` the

@@ -4,133 +4,34 @@
 // 为什么是聚合而不是「LIST + 标量」：`SELECT sr_mean(x) FROM t GROUP BY g` 是数据库用户
 // 写统计查询的默认形状，换成标量就得先 `list(x)` 再喂给函数，SQL 更长、也更绕。
 //
-// NULL 语义（与 statrs 对齐、向 SQL 用户侧传播）：
-//   - SQL NULL 行不进状态（聚合惯例，与 DuckDB 自带的 mean/stddev 一致）；
+// 形状：`#[duck_aggregate_function(auto_collect = true)]`（duckfn 0.0.18 起）。
+// 注解函数本身就是 finalize 处理器 —— `Vec<T>` 参数是逐行收集的列，`DuckFirst<T>` 是
+// 每查询一个的常量，宏按 SummaryState 的形状生成状态、`simple_combine` 与 `result`，
+// 这里不再有手写状态结构体、marker 类型或 `DuckAggregateState` impl。
+//
+// NULL 语义（与 statrs 对齐、向 SQL 用户侧传播；auto_collect 全部免费给）：
+//   - SQL NULL 行不进收集（非 `Option` 的列参数，整行跳过 —— 协方差两列因此保持配对）；
 //   - statrs 算不出的（空组、方差类不足 2 个值、quantile 的 tau 越界…）返回 NAN，
 //     统一经 `nan_to_null` 折成 SQL NULL —— NAN 不会作为值出现在结果里；
-//   - 整组没有一行有效数据时，结果同样是 NULL（空 slice 上 statrs 一律给 NAN）。
-//
-// 结构：`auto_collect = true` 把「收集整列 + 换最后一跳算式」的样板（状态结构体、
-// `DuckAggregateState`、逐行 push 的行处理器）全部收进宏里 —— 被标注函数直接就是
-// finalize：`Vec<f64>` 参数是要收集的列，返回值是聚合结果。宏生成的状态与过去手写的
-// `SummaryState<S>` 等价（每列一个 `Vec<T>`，`simple_combine` 拼接、`result` 求值），
-// 并行 combine 与 NULL 跳过的语义原样不变。
-// 具体算哪个统计量仍由类型参数 `S` 在 finalize 里静态派发（marker struct + `Summary`
-// trait）—— 不用宏：宏生成的代码块类型不安全、IDE 也不补全，而每个算式只是
-// `Summary` 实现里委托 statrs 的一行。
-//
-// 状态先收齐整列数据、finalize 时把切片交给 statrs 计算：语义与「在本机直接调 statrs」
-// 严格一致是第一优先级，median/quantile 这类顺序统计量本来也需要全量数据（DuckDB 自带的
-// quantile 同样在状态里攒数据）。
+//   - 空组上 `DuckFirst<T>`（如 sr_quantile 的 tau）没有值可解，auto_collect 直接对
+//     该组报 NULL、不调用函数 —— 与手写时代的守卫语义一致。
 //
 // Wrapping statrs::statistics as aggregates: a column in, one value out.
 //
-// Structure: `auto_collect = true` absorbs the collect-then-compute boilerplate (state struct,
-// `DuckAggregateState`, the one-line row handler) into the macro — the annotated function *is* the
-// finalize handler: a `Vec<f64>` parameter is the collected column, the return value is the result.
-// The generated state is exactly the former hand-written `SummaryState<S>` (a `Vec<T>` per column,
-// merged in `simple_combine`, evaluated in `result`), so parallel combine and NULL-skipping
-// semantics are unchanged. The concrete statistic is still dispatched by the type parameter `S`
-// inside finalize (marker structs + the `Summary` trait) — no macro: generated code is type-unsafe
-// and invisible to the IDE, and each statistic is just the one-line statrs delegation in its
-// `Summary` impl.
+// Shape: `#[duck_aggregate_function(auto_collect = true)]` (duckfn 0.0.18+). The annotated
+// function *is* the finalize handler — a `Vec<T>` parameter collects the column across rows,
+// a `DuckFirst<T>` parameter is a per-query constant, and the macro generates the state,
+// `simple_combine` and `result`. No hand-written state structs, marker types or
+// `DuckAggregateState` impls anymore.
 //
-// NULL semantics as before: SQL NULL rows never enter the state; whatever statrs spells NAN
-// (empty group, fewer than two samples, out-of-range tau, negatives in the geometric/harmonic
-// means) becomes SQL NULL through the shared `nan_to_null`.
+// NULL semantics (aligned with statrs, propagated to the SQL side; all free with
+// auto_collect): NULL rows never enter the collection; whatever statrs spells NAN becomes
+// SQL NULL through the shared `nan_to_null`; an empty group has no value to resolve for
+// `DuckFirst<T>`, so auto_collect reports NULL without calling the function.
 // ============================================================================
 
 use duckfn::{DuckFirst, DuckOptionResult, duck_aggregate_function};
 use statrs::statistics::{Data, OrderStatistics, Statistics};
-
-/// 「一列切片算一个汇总统计量」的静态派发点。实现体只有委托给 statrs 的一行。
-///
-/// The static dispatch point for "compute one summary statistic over a column". Each body is the
-/// one-line delegation to statrs.
-trait Summary {
-    fn eval(values: &[f64]) -> f64;
-}
-
-// marker 类型本身不带任何逻辑，存在的意义就是让 `summarize::<ArithmeticMean>` 与
-// `summarize::<Median>` 成为两条可分别派发的算式。
-#[derive(Default, Debug, Clone, Copy)] struct ArithmeticMean;
-#[derive(Default, Debug, Clone, Copy)] struct GeometricMean;
-#[derive(Default, Debug, Clone, Copy)] struct HarmonicMean;
-#[derive(Default, Debug, Clone, Copy)] struct QuadraticMean;
-#[derive(Default, Debug, Clone, Copy)] struct Median;
-#[derive(Default, Debug, Clone, Copy)] struct SampleVariance;
-#[derive(Default, Debug, Clone, Copy)] struct SampleStdDev;
-#[derive(Default, Debug, Clone, Copy)] struct PopulationVariance;
-#[derive(Default, Debug, Clone, Copy)] struct PopulationStdDev;
-
-// 集中趋势：均值族对切片直接算（`Statistics` 落在所有 `IntoIterator<Item = Borrow<f64>>`
-// 上，`&[f64]` 即是）；中位数走 `OrderStatistics`，它按 `&mut` 就地选择，finalize 时给一份
-// 可重排的拷贝 —— 状态里收集的原始列不动。
-impl Summary for ArithmeticMean {
-    fn eval(values: &[f64]) -> f64 {
-        values.mean()
-    }
-}
-
-impl Summary for GeometricMean {
-    fn eval(values: &[f64]) -> f64 {
-        values.geometric_mean()
-    }
-}
-
-impl Summary for HarmonicMean {
-    fn eval(values: &[f64]) -> f64 {
-        values.harmonic_mean()
-    }
-}
-
-impl Summary for QuadraticMean {
-    fn eval(values: &[f64]) -> f64 {
-        values.quadratic_mean()
-    }
-}
-
-impl Summary for Median {
-    fn eval(values: &[f64]) -> f64 {
-        let mut data = Data::new(values.to_vec());
-        data.median()
-    }
-}
-
-// 离散程度：样本版（Bessel 修正、除以 N-1）与总体版（除以 N）。空组与样本不足在 statrs 里
-// 都是 NAN，落到 SQL 侧就是 NULL —— 与 DuckDB 自带 var/stddev 对单行输入给 NULL 一致。
-impl Summary for SampleVariance {
-    fn eval(values: &[f64]) -> f64 {
-        values.variance()
-    }
-}
-
-impl Summary for SampleStdDev {
-    fn eval(values: &[f64]) -> f64 {
-        values.std_dev()
-    }
-}
-
-impl Summary for PopulationVariance {
-    fn eval(values: &[f64]) -> f64 {
-        values.population_variance()
-    }
-}
-
-impl Summary for PopulationStdDev {
-    fn eval(values: &[f64]) -> f64 {
-        values.population_std_dev()
-    }
-}
-
-/// 全部汇总统计量共用的 finalize：收到的 `Vec<f64>` 就是收集好的整列，按类型参数派发。
-///（状态由 `auto_collect` 在宏里生成，这里只剩算式本身。）
-///
-/// The finalize shared by every summary aggregate: the `Vec<f64>` is the collected column, dispatched
-/// on the type parameter. (The state itself is generated by `auto_collect` inside the macro.)
-fn summarize<S: Summary>(values: Vec<f64>) -> DuckOptionResult<f64> {
-    super::nan_to_null(S::eval(&values))
-}
 
 /// `sr_mean(x)`：算术平均（`Statistics::mean`）。
 ///
@@ -144,8 +45,8 @@ fn summarize<S: Summary>(values: Vec<f64>) -> DuckOptionResult<f64> {
     comment = "SQL NULL rows are skipped; statrs' NAN for an empty group becomes SQL NULL",
     example = "SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)"
 )]
-fn sr_mean(input: Vec<f64>) -> DuckOptionResult<f64> {
-    summarize::<ArithmeticMean>(input)
+fn sr_mean(values: Vec<f64>) -> DuckOptionResult<f64> {
+    super::nan_to_null(values.mean())
 }
 
 /// `sr_geometric_mean(x)`：几何平均（`Statistics::geometric_mean`），含负数 NULL、含 0 出 0。
@@ -160,8 +61,8 @@ fn sr_mean(input: Vec<f64>) -> DuckOptionResult<f64> {
     comment = "A negative value makes the statistic undefined, which comes back as NULL",
     example = "SELECT sr_geometric_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)"
 )]
-fn sr_geometric_mean(input: Vec<f64>) -> DuckOptionResult<f64> {
-    summarize::<GeometricMean>(input)
+fn sr_geometric_mean(values: Vec<f64>) -> DuckOptionResult<f64> {
+    super::nan_to_null(values.geometric_mean())
 }
 
 /// `sr_harmonic_mean(x)`：调和平均（`Statistics::harmonic_mean`）。
@@ -175,8 +76,8 @@ fn sr_geometric_mean(input: Vec<f64>) -> DuckOptionResult<f64> {
     comment = "A negative value makes the statistic undefined, which comes back as NULL",
     example = "SELECT sr_harmonic_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)"
 )]
-fn sr_harmonic_mean(input: Vec<f64>) -> DuckOptionResult<f64> {
-    summarize::<HarmonicMean>(input)
+fn sr_harmonic_mean(values: Vec<f64>) -> DuckOptionResult<f64> {
+    super::nan_to_null(values.harmonic_mean())
 }
 
 /// `sr_quadratic_mean(x)`：平方均值 / RMS（`Statistics::quadratic_mean`）。
@@ -190,8 +91,8 @@ fn sr_harmonic_mean(input: Vec<f64>) -> DuckOptionResult<f64> {
     comment = "SQL NULL rows are skipped; statrs' NAN for an empty group becomes SQL NULL",
     example = "SELECT sr_quadratic_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)"
 )]
-fn sr_quadratic_mean(input: Vec<f64>) -> DuckOptionResult<f64> {
-    summarize::<QuadraticMean>(input)
+fn sr_quadratic_mean(values: Vec<f64>) -> DuckOptionResult<f64> {
+    super::nan_to_null(values.quadratic_mean())
 }
 
 /// `sr_median(x)`：中位数（`OrderStatistics::median`，就地选择算法），偶数个取中间两数平均。
@@ -206,8 +107,12 @@ fn sr_quadratic_mean(input: Vec<f64>) -> DuckOptionResult<f64> {
     comment = "Even-length inputs average the two middle values, statrs' own convention",
     example = "SELECT sr_median(x) FROM (VALUES (3.0), (1.0), (2.0)) t(x)"
 )]
-fn sr_median(input: Vec<f64>) -> DuckOptionResult<f64> {
-    summarize::<Median>(input)
+fn sr_median(values: Vec<f64>) -> DuckOptionResult<f64> {
+    // 收集来的 Vec 直接交给 Data 就地选择 —— finalize 之后它就被释放，动的是拷贝的所有权。
+    // The collected Vec moves into the in-place `Data`; mutating it here is fine, the state is
+    // done with it at finalize.
+    let mut data = Data::new(values);
+    super::nan_to_null(data.median())
 }
 
 /// `sr_variance(x)`：样本方差（`Statistics::variance`，Bessel 修正、除以 N-1）。
@@ -222,8 +127,8 @@ fn sr_median(input: Vec<f64>) -> DuckOptionResult<f64> {
     comment = "One value has no sample variance; the result is NULL, not 0",
     example = "SELECT sr_variance(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)"
 )]
-fn sr_variance(input: Vec<f64>) -> DuckOptionResult<f64> {
-    summarize::<SampleVariance>(input)
+fn sr_variance(values: Vec<f64>) -> DuckOptionResult<f64> {
+    super::nan_to_null(values.variance())
 }
 
 /// `sr_std_dev(x)`：样本标准差。
@@ -237,8 +142,8 @@ fn sr_variance(input: Vec<f64>) -> DuckOptionResult<f64> {
     comment = "One value has no sample standard deviation; the result is NULL, not 0",
     example = "SELECT sr_std_dev(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)"
 )]
-fn sr_std_dev(input: Vec<f64>) -> DuckOptionResult<f64> {
-    summarize::<SampleStdDev>(input)
+fn sr_std_dev(values: Vec<f64>) -> DuckOptionResult<f64> {
+    super::nan_to_null(values.std_dev())
 }
 
 /// `sr_population_variance(x)`：总体方差（除以 N）。
@@ -252,8 +157,8 @@ fn sr_std_dev(input: Vec<f64>) -> DuckOptionResult<f64> {
     comment = "Single-row groups yield a real number here (dividing by N), unlike the sample family",
     example = "SELECT sr_population_variance(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)"
 )]
-fn sr_population_variance(input: Vec<f64>) -> DuckOptionResult<f64> {
-    summarize::<PopulationVariance>(input)
+fn sr_population_variance(values: Vec<f64>) -> DuckOptionResult<f64> {
+    super::nan_to_null(values.population_variance())
 }
 
 /// `sr_population_std_dev(x)`：总体标准差（除以 N）。
@@ -267,15 +172,13 @@ fn sr_population_variance(input: Vec<f64>) -> DuckOptionResult<f64> {
     comment = "Single-row groups yield a real number here (dividing by N), unlike the sample family",
     example = "SELECT sr_population_std_dev(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)"
 )]
-fn sr_population_std_dev(input: Vec<f64>) -> DuckOptionResult<f64> {
-    summarize::<PopulationStdDev>(input)
+fn sr_population_std_dev(values: Vec<f64>) -> DuckOptionResult<f64> {
+    super::nan_to_null(values.population_std_dev())
 }
 
-/// `sr_quantile(x, tau)`：tau 分位数（`OrderStatistics::quantile`）。第二个参数按常量写
-/// （聚合参数是逐行的列，`0.975` 这样的字面量每行都是同一个值），用 `DuckFirst<f64>` 声明
-/// —— 它逐行不变，宏只解析一次，进 finalize 的就是一个 `f64`。tau 为 NULL 的行整行不进
-/// 收集，与「NULL 输入不进函数体」的标量规则同源；空组（或全 NULL）时 `DuckFirst` 无从解析，
-/// `auto_collect` 直接报 NULL，函数不会被调用 —— 与原手写的 `QuantileState` 语义一致。
+/// `sr_quantile(x, tau)`：tau 分位数（`OrderStatistics::quantile`）。第二个参数是
+/// `DuckFirst<f64>` —— 每查询解析一次的常量，写成 `sr_quantile(x, 0.975)` 即可。
+/// tau 为 NULL 的行整行不进收集；空组没有值可解，auto_collect 直接报 NULL、不调用本函数。
 ///
 /// ```sql
 /// SELECT sr_quantile(x, 0.5) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x);  -- 2.5
@@ -287,7 +190,7 @@ fn sr_population_std_dev(input: Vec<f64>) -> DuckOptionResult<f64> {
     comment = "Write the tau argument as a literal; a NULL tau skips the row entirely, like any NULL input",
     example = "SELECT sr_quantile(x, 0.5) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)"
 )]
-fn sr_quantile(input: Vec<f64>, tau: DuckFirst<f64>) -> DuckOptionResult<f64> {
-    let mut data = Data::new(input);
+fn sr_quantile(values: Vec<f64>, tau: DuckFirst<f64>) -> DuckOptionResult<f64> {
+    let mut data = Data::new(values);
     super::nan_to_null(data.quantile(tau))
 }

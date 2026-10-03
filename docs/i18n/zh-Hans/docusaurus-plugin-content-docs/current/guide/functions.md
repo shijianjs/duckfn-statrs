@@ -23,8 +23,8 @@ flowchart LR
 
 | 函数 | 类别 | 签名 | 行为 |
 | --- | --- | --- | --- |
-| `sr_mean` 及均值 / 方差族 | 聚合 | `DOUBLE -> DOUBLE` | 状态收集整列，finalize 时交给 statrs 计算。 |
-| `sr_quantile` | 聚合 | `(DOUBLE, DOUBLE) -> DOUBLE` | tau 是第二个逐行但恒定的参数，存进状态。 |
+| `sr_mean` 及均值 / 方差族 | 聚合 | `DOUBLE -> DOUBLE` | `auto_collect` 收集整列，函数在 finalize 时一次性委托给 statrs。 |
+| `sr_quantile` | 聚合 | `(DOUBLE, DOUBLE) -> DOUBLE` | tau 是第二个参数（`DuckFirst` 每查询常量）。 |
 | `sr_covariance` / `sr_population_covariance` | 聚合 | `(DOUBLE, DOUBLE) -> DOUBLE` | 两列按行配对；任一列为 NULL 的行整行跳过。 |
 | `sr_normal_pdf` / `sr_normal_cdf` / `sr_normal_quantile` | 标量 | `3 × DOUBLE -> DOUBLE` | 逐行求值；非法参数报查询错误。 |
 
@@ -77,83 +77,39 @@ fn sr_normal_quantile(p: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> 
 让一条报告单独也看得懂。本扩展里「报错」与「NULL」的界线是刻意划的：*statrs 算不出* → NULL
 （经 `nan_to_null`）；*调用写错*（std_dev ≤ 0、概率越界）→ 报错。
 
-## 聚合：逐行输入 + 一个状态
+## 聚合：用 `auto_collect` 收集
 
-聚合的签名是「输入列 + 一个 `&mut` 状态参数」（位置随意）。状态要满足 `Default + Clone + Debug`
-（宏生成的包装结构体 derive 了它们），再实现 `DuckAggregateState`：
+底层机制（来自 duckfn 的聚合指南）：聚合是「逐行输入 + 一个 `&mut` 状态」（位置随意），
+状态要满足 `Default + Clone + Debug`，再实现 `DuckAggregateState`：
 
 - `combine` / `simple_combine` 合并两个状态。线程并行与分组合并都走这里，所以它必须满足结合律。
 - `result` / `simple_result` 把状态变成这一组的值。`simple_result` 只能给永不为 NULL 的值；
   一组要落成 SQL NULL 时覆盖 `result`、返回 `Ok(None)`。
 - `Output` 决定 SQL 返回类型：`i64`、`f64`、`String`、`Vec<…>`（即 `list<…>`）等。
 
-分位数状态把两个活动件都摆出来了 —— 收集的数据，加上每行读一次的常量参数：
+本扩展里这些都不手写。这里每个统计量都是「收集列、finalize 算一次」的形状，而
+`#[duck_aggregate_function(auto_collect = true)]`（duckfn 0.0.18+）生成的正是它：被注解的函数
+本身*就是* finalize 处理器 —— `Vec<T>` 参数是逐行收集的列，`DuckFirst<T>` 参数是每查询解析
+一次的常量，返回值沿用标量的规则（`-> T`、`-> Option<T>`、`-> DuckOptionResult<T>`）；状态、
+合并的 `simple_combine` 与可出 NULL 的 `result` 都在宏底下生成：
 
 ```rust
-#[derive(Default, Debug, Clone)]
-struct QuantileState {
-    values: Vec<f64>,
-    tau: Option<f64>,
-}
-
-impl DuckAggregateState for QuantileState {
-    type Output = f64;
-
-    fn simple_combine(&mut self, other: &Self) {
-        self.values.extend(other.values.iter().copied());
-        self.tau = self.tau.or(other.tau);      // 同一条查询里常量处处相同
-    }
-
-    fn result(&self) -> DuckOptionResult<f64> {
-        let Some(tau) = self.tau else {
-            return Ok(None);                    // 空组 -> SQL NULL
-        };
-        let mut data = Data::new(self.values.clone());
-        super::nan_to_null(data.quantile(tau))  // statrs 的 NAN -> SQL NULL
-    }
-}
-
-#[duck_aggregate_function(/* description / comment / example */)]
-fn sr_quantile(input: f64, tau: f64, state: &mut QuantileState) {
-    state.values.push(input);
-    state.tau = Some(tau);
+#[duck_aggregate_function(
+    auto_collect = true,
+    description = "Tau quantile of a DOUBLE column, tau as the second (constant) argument, NULL when empty or tau is not in [0, 1]",
+    example = "SELECT sr_quantile(x, 0.5) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)"
+)]
+fn sr_quantile(values: Vec<f64>, tau: DuckFirst<f64>) -> DuckOptionResult<f64> {
+    let mut data = Data::new(values);
+    super::nan_to_null(data.quantile(tau))   // statrs' NAN -> SQL NULL
 }
 ```
 
-均值 / 方差族共用一份状态，只换最后一步算式 —— 「算什么」是类型参数，在编译期静态派发，
-不是代码生成器：
-
-```rust
-trait Summary {
-    fn eval(values: &[f64]) -> f64;
-}
-
-#[derive(Default, Debug, Clone)]
-struct SummaryState<S: Summary> {
-    values: Vec<f64>,
-    _marker: PhantomData<S>,
-}
-
-impl<S: Summary> DuckAggregateState for SummaryState<S> {
-    type Output = f64;
-    fn simple_combine(&mut self, other: &Self) {
-        self.values.extend(other.values.iter().copied());
-    }
-    fn result(&self) -> DuckOptionResult<f64> {
-        super::nan_to_null(S::eval(&self.values))
-    }
-}
-
-#[duck_aggregate_function(/* ... */)]
-fn sr_mean(input: f64, state: &mut SummaryState<ArithmeticMean>) {
-    state.values.push(input);
-}
-```
-
-九个 marker 结构体、各一个 trait 实现、行处理器只有一行 —— 不用 `macro_rules!`：宏生成的代码
-IDE 看不见、类型也不安全，而 duckfn-macro 把 `&mut` 后面的类型整块当 `syn::Type` 内插，
-泛型实例化照样能注册。状态里同样可以放 `String`、`HashMap`、`Vec<…>`，或按分组键一格一位 ——
-支持哪些形状见 duckfn 指南的聚合章节。
+NULL 规则也来自同一套机制：任何非 `Option` 列出现 NULL，整行不进收集 —— 这就是
+`sr_covariance` 的两个 `Vec<f64>` 不需要长度检查也保持配对的原因；空组配上非空的
+`DuckFirst<T>` 没有值可解析，`auto_collect` 直接对该组报 NULL、不调用函数。并行 `combine`、
+结构化返回值与 `overloads_name` 照常可用；真需要自定义状态形状时，手写形态仍是退路
+（见 duckfn 指南的聚合章节）。
 
 ## 加你自己的函数
 
@@ -161,8 +117,8 @@ IDE 看不见、类型也不安全，而 duckfn-macro 把 `&mut` 后面的类型
    也各只接受自己的参数。手册是 [duckfn 用户指南](https://shijianjs.github.io/duckfn/) ——
    直接翻到对应种类那一章。
 2. **抄最近的那一个**（`src/extension/functions/` 里），改逻辑，别从零发明签名。给一列新增一个
-   statrs 包装，通常就是多一个 marker 结构体、一个 `Summary` 实现，加上共享 `SummaryState` 上
-   一行式的处理函数。
+   statrs 包装，通常就是一个新的 `auto_collect = true` 聚合：列拿 `Vec<f64>`（要配对就再加一个
+   `Vec<f64>`），函数体里把 statrs 调一次。
 3. **挂进模块树**：在 `src/extension/functions/mod.rs` 加 `mod my_function;`。crate root 不用动。
 4. **把文档元数据写进属性** —— `description`、`comment`、`example` / `examples`：
 
