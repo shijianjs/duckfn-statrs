@@ -15,15 +15,15 @@ only feeds SQL values in and hands SQL results back out.
 ## Quick start
 
 ```shell
-cargo install cargo-duckdb-ext-tools   # once: a global cargo subcommand, no project dependency
-cargo duckdb-ext build                 # -> target/debug/duckfn_statrs.duckdb_extension
+make configure   # once: the configure/venv (Python + the sqllogictest runner)
+make debug       # -> build/debug/duckfn_statrs.duckdb_extension
 ```
 
 Self-built artifacts are unsigned, so DuckDB needs `-unsigned` to load them:
 
 ```shell
 duckdb -unsigned -c "
-LOAD './target/debug/duckfn_statrs.duckdb_extension';
+LOAD './build/debug/duckfn_statrs.duckdb_extension';
 SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x);
 -- 2.0
 SELECT sr_normal_cdf(1.96, 0.0, 1.0);
@@ -75,16 +75,16 @@ Everything follows statrs and propagates to the SQL side:
 
 ## Building from source
 
-Two build paths, deliberately kept in sync:
+The official DuckDB `extension-ci-tools` makefiles are the build path:
 
 ```shell
-cargo duckdb-ext build   # day-to-day, no make -> target/debug/duckfn_statrs.duckdb_extension
 make configure           # once: the configure/venv (Python + the sqllogictest runner)
-make debug               # the official-template path -> build/debug/extension/duckfn_statrs/...
+make debug               # the official path -> build/debug/duckfn_statrs.duckdb_extension
 ```
 
 `make release` is the same flow with optimizations. On Windows `make` needs Git Bash.
-The `Justfile` wraps both (`just build`, `just ci-build`, `just test`, `just ci-release`).
+The `Justfile` wraps it (`just build` = `make configure && make debug`, `just ci-build`, `just test`,
+`just ci-release`).
 
 ## Testing
 

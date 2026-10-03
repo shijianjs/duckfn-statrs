@@ -17,24 +17,25 @@ flowchart LR
 ## 前置条件
 
 - **Rust** 1.89 或更新（`Cargo.toml` 里的 `rust-version`；statrs 把模板的 1.86 下限抬了上去）。
-- **[just](https://github.com/casey/just)** 与 **cargo-duckdb-ext-tools** —— recipe 会调用它们：
+- **[just](https://github.com/casey/just)** —— recipe 会调用它：
 
   ```shell
-  cargo install just cargo-duckdb-ext-tools
+  cargo install just
   ```
 
+- **make**（Windows 上要在 Git Bash 里跑）与 **Python 3** —— 官方 DuckDB
+  `extension-ci-tools` 的构建 / 测试流程，`just build` 底层就是它（`make configure` + `make debug`），
+  `just test` 走的也是同一套。
 - 一个 **DuckDB** 1.3 或更新的可执行文件（`duckdb` 在 `PATH` 里，或者用
   `just DUCKDB=/path/to/duckdb …` 指定）。
-- 可选：**make**（Windows 上要在 Git Bash 里跑）与 Python —— CI 用的那套官方构建 / 测试流程需要它们，
-  cargo 那条路不需要。
 
 ## 1. 构建
 
 ```shell
-just build          # = cargo duckdb-ext build
+just build          # = make configure && make debug
 ```
 
-产物是 `target/debug/duckfn_statrs.duckdb_extension`。没有 C++ 这一步，也不需要本地编译 DuckDB：扩展
+产物是 `build/debug/duckfn_statrs.duckdb_extension`。没有 C++ 这一步，也不需要本地编译 DuckDB：扩展
 只用到 DuckDB 的头文件，加载时通过它的 API 表分发。
 
 ## 2. 加载并调用
@@ -45,7 +46,7 @@ just repl           # 已经 LOAD 好扩展的 DuckDB REPL
 
 ```sql
 -- 或者手动来；本地构建的产物必须加 -unsigned
-duckdb -unsigned -c "LOAD './target/debug/duckfn_statrs.duckdb_extension';"
+duckdb -unsigned -c "LOAD './build/debug/duckfn_statrs.duckdb_extension';"
 ```
 
 下面这些函数就地就能跑 —— 站点从仓库的最新 Release 预加载了这个扩展，这里不用写 `LOAD`
@@ -105,8 +106,7 @@ just test           # make configure + make debug + make test
 
 :::
 
-Windows 上还有一条：如果 `cargo duckdb-ext build` 报产物被占用，说明有 DuckDB 进程正拿着
-`target/debug/duckfn_statrs.duckdb_extension`。换个路径构建
-（`cargo duckdb-ext build -o build/debug/duckfn_statrs.duckdb_extension`）或者关掉那个进程即可。
+Windows 上还有一条：如果 `make debug` 报产物被占用，说明有 DuckDB 进程正拿着
+`build/debug/duckfn_statrs.duckdb_extension`（多半是没关的 `just repl`）—— 关掉那个进程重新构建即可。
 `.duckdb_extension` 不是改了名的 DLL：DuckDB 的元数据在文件尾，直接 `Copy-Item` 一个 DLL 过去会报
 `The metadata at the end of the file is invalid`。

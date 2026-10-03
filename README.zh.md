@@ -14,15 +14,15 @@ SQL 的语义送出来。
 ## 快速上手
 
 ```shell
-cargo install cargo-duckdb-ext-tools   # 只需一次：全局 cargo 子命令，不给项目加依赖
-cargo duckdb-ext build                 # -> target/debug/duckfn_statrs.duckdb_extension
+make configure   # 只做一次：建 configure/venv（Python 与 sqllogictest 运行器）
+make debug       # -> build/debug/duckfn_statrs.duckdb_extension
 ```
 
 自己构建的产物没有签名，加载时必须给 DuckDB 加 `-unsigned`：
 
 ```shell
 duckdb -unsigned -c "
-LOAD './target/debug/duckfn_statrs.duckdb_extension';
+LOAD './build/debug/duckfn_statrs.duckdb_extension';
 SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x);
 -- 2.0
 SELECT sr_normal_cdf(1.96, 0.0, 1.0);
@@ -72,16 +72,16 @@ SELECT sr_normal_cdf(1.96, 0.0, 1.0);
 
 ## 从源码构建
 
-两条构建路径，有意保持一致：
+构建走官方 DuckDB `extension-ci-tools` makefile：
 
 ```shell
-cargo duckdb-ext build   # 日常迭代，不需要 make -> target/debug/duckfn_statrs.duckdb_extension
 make configure           # 只做一次：建 configure/venv（Python 与 sqllogictest 运行器）
-make debug               # 官方模板那条路 -> build/debug/extension/duckfn_statrs/...
+make debug               # 官方路径 -> build/debug/duckfn_statrs.duckdb_extension
 ```
 
 `make release` 是带优化的同一套流程。Windows 上 `make` 需要在 Git Bash 里跑。
-`Justfile` 把两者都包了一层（`just build`、`just ci-build`、`just test`、`just ci-release`）。
+`Justfile` 把它包了一层（`just build` = `make configure && make debug`、`just ci-build`、`just test`、
+`just ci-release`）。
 
 ## 测试
 
