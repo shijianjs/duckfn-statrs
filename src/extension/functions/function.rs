@@ -14,8 +14,8 @@
 // (support pieces, not user-facing computations).
 // ============================================================================
 
-use duckfn::{DuckOptionResult, duck_scalar_function};
-use statrs::function::{beta, erf, exponential, factorial, gamma, harmonic, logistic};
+use duckfn::{DuckOptionResult, duck_error, duck_scalar_function};
+use statrs::function::{beta, erf, evaluate, exponential, factorial, gamma, harmonic, logistic};
 
 use super::{as_u64, nan_to_null};
 
@@ -290,4 +290,78 @@ fn sr_logit(p: f64) -> DuckOptionResult<f64> {
 )]
 fn sr_exponential_integral(x: f64, n: f64) -> DuckOptionResult<f64> {
     Ok(exponential::integral(x, as_u64("sr_exponential_integral", n)?))
+}
+
+// ---------------------------------------------------------------------------
+// 多项式求值（statrs::function::evaluate::polynomial）
+// ---------------------------------------------------------------------------
+
+/// 多项式 Σ coeff[i] · x^i（coeffs 按升幂排列的 LIST(DOUBLE)）。
+#[duck_scalar_function(
+    description = "Polynomial evaluation sum coeff[i] * x^i with the coefficient LIST in ascending order",
+    example = "SELECT sr_polynomial(2.0, [1.0, 0.0, 3.0])"
+)]
+fn sr_polynomial(x: f64, coeffs: Vec<f64>) -> DuckOptionResult<f64> {
+    nan_to_null(evaluate::polynomial(x, &coeffs))
+}
+
+// ---------------------------------------------------------------------------
+// 核函数族（statrs::function::kernel）：9 个核的 evaluate 与 support，code 表：
+// 1 Gaussian 2 Epanechnikov 3 Triangular 4 Tricube 5 Quartic 6 Uniform
+// 7 Cosine 8 Logistic 9 Sigmoid
+// ---------------------------------------------------------------------------
+
+use statrs::function::kernel::{
+    Cosine, Epanechnikov, Gaussian, Kernel, Logistic as LogisticKernel, Quartic, Sigmoid,
+    Triangular as TriangularKernel, Tricube, Uniform as UniformKernel,
+};
+
+/// 核函数 K(x)（按 code 选核）。
+#[duck_scalar_function(
+    description = "Kernel function evaluation K(x); kind 1 gaussian 2 epanechnikov 3 triangular 4 tricube 5 quartic 6 uniform 7 cosine 8 logistic 9 sigmoid",
+    example = "SELECT sr_kernel_eval(1.0, 0.0)"
+)]
+fn sr_kernel_eval(kind: f64, x: f64) -> DuckOptionResult<f64> {
+    let value = match kind {
+        1.0 => Gaussian.evaluate(x),
+        2.0 => Epanechnikov.evaluate(x),
+        3.0 => TriangularKernel.evaluate(x),
+        4.0 => Tricube.evaluate(x),
+        5.0 => Quartic.evaluate(x),
+        6.0 => UniformKernel.evaluate(x),
+        7.0 => Cosine.evaluate(x),
+        8.0 => LogisticKernel.evaluate(x),
+        9.0 => Sigmoid.evaluate(x),
+        other => {
+            return Err(duck_error(format!(
+                "sr_kernel_eval: the kernel kind must be 1..9 (gaussian, epanechnikov, triangular, tricube, quartic, uniform, cosine, logistic, sigmoid), got {other}"
+            )));
+        }
+    };
+    nan_to_null(value)
+}
+
+/// 核的紧支撑区间 [lo, hi]；非紧支撑核（gaussian / logistic / sigmoid）返回 NULL。
+#[duck_scalar_function(
+    description = "Compact support [lo, hi] of a kernel (same kind codes as sr_kernel_eval); NULL for kernels with unbounded support",
+    example = "SELECT sr_kernel_support(2.0)"
+)]
+fn sr_kernel_support(kind: f64) -> DuckOptionResult<Vec<f64>> {
+    let support = match kind {
+        1.0 => Gaussian.support(),
+        2.0 => Epanechnikov.support(),
+        3.0 => TriangularKernel.support(),
+        4.0 => Tricube.support(),
+        5.0 => Quartic.support(),
+        6.0 => UniformKernel.support(),
+        7.0 => Cosine.support(),
+        8.0 => LogisticKernel.support(),
+        9.0 => Sigmoid.support(),
+        other => {
+            return Err(duck_error(format!(
+                "sr_kernel_support: the kernel kind must be 1..9 (see sr_kernel_eval), got {other}"
+            )));
+        }
+    };
+    Ok(support.map(|(lo, hi)| vec![lo, hi]))
 }

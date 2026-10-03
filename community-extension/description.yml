@@ -27,15 +27,17 @@ docs:
     SELECT sr_normal_quantile(0.975, 0.0, 1.0);
     -- 1.9599639845400538
   extended_description: |
-    Wraps the Rust statrs crate as DuckDB functions - currently 22 aggregates and 166 scalars,
-    covering statrs' statistics, function (special functions), distribution (27 univariate
-    distributions) and consts modules. Summary statistics are aggregates over DOUBLE columns
-    (means, median/quantiles/percentiles/ranks, sample and population variance, covariance of two
-    row-paired columns). Distribution functions are scalars: pdf|pmf / ln_pdf|ln_pmf / cdf / sf /
-    quantile per distribution, every parameter DOUBLE (integer parameters like binomial n are
-    whole-number literals, validated - not rounded). Constants (sqrt(2*pi), Euler-Mascheroni, ...)
-    are zero-argument scalars. Multivariate distributions, Categorical, samplers and KDE are
-    deliberately not wrapped (vector/matrix parameters do not fit the DOUBLE-only surface).
+    Wraps the Rust statrs crate as DuckDB functions - currently 26 aggregates and 226 scalars,
+    covering every statrs module: statistics (means, order statistics incl. percentile / ranks,
+    variance families, covariance of two row-paired columns), distribution (20 continuous and 8
+    discrete univariate incl. Categorical, 4 multivariate over LIST vectors and row-major
+    flattened matrices, Empirical as aggregates, plus rand-integration sampling for all of them
+    incl. statrs' BinomialAlgorithm sampler), density (kde_pdf / knn_pdf via the kde feature),
+    function (erf / gamma / beta families, factorials, harmonic numbers, logistic / logit,
+    kernels, polynomial evaluation), generate (waveform and log-spaced sequences) and stats_tests
+    (t-test, skewtest, Anderson-Darling, two-sample KS, Mann-Whitney U, chi-square, one-way ANOVA,
+    Fisher's exact - returning [statistic, p-value]). Integer slots (binomial n, pmf x, sample k)
+    are whole-number literals, validated - never rounded.
 
     NULL semantics follow statrs and propagate to the SQL side: a NULL row never enters an
     aggregate; whatever statrs cannot define (empty group, sample variance of one value, an

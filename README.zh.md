@@ -37,7 +37,7 @@ SELECT sr_normal_cdf(1.96, 0.0, 1.0);
 
 注册名统一带 `sr_` 前缀，在 `duckdb_functions()` 里可以按前缀整组检索；代码目录与 statrs 的
 模块树同构（`functions/{consts,function,statistics,distribution}/`），对应关系见
-`src/extension/functions/mod.rs` 头注释。当前 22 个聚合 + 166 个标量，按族概括：
+`src/extension/functions/mod.rs` 头注释。当前 26 个聚合 + 226 个标量 = 252 个函数，按族概括：
 
 **聚合函数**（一列 DOUBLE 进、一个 DOUBLE 出，`auto_collect` 形态）：
 
@@ -48,17 +48,23 @@ SELECT sr_normal_cdf(1.96, 0.0, 1.0);
 | 离散程度 | `sr_variance` / `sr_std_dev` / `sr_population_variance` / `sr_population_std_dev` |
 | 极值与配对 | `sr_min` / `sr_max` / `sr_abs_min` / `sr_abs_max`；`sr_covariance(x, y)` / `sr_population_covariance(x, y)` |
 
-**标量函数**（逐行求值，参数与返回全部是 DOUBLE）：
+**标量函数**（逐行求值；参数用 DOUBLE，向量/计数走 LIST，BIGINT 用于随机抽样点数与波形时长）：
 
 | 族 | 函数 |
 | --- | --- |
 | 连续分布（20 种） | 每分布 `sr_<分布>_pdf / ln_pdf / cdf / sf / quantile`（normal、log_normal、beta、gamma、chi_squared、students_t、uniform、weibull、pareto…） |
-| 离散分布（7 种） | 每分布 `sr_<分布>_pmf / ln_pmf / cdf / sf / quantile`（binomial、poisson、geometric、hypergeometric…） |
-| 特殊函数 | `sr_erf` / `sr_erfc` / `sr_gamma` / `sr_ln_gamma` / `sr_digamma` / `sr_beta` / `sr_beta_regularized` / 不完全 Gamma 四变体 / `sr_factorial` / `sr_choose` / `sr_harmonic` / `sr_logistic` / `sr_logit`… |
+| 离散分布（8 种） | 每分布 `sr_<分布>_pmf / ln_pmf / cdf / sf / quantile`（binomial、poisson、geometric、hypergeometric、categorical…） |
+| 多元分布（4 种） | `sr_multivariate_normal_pdf` / `sr_dirichlet_pdf` / `sr_multinomial_pmf` / `sr_multivariate_students_t_pdf`（LIST 向量、行主序摊平矩阵）+ `sr_dirichlet_entropy` |
+| 经验分布（聚合） | `sr_empirical_cdf / sf / quantile(x, k)`；抽样 `sr_sample_empirical` |
+| 随机采样（31 个） | `sr_sample_<分布>(<参数...>, k BIGINT)` 抽 k 个点出 LIST；二项另有 `sr_sample_binomial_algorithm`（statrs 的 BinomialAlgorithm） |
+| 密度估计 | `sr_kde_pdf(x, 样本 LIST, 带宽可 NULL)` / `sr_knn_pdf`（kde feature，k-d tree） |
+| 假设检验（9 个） | `sr_ttest_onesample` / `sr_skewtest` / `sr_anderson_darling` / `sr_ks_twosample` / `sr_mannwhitneyu` / `sr_chisquare` / `sr_f_oneway` / `sr_fishers_exact(_with_odds_ratio)`，出 [统计量, p 值] |
+| 信号生成器 | `sr_gen_square / triangle / sawtooth / periodic / sinusoidal / log_spaced`（取前 k 点出 LIST） |
+| 特殊函数 | `sr_erf` / `sr_erfc` / `sr_gamma` / `sr_ln_gamma` / `sr_digamma` / `sr_beta` / `sr_beta_regularized` / 不完全 Gamma 四变体 / `sr_factorial` / `sr_choose` / `sr_harmonic` / `sr_logistic` / `sr_logit` / `sr_polynomial` / `sr_kernel_eval` / `sr_kernel_support`… |
 | 常量 | `sr_sqrt_2pi()` / `sr_euler_mascheroni()` 等（statrs::consts） |
 
-statrs 中有意不包装的部分（多元/Categorical 分布、采样器、KDE、假设检验模块）与理由，
-记在 `src/extension/functions/mod.rs` 与 `distribution/mod.rs` 的头注释里。
+statrs 的全部能力都有 SQL 出口（首要规则，缺口不允许存在）；仅剩的非能力导出
+（`prec` 内部精度策略、`euclid::Modulus` trait）在 `src/extension/functions/mod.rs` 头注释里说明。
 
 ## NULL 与错误语义
 

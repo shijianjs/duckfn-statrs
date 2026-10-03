@@ -1,0 +1,24 @@
+# name: test/sql/density.test
+# description: statrs::density 的点估计密度（kde_pdf / knn_pdf，kde feature）。
+# 期望值取实跑输出（statrs 的 k-d tree + 高斯核实现值）；NULL bandwidth 验证
+# special_null_handling（常量 NULL 进函数体、走自动带宽，而非整式折叠 NULL）。
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# 固定带宽与自动带宽（bandwidth = NULL 不被折叠，实测两个不同值）
+query RR
+SELECT sr_kde_pdf(0.5, [0.0, 0.2, 0.7, 1.0], 0.5), sr_kde_pdf(0.5, [0.0, 0.2, 0.7, 1.0], NULL)
+----
+0.5927180961167049	0.6336441730224942
+
+query R
+SELECT sr_knn_pdf(0.5, [0.0, 0.2, 0.7, 1.0], 0.5)
+----
+1.0000000000000018
+
+# 空样本是 statrs 的 EmptySample 错误（不是 NULL）
+statement error
+SELECT sr_kde_pdf(0.5, []::DOUBLE[], 0.5)
+----
+sr_kde_pdf

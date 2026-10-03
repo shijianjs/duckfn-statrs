@@ -37,9 +37,9 @@ The `Justfile` wraps the same commands: `just build`, `just sql "SELECT sr_mean(
 ## Functions
 
 Every registered name carries the `sr_` prefix, so the whole set is one `duckdb_functions()` filter
-away; the code tree mirrors statrs' module tree (`functions/{consts,function,statistics,distribution}/`)
-and the correspondence table is in `src/extension/functions/mod.rs`. Currently 22 aggregates +
-166 scalars, by family:
+away; the code tree mirrors statrs' module tree (`functions/{consts,function,generate,density,
+statistics,distribution,sampling,stats_tests}/`) and the correspondence table is in
+`src/extension/functions/mod.rs`. Currently 26 aggregates + 226 scalars = 252 functions, by family:
 
 **Aggregates** (a DOUBLE column in, one DOUBLE out, all `auto_collect`):
 
@@ -50,18 +50,25 @@ and the correspondence table is in `src/extension/functions/mod.rs`. Currently 2
 | Dispersion | `sr_variance` / `sr_std_dev` / `sr_population_variance` / `sr_population_std_dev` |
 | Extremes & pairing | `sr_min` / `sr_max` / `sr_abs_min` / `sr_abs_max`; `sr_covariance(x, y)` / `sr_population_covariance(x, y)` |
 
-**Scalars** (row by row, every parameter and result is DOUBLE):
+**Scalars** (row by row; DOUBLE parameters, LIST for vectors and count vectors, BIGINT for sample
+counts and waveform durations):
 
 | Family | Functions |
 | --- | --- |
 | Continuous distributions (20) | per distribution `sr_<dist>_pdf / ln_pdf / cdf / sf / quantile` (normal, log_normal, beta, gamma, chi_squared, students_t, uniform, weibull, pareto, …) |
-| Discrete distributions (7) | per distribution `sr_<dist>_pmf / ln_pmf / cdf / sf / quantile` (binomial, poisson, geometric, hypergeometric, …) |
-| Special functions | `sr_erf` / `sr_erfc` / `sr_gamma` / `sr_ln_gamma` / `sr_digamma` / `sr_beta` / `sr_beta_regularized` / the four incomplete-Gamma variants / `sr_factorial` / `sr_choose` / `sr_harmonic` / `sr_logistic` / `sr_logit` … |
+| Discrete distributions (8) | per distribution `pmf / ln_pmf / cdf / sf / quantile` (binomial, poisson, geometric, hypergeometric, categorical, …) |
+| Multivariate (4) | `sr_multivariate_normal_pdf` / `sr_dirichlet_pdf` / `sr_multinomial_pmf` / `sr_multivariate_students_t_pdf` (LIST vectors, row-major flattened matrices) + `sr_dirichlet_entropy` |
+| Empirical (aggregate) | `sr_empirical_cdf / sf / quantile(x, k)`; sampling via `sr_sample_empirical` |
+| Random sampling (31) | `sr_sample_<dist>(params..., k BIGINT)` draws k points into a LIST; binomial also `sr_sample_binomial_algorithm` (statrs' BinomialAlgorithm) |
+| Density estimation | `sr_kde_pdf(x, sample LIST, bandwidth or NULL)` / `sr_knn_pdf` (kde feature, k-d tree) |
+| Hypothesis tests (9) | `sr_ttest_onesample` / `sr_skewtest` / `sr_anderson_darling` / `sr_ks_twosample` / `sr_mannwhitneyu` / `sr_chisquare` / `sr_f_oneway` / `sr_fishers_exact(_with_odds_ratio)`, returning [statistic, p-value] |
+| Signal generators | `sr_gen_square / triangle / sawtooth / periodic / sinusoidal / log_spaced` (first k points as a LIST) |
+| Special functions | `sr_erf` / `sr_erfc` / `sr_gamma` / `sr_ln_gamma` / `sr_digamma` / `sr_beta` / `sr_beta_regularized` / the four incomplete-Gamma variants / `sr_factorial` / `sr_choose` / `sr_harmonic` / `sr_logistic` / `sr_logit` / `sr_polynomial` / `sr_kernel_eval` / `sr_kernel_support` … |
 | Constants | `sr_sqrt_2pi()` / `sr_euler_mascheroni()` and friends (statrs::consts) |
 
-What statrs deliberately does not wrap (multivariate / Categorical, samplers, KDE, the hypothesis
-test module) and why are recorded in the headers of `src/extension/functions/mod.rs` and
-`distribution/mod.rs`.
+Every statrs capability has a SQL surface (the first rule: no gaps). The only remaining exports
+without a function are not capabilities at all (`prec`'s internal accuracy policy, the
+`euclid::Modulus` trait) — recorded in the header of `src/extension/functions/mod.rs`.
 
 ## NULL and error semantics
 

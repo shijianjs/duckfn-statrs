@@ -111,14 +111,27 @@ quack-rs = "0.16.0"
 # means "DuckDB >= 1.5".
 libduckdb-sys = { version = ">=1.10500, <2", features = ["loadable-extension"] }
 
-# statrs：Rust 统计计算库，本扩展的存在理由 —— 把它的 statistics / distribution 等模块包装成
-# DuckDB 函数（见 src/extension/functions/）。纯 Rust 实现，与 duckdb 的 loadable-extension 路线不冲突。
-# 默认 features 是 nalgebra / rand / std：nalgebra 服务于矩阵/线性回归一类 API，rand 服务于采样，
-# 只用统计量与分布时用不到 —— 收窄前先确认目标 API 不在被关掉的模块里。
+# statrs：Rust 统计计算库，本扩展的存在理由 —— 把它的全部能力包装成 DuckDB 函数
+# （见 src/extension/functions/ 与 functions/mod.rs 的模块对应表）。纯 Rust 实现，
+# 与 duckdb 的 loadable-extension 路线不冲突。默认 features 里 nalgebra 是多元分布
+# （OVector/DMatrix 的 Dyn 维度）与 kde 的地基，rand 是二项采样的地基，都要；
+# kde 额外拉进 kdtree，打开它才有点估计（density::kde_pdf / knn_pdf）。
 #
 # statrs: the Rust statistical computing library this extension wraps into DuckDB functions
-# (see src/extension/functions/). Pure Rust, so it sits fine next to the loadable-extension setup.
-statrs = "0.19"
+# (see the module map in src/extension/functions/mod.rs). Pure Rust, so it sits fine next to the
+# loadable-extension setup. The `kde` feature (k-d tree backed density estimation) is on.
+statrs = { version = "0.19", features = ["kde"] }
+
+# rand：statrs 的采样入口（每个分布都 impl rand::distr::Distribution）；sr_sample_* 系列
+# 直接拿它取线程随机数。版本与 statrs 0.19 锁定的 rand 对齐（同一 crate，避免双树）。
+#
+# rand: statrs' sampling surface (every distribution implements rand::distr::Distribution);
+# the sr_sample_* functions draw from the thread rng. Version-aligned with statrs 0.19.
+rand = "0.10"
+
+# nalgebra：statrs 多元分布的类型参数（OVector<f64, Dyn>），sr_sample_multivariate_normal
+# 的抽样返回值直接用它；版本与 statrs 0.19 锁定的 nalgebra 对齐。
+nalgebra = "0.35"
 
 # 用到时间/日期（`DuckDate`、`DuckTimestamp*`…）或 UUID、DECIMAL 的互转时，打开 duckfn 的对应 feature
 # （"chrono" / "uuid" / "rust_decimal"）并把那个 crate 加成直接依赖 —— duckfn 不 re-export 它们。例：

@@ -1,25 +1,30 @@
 // statrs::distribution 的包装层（目录对应 statrs 的 src/distribution/）。
 //
-// 对应关系按 statrs 的文件名逐条落在下面三个文件里，函数名 = `sr_` + statrs 类型的
+// 对应关系按 statrs 的文件名逐条落在下面的文件里，函数名 = `sr_` + statrs 类型的
 // snake_case 名 + 方法名（pdf / ln_pdf / cdf / sf / quantile；离散为 pmf / ln_pmf /
 // cdf / sf / quantile）。statrs 的 inverse_cdf 在 SQL 侧叫 quantile（数据库的通用词），
 // 行为一致。
 //
-// 有意不包装的（与 statrs 的差额，核对时看这里）：
-//   - Categorical：参数是概率向量 &[f64]，不是标量 DOUBLE；
-//   - Dirichlet / Multinomial / MultivariateNormal / MultivariateStudent：多元分布，
-//     参数是向量/矩阵，不匹配「对外只有 DOUBLE」的约定；
-//   - Empirical：吃整份数据集，等样本类接口和聚合形态一起设计；
-//   - binomial 的 sampler / sampling 模块：扩展是确定性求值，不做随机采样。
+// 能力覆盖到 statrs 的全部导出：
+//   - 一元连续 20 种、离散 7 种 → continuous_*.rs / discrete.rs；
+//   - Categorical（概率向量 LIST）→ categorical.rs；
+//   - Empirical（数据驱动，聚合形态）→ empirical.rs；
+//   - 多元四类（Dyn 维度，LIST 向量/摊平矩阵）→ multivariate.rs；
+//   - 二项随机采样（statrs 的 BinomialAlgorithm/BinomialSampler）→ functions/sampling.rs。
+// 唯一不经这里的导出是 `sample` 家族里的内部工具（见 sampling.rs 头注释）。
 //
 // The tree mirrors statrs::distribution; a wrapper name is `sr_` + the statrs type in
-// snake_case + the method. Deliberately not wrapped: vector/matrix-parameter distributions
-// (Categorical, Dirichlet, Multinomial, the multivariate ones), Empirical (takes a whole
-// dataset), and the samplers (this extension evaluates, it does not draw).
+// snake_case + the method. Full export coverage: 20 continuous and 7 discrete univariate
+// distributions, Categorical (probability LIST), Empirical (data-driven aggregates), the four
+// multivariate ones (Dyn dimension over LIST vectors and row-major flattened matrices), and
+// binomial sampling (see functions/sampling.rs).
 
+mod categorical;
 mod continuous_location_scale;
 mod continuous_shape;
 mod discrete;
+mod empirical;
+mod multivariate;
 
 use quack_rs::error::ExtensionError;
 

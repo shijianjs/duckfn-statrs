@@ -1,0 +1,69 @@
+# name: test/sql/sampling.test
+# description: statrs 的随机采样出口（rand::distr::Distribution + binomial sampler）。
+# 随机数没有点值断言 —— 用例锁的是「结构不变量」：样本数 = k、样本全部落在分布支撑内、
+# 非法参数报错。支撑范围是分布自身的定义域，非手算统计量。
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# k 条样本、长度即 k
+query III
+SELECT len(sr_sample_normal(0.0, 1.0, 7)), len(sr_sample_exp(2.0, 5)), len(sr_sample_binomial(0.5, 10.0, 12))
+----
+7	5	12
+
+# Bernoulli 样本恒在 {0,1}；Binomial 样本恒在 [0, n]（越界计数为 0）
+query RR
+SELECT count(*) FILTER (WHERE s NOT IN (0.0, 1.0)) = 0, count(*) > 100
+FROM (SELECT unnest(sr_sample_bernoulli(0.5, 200)) AS s)
+----
+true	true
+
+query R
+SELECT count(*) FILTER (WHERE s < 0.0 OR s > 10.0) = 0
+FROM (SELECT unnest(sr_sample_binomial(0.5, 10.0, 200)) AS s)
+----
+true
+
+# Uniform 样本全在 [2, 3]；显式算法的 sampler 通道（1 automatic / 2 inversion / 3 rejection）
+query R
+SELECT count(*) FILTER (WHERE s < 2.0 OR s > 3.0) = 0
+FROM (SELECT unnest(sr_sample_uniform(2.0, 3.0, 300)) AS s)
+----
+true
+
+query III
+SELECT len(sr_sample_binomial_algorithm(0.5, 10.0, 1.0, 4)),
+       len(sr_sample_binomial_algorithm(0.5, 10.0, 2.0, 4)),
+       len(sr_sample_binomial_algorithm(0.5, 10.0, 3.0, 4))
+----
+4	4	4
+
+# Categorical 样本是类别索引 0..len-1；多元正态的每个抽样点是与 mean 等长的向量
+query R
+SELECT count(*) FILTER (WHERE s NOT IN (0.0, 1.0, 2.0)) = 0
+FROM (SELECT unnest(sr_sample_categorical([1.0, 2.0, 1.0], 100)) AS s)
+----
+true
+
+query R
+SELECT count(*) = 25 FROM (SELECT unnest(sr_sample_multivariate_normal([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 25)) AS p)
+----
+true
+
+# Empirical 抽样（聚合形态）：子样本长度 = k
+query I
+SELECT len(sr_sample_empirical(v, 6)) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
+----
+6
+
+# k 非正、未知算法都是调用错误
+statement error
+SELECT sr_sample_normal(0.0, 1.0, 0)
+----
+sr_sample_normal: k must be a positive whole number, got 0
+
+statement error
+SELECT sr_sample_binomial_algorithm(0.5, 10.0, 9.0, 4)
+----
+the algorithm must be 1 (automatic), 2 (inversion) or 3 (rejection), got 9

@@ -1,0 +1,72 @@
+# name: test/sql/distribution_extra.test
+# description: statrs::distribution 的补齐部分 —— Categorical（概率向量 LIST）、
+#   Empirical（数据驱动的聚合）与四个多元分布（Dyn 维度）。期望值取解析精确点
+#   （均匀归一化 1/4·2=0.5、N(0,I₂) 在 0 处密度 1/2π、Dirichlet(1,1) 是单纯形上
+#   均匀密度 1、Binomial(2;4,½)=C(4,2)/16=0.25 族类）与实跑输出。
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# Categorical([1,2,1]) 归一化为 [.25,.5,.25]：pmf(1)=0.5、cdf(1)=0.75、quantile(0.5)=1
+query RRR
+SELECT sr_categorical_pmf(1.0, [1.0, 2.0, 1.0]),
+       sr_categorical_cdf(1.0, [1.0, 2.0, 1.0]),
+       sr_categorical_quantile(0.5, [1.0, 2.0, 1.0])
+----
+0.5	0.75	1.0
+
+# x 非整数报错（statrs 的 pmf 吃 u64）
+statement error
+SELECT sr_categorical_pmf(1.5, [1.0, 2.0, 1.0])
+----
+expected a non-negative whole number, got 1.5
+
+# Empirical（聚合形态）：[1,2,3,4] 的 cdf(2)=0.5、sf(2)=0.5、quantile(0.5)≈2
+query RRR
+SELECT sr_empirical_cdf(v, 2.0), sr_empirical_sf(v, 2.0),
+       sr_empirical_quantile(v, 0.5)::DECIMAL(12,6)
+FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v);
+----
+0.5	0.5	1.999969
+
+# 空组 → NULL（auto_collect + DuckFirst 的约定）
+query R
+SELECT sr_empirical_cdf(v, 2.0) FROM (VALUES (1.0)) t(v) WHERE 1 = 0
+----
+NULL
+
+# MultivariateNormal(0, I₂) 在原点的密度 = 1/(2π)
+query R
+SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0])::DECIMAL(12,8)
+----
+0.15915494
+
+# 协方差形状不符是调用错误（ nalgebra 的 from_vec panic 已在 SQL 边界拦下）
+statement error
+SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0])
+----
+expected 4 entries for a 2x2 covariance matrix
+
+# Dirichlet(1,1) 是单纯形上的均匀分布：pdf = 1、熵 = 0；Multinomial(4; [½,½], n=4) = C(4,2)·(½)^4 = 0.375
+query RR
+SELECT sr_dirichlet_pdf([0.5, 0.5], [1.0, 1.0])::DECIMAL(12,8),
+       sr_dirichlet_entropy([1.0, 1.0])::DECIMAL(12,8)
+----
+1.00000000	0.00000000
+
+query RR
+SELECT sr_multinomial_pmf([0.5, 0.5], 4.0, [2, 2])::DECIMAL(12,8),
+       sr_multinomial_pmf([0.5, 0.5], 4.0, [4, 0])::DECIMAL(12,8)
+----
+0.37500000	0.06250000
+
+# MultivariateStudent(df=3, 0, I₂) 在原点：与多元正态同形（实跑锚点）
+query R
+SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)::DECIMAL(12,8)
+----
+0.15915494
+
+statement error
+SELECT sr_multinomial_pmf([0.5, 0.5], 4.5, [2, 2])
+----
+expected a non-negative whole number, got 4.5
