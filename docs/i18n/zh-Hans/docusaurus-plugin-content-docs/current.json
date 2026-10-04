@@ -18,5 +18,29 @@
   "sidebar.userGuide.category.Function reference.link.generated-index.description": {
     "message": "全部 252 个 sr_ 函数的可执行 SQL 示例，按类别组织。",
     "description": "The generated-index page description for category 'Function reference' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Summary statistics": {
+    "message": "描述统计量",
+    "description": "The label for category 'Summary statistics' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Distributions": {
+    "message": "分布",
+    "description": "The label for category 'Distributions' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Continuous": {
+    "message": "连续",
+    "description": "The label for category 'Continuous' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Discrete": {
+    "message": "离散",
+    "description": "The label for category 'Discrete' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Special functions": {
+    "message": "特殊函数",
+    "description": "The label for category 'Special functions' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Random sampling": {
+    "message": "随机抽样",
+    "description": "The label for category 'Random sampling' in sidebar 'userGuide'"
   }
 }

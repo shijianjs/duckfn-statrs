@@ -18,11 +18,24 @@ WHERE function_name LIKE 'sr_%'
 ORDER BY function_name;
 ```
 
-## Browsing by category
+## How this section is organised
 
-Use the sidebar on the left to navigate to each function family. Each page contains individual
-function signatures with parameter types and at least one executable SQL example that runs in
-your browser.
+The sidebar mirrors the function families, with distributions split by kind:
+
+- **Summary statistics** — descriptive aggregates and the empirical distribution.
+- **Distributions**
+  - **Continuous** — normal / log-normal, the gamma family, beta, location-scale, extreme value
+    and heavy tail, Student's t and Fisher-Snedecor, uniform / triangular / Dirac.
+  - **Discrete** — Bernoulli and binomial trials, Poisson and hypergeometric, categorical and
+    discrete uniform.
+  - **Multivariate** — multivariate normal, Dirichlet and multinomial.
+- **Special functions** — error / gamma / beta families, factorials, harmonic numbers,
+  logistic/logit, polynomial and kernel helpers — plus the **Constants**.
+- **Random sampling** — continuous, and discrete / multivariate / empirical samplers.
+- **Density and signals**, **Hypothesis tests**.
+
+Each page gives every function its signature, parameter types and at least one executable SQL
+example that runs in your browser.
 
 ## NULL semantics (applies everywhere)
 

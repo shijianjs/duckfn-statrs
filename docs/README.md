@@ -14,7 +14,8 @@ if you would rather not have a site (nothing else in the repository depends on i
 | --- | --- |
 | `docs/intro.md` | Introduction. The only page with a `slug`, so `/docs/intro` stays stable. |
 | `docs/getting-started/` | User guide: install and load (`quick-start.md`). Development: project structure (`project-structure.md`). |
-| `docs/guide/` | User guide: function reference (`functions.md`). Development: writing functions (`writing-functions.md`), testing (`testing.md`). |
+| `docs/guide/functions/` | User guide: the function reference, a nested tree — `overview.md` plus `statistics/`, `distributions/` (`continuous/`, `discrete/`, `multivariate.md`), `special/`, `sampling/`, plus `density-and-signals.md` and `hypothesis-tests.md`. |
+| `docs/guide/` | Development: writing functions (`writing-functions.md`), testing (`testing.md`). |
 | `docs/build-and-release.md`, `docs/community-extension.md` | Development sidebar: the official build path, the release flow, the wasm target, and publishing to DuckDB's community extensions. |
 | `i18n/zh-Hans/` | Simplified Chinese translations of all of the above, plus the UI strings. |
 | `src/pages/index.tsx` | Home page: hero, feature cards, the Rust/SQL showcase and the "where to go next" cards. The hero, the feature grid and the next-step cards are `<dfk-*>` custom elements from [`duckfn-docs-kit`](https://www.npmjs.com/package/duckfn-docs-kit), mounted through callback refs and fed with the imperative `translate()` API; every string still has an entry in `i18n/zh-Hans/code.json` under `homepage.*`. The code showcase stays here because it needs the theme's `CodeBlock`. |
@@ -205,7 +206,7 @@ A translated page is a full copy of its English source, placed under
 
 - Translate the body and the reader-facing front matter (`title`, `description`).
 - Keep `id`, `slug` and `sidebar_position` identical so both languages share routes and order.
-- Link to other pages with **relative file paths** (`./project-structure.md`, `../guide/functions.md`).
+- Link to other pages with **relative file paths** (`./project-structure.md`, `../guide/functions/overview.md`).
   A hard-coded `/docs/...` link would send a Chinese page to the English one.
 - Runnable blocks are copied verbatim except for the SQL comments: the `{"type":"duckfn",…}` info
   string and the query itself are code, and `npm test` runs the Chinese page's blocks too.

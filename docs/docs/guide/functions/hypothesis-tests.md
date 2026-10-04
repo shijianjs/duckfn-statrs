@@ -1,6 +1,6 @@
 ---
 title: Hypothesis tests
-sidebar_position: 18
+sidebar_position: 7
 description: Nine statistical hypothesis tests — t-test, chi-square, ANOVA, KS, Mann-Whitney U, skewness, Anderson-Darling, Fisher's exact.
 ---
 

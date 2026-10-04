@@ -1,6 +1,6 @@
 ---
 title: 假设检验
-sidebar_position: 18
+sidebar_position: 7
 description: 9 个统计假设检验——t 检验、卡方、ANOVA、KS、Mann-Whitney U、偏度、Anderson-Darling、Fisher 精确。
 ---
 
