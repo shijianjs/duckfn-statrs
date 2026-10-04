@@ -11,8 +11,8 @@
 //                                 多元分布 Dyn 维度；二项采样在 sampling.rs）
 //   src/density/                  functions/density.rs（kde_pdf / knn_pdf）
 //   src/generate.rs               functions/generate.rs（波形/对数间距序列取前 n 项 → LIST）
-//   src/stats_tests/              functions/stats_tests/（8 个假设检验）
-//   src/euclid.rs                 trait（无独立函数），能力经 density 出口
+//   src/stats_tests/              functions/stats_tests/（9 个假设检验）
+//   src/euclid.rs                 functions/euclid.rs（Modulus 规范化取模，f64 标量出口）
 //   src/prec.rs                   内部精度策略，非计算能力，不包装
 //
 // 类型面：标量用 DOUBLE；statrs 的向量/矩阵参数走 LIST(DOUBLE)（多元协方差为行主序摊平的
@@ -31,6 +31,7 @@ pub(crate) mod stats_tests;
 
 mod consts;
 mod density;
+mod euclid;
 mod function;
 mod generate;
 mod sampling;

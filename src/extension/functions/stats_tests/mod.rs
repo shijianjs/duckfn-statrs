@@ -1,10 +1,11 @@
-// statrs::stats_tests 的包装层（目录对应 statrs 的 src/stats_tests/），8 个假设检验
+// statrs::stats_tests 的包装层（目录对应 statrs 的 src/stats_tests/），9 个假设检验
 // 全数落地在 tests.rs —— 对应关系：
 //
 //   statrs                              duckfn_statrs
 //   ttest_onesample::ttest_onesample    sr_ttest_onesample
 //   skewtest::skewtest                  sr_skewtest
 //   anderson_darling::anderson_darling  sr_anderson_darling（dist 参数化）
+//   ks_test::ks_onesample               sr_ks_onesample（dist 参数化）
 //   ks_test::ks_twosample               sr_ks_twosample
 //   mannwhitneyu::mannwhitneyu          sr_mannwhitneyu
 //   chisquare::chisquare                sr_chisquare

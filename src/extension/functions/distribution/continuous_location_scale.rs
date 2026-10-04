@@ -18,6 +18,7 @@ use statrs::distribution::{
     Continuous, ContinuousCDF, Cauchy, Dirac, Gumbel, Laplace, Levy, LogNormal, Normal,
     StudentsT, Triangular, Uniform,
 };
+use statrs::statistics::{Distribution, Max, Median, Min, Mode};
 
 use super::check_probability;
 
@@ -547,4 +548,866 @@ fn sr_dirac_sf(x: f64, v: f64) -> DuckOptionResult<f64> {
 fn sr_dirac_quantile(p: f64, v: f64) -> DuckOptionResult<f64> {
     check_probability("sr_dirac_quantile", p)?;
     Ok(Some(dirac("sr_dirac_quantile", v)?.inverse_cdf(p)))
+}
+
+// ============================================================================
+// 分布矩与域 · 十个位置-尺度分布
+//
+// 每个分布补九个标量函数：mean / variance / std_dev / entropy / skewness（返回 Option）
+// 与 min / max / median / mode（域端点与中心位置）。min/max 是支撑域端点：无界分布返回
+// ±inf，保留为 inf 而不是转 NULL。mode 一般为 Option；Gumbel 例外（statrs 给它裸 f64）。
+//
+// Moments and domain of the ten location-scale distributions: mean / variance /
+// std_dev / entropy / skewness (Option-valued) plus min / max / median / mode.
+// Endpoints of unbounded distributions stay ±inf rather than NULL.
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// Normal（均矩与域）
+// ---------------------------------------------------------------------------
+
+/// 正态分布均值。
+#[duck_scalar_function(
+    description = "Normal (Gaussian) distribution mean",
+    example = "SELECT sr_normal_mean(0.0, 1.0)"
+)]
+fn sr_normal_mean(mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    Ok(normal("sr_normal_mean", mean, std_dev)?.mean())
+}
+
+/// 正态分布方差。
+#[duck_scalar_function(
+    description = "Normal (Gaussian) distribution variance",
+    example = "SELECT sr_normal_variance(0.0, 1.0)"
+)]
+fn sr_normal_variance(mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    Ok(normal("sr_normal_variance", mean, std_dev)?.variance())
+}
+
+/// 正态分布标准差。
+#[duck_scalar_function(
+    description = "Normal (Gaussian) distribution standard deviation",
+    example = "SELECT sr_normal_std_dev(0.0, 1.0)"
+)]
+fn sr_normal_std_dev(mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    Ok(normal("sr_normal_std_dev", mean, std_dev)?.std_dev())
+}
+
+/// 正态分布微分熵。
+#[duck_scalar_function(
+    description = "Normal (Gaussian) distribution differential entropy",
+    example = "SELECT sr_normal_entropy(0.0, 1.0)"
+)]
+fn sr_normal_entropy(mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    Ok(normal("sr_normal_entropy", mean, std_dev)?.entropy())
+}
+
+/// 正态分布偏度（恒为 0）。
+#[duck_scalar_function(
+    description = "Normal (Gaussian) distribution skewness (always 0)",
+    example = "SELECT sr_normal_skewness(0.0, 1.0)"
+)]
+fn sr_normal_skewness(mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    Ok(normal("sr_normal_skewness", mean, std_dev)?.skewness())
+}
+
+/// 正态分布支撑域下确界（-inf，无界）。
+#[duck_scalar_function(
+    description = "Normal (Gaussian) distribution support minimum (negative infinity)",
+    example = "SELECT sr_normal_min(0.0, 1.0)"
+)]
+fn sr_normal_min(mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    Ok(Some(normal("sr_normal_min", mean, std_dev)?.min()))
+}
+
+/// 正态分布支撑域上确界（+inf，无界）。
+#[duck_scalar_function(
+    description = "Normal (Gaussian) distribution support maximum (positive infinity)",
+    example = "SELECT sr_normal_max(0.0, 1.0)"
+)]
+fn sr_normal_max(mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    Ok(Some(normal("sr_normal_max", mean, std_dev)?.max()))
+}
+
+/// 正态分布中位数。
+#[duck_scalar_function(
+    description = "Normal (Gaussian) distribution median",
+    example = "SELECT sr_normal_median(0.0, 1.0)"
+)]
+fn sr_normal_median(mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    Ok(Some(normal("sr_normal_median", mean, std_dev)?.median()))
+}
+
+/// 正态分布众数。
+#[duck_scalar_function(
+    description = "Normal (Gaussian) distribution mode",
+    example = "SELECT sr_normal_mode(0.0, 1.0)"
+)]
+fn sr_normal_mode(mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
+    Ok(normal("sr_normal_mode", mean, std_dev)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// LogNormal（均矩与域）
+// ---------------------------------------------------------------------------
+
+/// 对数正态分布均值。
+#[duck_scalar_function(
+    description = "Log-normal distribution mean",
+    example = "SELECT sr_log_normal_mean(0.0, 1.0)"
+)]
+fn sr_log_normal_mean(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(log_normal("sr_log_normal_mean", location, scale)?.mean())
+}
+
+/// 对数正态分布方差。
+#[duck_scalar_function(
+    description = "Log-normal distribution variance",
+    example = "SELECT sr_log_normal_variance(0.0, 1.0)"
+)]
+fn sr_log_normal_variance(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(log_normal("sr_log_normal_variance", location, scale)?.variance())
+}
+
+/// 对数正态分布标准差。
+#[duck_scalar_function(
+    description = "Log-normal distribution standard deviation",
+    example = "SELECT sr_log_normal_std_dev(0.0, 1.0)"
+)]
+fn sr_log_normal_std_dev(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(log_normal("sr_log_normal_std_dev", location, scale)?.std_dev())
+}
+
+/// 对数正态分布微分熵。
+#[duck_scalar_function(
+    description = "Log-normal distribution differential entropy",
+    example = "SELECT sr_log_normal_entropy(0.0, 1.0)"
+)]
+fn sr_log_normal_entropy(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(log_normal("sr_log_normal_entropy", location, scale)?.entropy())
+}
+
+/// 对数正态分布偏度。
+#[duck_scalar_function(
+    description = "Log-normal distribution skewness",
+    example = "SELECT sr_log_normal_skewness(0.0, 1.0)"
+)]
+fn sr_log_normal_skewness(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(log_normal("sr_log_normal_skewness", location, scale)?.skewness())
+}
+
+/// 对数正态分布支撑域下确界（0）。
+#[duck_scalar_function(
+    description = "Log-normal distribution support minimum (0)",
+    example = "SELECT sr_log_normal_min(0.0, 1.0)"
+)]
+fn sr_log_normal_min(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(log_normal("sr_log_normal_min", location, scale)?.min()))
+}
+
+/// 对数正态分布支撑域上确界（+inf，无界）。
+#[duck_scalar_function(
+    description = "Log-normal distribution support maximum (positive infinity)",
+    example = "SELECT sr_log_normal_max(0.0, 1.0)"
+)]
+fn sr_log_normal_max(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(log_normal("sr_log_normal_max", location, scale)?.max()))
+}
+
+/// 对数正态分布中位数。
+#[duck_scalar_function(
+    description = "Log-normal distribution median",
+    example = "SELECT sr_log_normal_median(0.0, 1.0)"
+)]
+fn sr_log_normal_median(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(log_normal("sr_log_normal_median", location, scale)?.median()))
+}
+
+/// 对数正态分布众数。
+#[duck_scalar_function(
+    description = "Log-normal distribution mode",
+    example = "SELECT sr_log_normal_mode(0.0, 1.0)"
+)]
+fn sr_log_normal_mode(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(log_normal("sr_log_normal_mode", location, scale)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Cauchy（均矩与域）
+// ---------------------------------------------------------------------------
+
+/// 柯西分布均值（不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Cauchy distribution mean (undefined)",
+    example = "SELECT sr_cauchy_mean(0.0, 1.0)"
+)]
+fn sr_cauchy_mean(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(cauchy("sr_cauchy_mean", location, scale)?.mean())
+}
+
+/// 柯西分布方差（不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Cauchy distribution variance (undefined)",
+    example = "SELECT sr_cauchy_variance(0.0, 1.0)"
+)]
+fn sr_cauchy_variance(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(cauchy("sr_cauchy_variance", location, scale)?.variance())
+}
+
+/// 柯西分布标准差（不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Cauchy distribution standard deviation (undefined)",
+    example = "SELECT sr_cauchy_std_dev(0.0, 1.0)"
+)]
+fn sr_cauchy_std_dev(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(cauchy("sr_cauchy_std_dev", location, scale)?.std_dev())
+}
+
+/// 柯西分布微分熵。
+#[duck_scalar_function(
+    description = "Cauchy distribution differential entropy",
+    example = "SELECT sr_cauchy_entropy(0.0, 1.0)"
+)]
+fn sr_cauchy_entropy(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(cauchy("sr_cauchy_entropy", location, scale)?.entropy())
+}
+
+/// 柯西分布偏度（不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Cauchy distribution skewness (undefined)",
+    example = "SELECT sr_cauchy_skewness(0.0, 1.0)"
+)]
+fn sr_cauchy_skewness(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(cauchy("sr_cauchy_skewness", location, scale)?.skewness())
+}
+
+/// 柯西分布支撑域下确界（-inf，无界）。
+#[duck_scalar_function(
+    description = "Cauchy distribution support minimum (negative infinity)",
+    example = "SELECT sr_cauchy_min(0.0, 1.0)"
+)]
+fn sr_cauchy_min(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(cauchy("sr_cauchy_min", location, scale)?.min()))
+}
+
+/// 柯西分布支撑域上确界（+inf，无界）。
+#[duck_scalar_function(
+    description = "Cauchy distribution support maximum (positive infinity)",
+    example = "SELECT sr_cauchy_max(0.0, 1.0)"
+)]
+fn sr_cauchy_max(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(cauchy("sr_cauchy_max", location, scale)?.max()))
+}
+
+/// 柯西分布中位数。
+#[duck_scalar_function(
+    description = "Cauchy distribution median",
+    example = "SELECT sr_cauchy_median(0.0, 1.0)"
+)]
+fn sr_cauchy_median(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(cauchy("sr_cauchy_median", location, scale)?.median()))
+}
+
+/// 柯西分布众数。
+#[duck_scalar_function(
+    description = "Cauchy distribution mode",
+    example = "SELECT sr_cauchy_mode(0.0, 1.0)"
+)]
+fn sr_cauchy_mode(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(cauchy("sr_cauchy_mode", location, scale)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Laplace（均矩与域）
+// ---------------------------------------------------------------------------
+
+/// 拉普拉斯分布均值。
+#[duck_scalar_function(
+    description = "Laplace distribution mean",
+    example = "SELECT sr_laplace_mean(0.0, 1.0)"
+)]
+fn sr_laplace_mean(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(laplace("sr_laplace_mean", location, scale)?.mean())
+}
+
+/// 拉普拉斯分布方差。
+#[duck_scalar_function(
+    description = "Laplace distribution variance",
+    example = "SELECT sr_laplace_variance(0.0, 1.0)"
+)]
+fn sr_laplace_variance(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(laplace("sr_laplace_variance", location, scale)?.variance())
+}
+
+/// 拉普拉斯分布标准差。
+#[duck_scalar_function(
+    description = "Laplace distribution standard deviation",
+    example = "SELECT sr_laplace_std_dev(0.0, 1.0)"
+)]
+fn sr_laplace_std_dev(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(laplace("sr_laplace_std_dev", location, scale)?.std_dev())
+}
+
+/// 拉普拉斯分布微分熵。
+#[duck_scalar_function(
+    description = "Laplace distribution differential entropy",
+    example = "SELECT sr_laplace_entropy(0.0, 1.0)"
+)]
+fn sr_laplace_entropy(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(laplace("sr_laplace_entropy", location, scale)?.entropy())
+}
+
+/// 拉普拉斯分布偏度（恒为 0）。
+#[duck_scalar_function(
+    description = "Laplace distribution skewness (always 0)",
+    example = "SELECT sr_laplace_skewness(0.0, 1.0)"
+)]
+fn sr_laplace_skewness(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(laplace("sr_laplace_skewness", location, scale)?.skewness())
+}
+
+/// 拉普拉斯分布支撑域下确界（-inf，无界）。
+#[duck_scalar_function(
+    description = "Laplace distribution support minimum (negative infinity)",
+    example = "SELECT sr_laplace_min(0.0, 1.0)"
+)]
+fn sr_laplace_min(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(laplace("sr_laplace_min", location, scale)?.min()))
+}
+
+/// 拉普拉斯分布支撑域上确界（+inf，无界）。
+#[duck_scalar_function(
+    description = "Laplace distribution support maximum (positive infinity)",
+    example = "SELECT sr_laplace_max(0.0, 1.0)"
+)]
+fn sr_laplace_max(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(laplace("sr_laplace_max", location, scale)?.max()))
+}
+
+/// 拉普拉斯分布中位数。
+#[duck_scalar_function(
+    description = "Laplace distribution median",
+    example = "SELECT sr_laplace_median(0.0, 1.0)"
+)]
+fn sr_laplace_median(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(laplace("sr_laplace_median", location, scale)?.median()))
+}
+
+/// 拉普拉斯分布众数。
+#[duck_scalar_function(
+    description = "Laplace distribution mode",
+    example = "SELECT sr_laplace_mode(0.0, 1.0)"
+)]
+fn sr_laplace_mode(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(laplace("sr_laplace_mode", location, scale)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Gumbel（均矩与域）
+// ---------------------------------------------------------------------------
+
+/// Gumbel（I 型极值）分布均值。
+#[duck_scalar_function(
+    description = "Gumbel (type-I extreme value) distribution mean",
+    example = "SELECT sr_gumbel_mean(0.0, 1.0)"
+)]
+fn sr_gumbel_mean(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(gumbel("sr_gumbel_mean", location, scale)?.mean())
+}
+
+/// Gumbel 分布方差。
+#[duck_scalar_function(
+    description = "Gumbel (type-I extreme value) distribution variance",
+    example = "SELECT sr_gumbel_variance(0.0, 1.0)"
+)]
+fn sr_gumbel_variance(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(gumbel("sr_gumbel_variance", location, scale)?.variance())
+}
+
+/// Gumbel 分布标准差。
+#[duck_scalar_function(
+    description = "Gumbel (type-I extreme value) distribution standard deviation",
+    example = "SELECT sr_gumbel_std_dev(0.0, 1.0)"
+)]
+fn sr_gumbel_std_dev(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(gumbel("sr_gumbel_std_dev", location, scale)?.std_dev())
+}
+
+/// Gumbel 分布微分熵。
+#[duck_scalar_function(
+    description = "Gumbel (type-I extreme value) distribution differential entropy",
+    example = "SELECT sr_gumbel_entropy(0.0, 1.0)"
+)]
+fn sr_gumbel_entropy(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(gumbel("sr_gumbel_entropy", location, scale)?.entropy())
+}
+
+/// Gumbel 分布偏度。
+#[duck_scalar_function(
+    description = "Gumbel (type-I extreme value) distribution skewness",
+    example = "SELECT sr_gumbel_skewness(0.0, 1.0)"
+)]
+fn sr_gumbel_skewness(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(gumbel("sr_gumbel_skewness", location, scale)?.skewness())
+}
+
+/// Gumbel 分布支撑域下确界（-inf，无界）。
+#[duck_scalar_function(
+    description = "Gumbel (type-I extreme value) distribution support minimum (negative infinity)",
+    example = "SELECT sr_gumbel_min(0.0, 1.0)"
+)]
+fn sr_gumbel_min(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(gumbel("sr_gumbel_min", location, scale)?.min()))
+}
+
+/// Gumbel 分布支撑域上确界（+inf，无界）。
+#[duck_scalar_function(
+    description = "Gumbel (type-I extreme value) distribution support maximum (positive infinity)",
+    example = "SELECT sr_gumbel_max(0.0, 1.0)"
+)]
+fn sr_gumbel_max(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(gumbel("sr_gumbel_max", location, scale)?.max()))
+}
+
+/// Gumbel 分布中位数。
+#[duck_scalar_function(
+    description = "Gumbel (type-I extreme value) distribution median",
+    example = "SELECT sr_gumbel_median(0.0, 1.0)"
+)]
+fn sr_gumbel_median(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(gumbel("sr_gumbel_median", location, scale)?.median()))
+}
+
+/// Gumbel 分布众数（statrs 返回裸 f64）。
+#[duck_scalar_function(
+    description = "Gumbel (type-I extreme value) distribution mode",
+    example = "SELECT sr_gumbel_mode(0.0, 1.0)"
+)]
+fn sr_gumbel_mode(location: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(gumbel("sr_gumbel_mode", location, scale)?.mode()))
+}
+
+// ---------------------------------------------------------------------------
+// Levy（均矩与域）
+// ---------------------------------------------------------------------------
+
+/// Lévy 分布均值（不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Lévy distribution mean (undefined)",
+    example = "SELECT sr_levy_mean(0.0, 1.0)"
+)]
+fn sr_levy_mean(mu: f64, c: f64) -> DuckOptionResult<f64> {
+    Ok(levy("sr_levy_mean", mu, c)?.mean())
+}
+
+/// Lévy 分布方差（不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Lévy distribution variance (undefined)",
+    example = "SELECT sr_levy_variance(0.0, 1.0)"
+)]
+fn sr_levy_variance(mu: f64, c: f64) -> DuckOptionResult<f64> {
+    Ok(levy("sr_levy_variance", mu, c)?.variance())
+}
+
+/// Lévy 分布标准差（不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Lévy distribution standard deviation (undefined)",
+    example = "SELECT sr_levy_std_dev(0.0, 1.0)"
+)]
+fn sr_levy_std_dev(mu: f64, c: f64) -> DuckOptionResult<f64> {
+    Ok(levy("sr_levy_std_dev", mu, c)?.std_dev())
+}
+
+/// Lévy 分布微分熵。
+#[duck_scalar_function(
+    description = "Lévy distribution differential entropy",
+    example = "SELECT sr_levy_entropy(0.0, 1.0)"
+)]
+fn sr_levy_entropy(mu: f64, c: f64) -> DuckOptionResult<f64> {
+    Ok(levy("sr_levy_entropy", mu, c)?.entropy())
+}
+
+/// Lévy 分布偏度（不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Lévy distribution skewness (undefined)",
+    example = "SELECT sr_levy_skewness(0.0, 1.0)"
+)]
+fn sr_levy_skewness(mu: f64, c: f64) -> DuckOptionResult<f64> {
+    Ok(levy("sr_levy_skewness", mu, c)?.skewness())
+}
+
+/// Lévy 分布支撑域下确界（mu）。
+#[duck_scalar_function(
+    description = "Lévy distribution support minimum (mu)",
+    example = "SELECT sr_levy_min(0.0, 1.0)"
+)]
+fn sr_levy_min(mu: f64, c: f64) -> DuckOptionResult<f64> {
+    Ok(Some(levy("sr_levy_min", mu, c)?.min()))
+}
+
+/// Lévy 分布支撑域上确界（+inf，无界）。
+#[duck_scalar_function(
+    description = "Lévy distribution support maximum (positive infinity)",
+    example = "SELECT sr_levy_max(0.0, 1.0)"
+)]
+fn sr_levy_max(mu: f64, c: f64) -> DuckOptionResult<f64> {
+    Ok(Some(levy("sr_levy_max", mu, c)?.max()))
+}
+
+/// Lévy 分布中位数。
+#[duck_scalar_function(
+    description = "Lévy distribution median",
+    example = "SELECT sr_levy_median(0.0, 1.0)"
+)]
+fn sr_levy_median(mu: f64, c: f64) -> DuckOptionResult<f64> {
+    Ok(Some(levy("sr_levy_median", mu, c)?.median()))
+}
+
+/// Lévy 分布众数。
+#[duck_scalar_function(
+    description = "Lévy distribution mode",
+    example = "SELECT sr_levy_mode(0.0, 1.0)"
+)]
+fn sr_levy_mode(mu: f64, c: f64) -> DuckOptionResult<f64> {
+    Ok(levy("sr_levy_mode", mu, c)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Uniform（均矩与域）
+// ---------------------------------------------------------------------------
+
+/// 连续均匀分布均值。
+#[duck_scalar_function(
+    description = "Continuous uniform distribution mean",
+    example = "SELECT sr_uniform_mean(0.0, 1.0)"
+)]
+fn sr_uniform_mean(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(uniform("sr_uniform_mean", min, max)?.mean())
+}
+
+/// 连续均匀分布方差。
+#[duck_scalar_function(
+    description = "Continuous uniform distribution variance",
+    example = "SELECT sr_uniform_variance(0.0, 1.0)"
+)]
+fn sr_uniform_variance(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(uniform("sr_uniform_variance", min, max)?.variance())
+}
+
+/// 连续均匀分布标准差。
+#[duck_scalar_function(
+    description = "Continuous uniform distribution standard deviation",
+    example = "SELECT sr_uniform_std_dev(0.0, 1.0)"
+)]
+fn sr_uniform_std_dev(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(uniform("sr_uniform_std_dev", min, max)?.std_dev())
+}
+
+/// 连续均匀分布微分熵。
+#[duck_scalar_function(
+    description = "Continuous uniform distribution differential entropy",
+    example = "SELECT sr_uniform_entropy(0.0, 1.0)"
+)]
+fn sr_uniform_entropy(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(uniform("sr_uniform_entropy", min, max)?.entropy())
+}
+
+/// 连续均匀分布偏度（恒为 0）。
+#[duck_scalar_function(
+    description = "Continuous uniform distribution skewness (always 0)",
+    example = "SELECT sr_uniform_skewness(0.0, 1.0)"
+)]
+fn sr_uniform_skewness(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(uniform("sr_uniform_skewness", min, max)?.skewness())
+}
+
+/// 连续均匀分布支撑域下确界（min）。
+#[duck_scalar_function(
+    description = "Continuous uniform distribution support minimum (min)",
+    example = "SELECT sr_uniform_min(0.0, 1.0)"
+)]
+fn sr_uniform_min(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(Some(uniform("sr_uniform_min", min, max)?.min()))
+}
+
+/// 连续均匀分布支撑域上确界（max）。
+#[duck_scalar_function(
+    description = "Continuous uniform distribution support maximum (max)",
+    example = "SELECT sr_uniform_max(0.0, 1.0)"
+)]
+fn sr_uniform_max(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(Some(uniform("sr_uniform_max", min, max)?.max()))
+}
+
+/// 连续均匀分布中位数。
+#[duck_scalar_function(
+    description = "Continuous uniform distribution median",
+    example = "SELECT sr_uniform_median(0.0, 1.0)"
+)]
+fn sr_uniform_median(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(Some(uniform("sr_uniform_median", min, max)?.median()))
+}
+
+/// 连续均匀分布众数。
+#[duck_scalar_function(
+    description = "Continuous uniform distribution mode",
+    example = "SELECT sr_uniform_mode(0.0, 1.0)"
+)]
+fn sr_uniform_mode(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(uniform("sr_uniform_mode", min, max)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Triangular（均矩与域）
+// ---------------------------------------------------------------------------
+
+/// 三角分布均值。
+#[duck_scalar_function(
+    description = "Triangular distribution mean",
+    example = "SELECT sr_triangular_mean(0.0, 2.0, 1.0)"
+)]
+fn sr_triangular_mean(min: f64, max: f64, mode: f64) -> DuckOptionResult<f64> {
+    Ok(triangular("sr_triangular_mean", min, max, mode)?.mean())
+}
+
+/// 三角分布方差。
+#[duck_scalar_function(
+    description = "Triangular distribution variance",
+    example = "SELECT sr_triangular_variance(0.0, 2.0, 1.0)"
+)]
+fn sr_triangular_variance(min: f64, max: f64, mode: f64) -> DuckOptionResult<f64> {
+    Ok(triangular("sr_triangular_variance", min, max, mode)?.variance())
+}
+
+/// 三角分布标准差。
+#[duck_scalar_function(
+    description = "Triangular distribution standard deviation",
+    example = "SELECT sr_triangular_std_dev(0.0, 2.0, 1.0)"
+)]
+fn sr_triangular_std_dev(min: f64, max: f64, mode: f64) -> DuckOptionResult<f64> {
+    Ok(triangular("sr_triangular_std_dev", min, max, mode)?.std_dev())
+}
+
+/// 三角分布微分熵。
+#[duck_scalar_function(
+    description = "Triangular distribution differential entropy",
+    example = "SELECT sr_triangular_entropy(0.0, 2.0, 1.0)"
+)]
+fn sr_triangular_entropy(min: f64, max: f64, mode: f64) -> DuckOptionResult<f64> {
+    Ok(triangular("sr_triangular_entropy", min, max, mode)?.entropy())
+}
+
+/// 三角分布偏度。
+#[duck_scalar_function(
+    description = "Triangular distribution skewness",
+    example = "SELECT sr_triangular_skewness(0.0, 2.0, 1.0)"
+)]
+fn sr_triangular_skewness(min: f64, max: f64, mode: f64) -> DuckOptionResult<f64> {
+    Ok(triangular("sr_triangular_skewness", min, max, mode)?.skewness())
+}
+
+/// 三角分布支撑域下确界（min）。
+#[duck_scalar_function(
+    description = "Triangular distribution support minimum (min)",
+    example = "SELECT sr_triangular_min(0.0, 2.0, 1.0)"
+)]
+fn sr_triangular_min(min: f64, max: f64, mode: f64) -> DuckOptionResult<f64> {
+    Ok(Some(triangular("sr_triangular_min", min, max, mode)?.min()))
+}
+
+/// 三角分布支撑域上确界（max）。
+#[duck_scalar_function(
+    description = "Triangular distribution support maximum (max)",
+    example = "SELECT sr_triangular_max(0.0, 2.0, 1.0)"
+)]
+fn sr_triangular_max(min: f64, max: f64, mode: f64) -> DuckOptionResult<f64> {
+    Ok(Some(triangular("sr_triangular_max", min, max, mode)?.max()))
+}
+
+/// 三角分布中位数。
+#[duck_scalar_function(
+    description = "Triangular distribution median",
+    example = "SELECT sr_triangular_median(0.0, 2.0, 1.0)"
+)]
+fn sr_triangular_median(min: f64, max: f64, mode: f64) -> DuckOptionResult<f64> {
+    Ok(Some(triangular("sr_triangular_median", min, max, mode)?.median()))
+}
+
+/// 三角分布众数。
+#[duck_scalar_function(
+    description = "Triangular distribution mode",
+    example = "SELECT sr_triangular_mode(0.0, 2.0, 1.0)"
+)]
+fn sr_triangular_mode(min: f64, max: f64, mode: f64) -> DuckOptionResult<f64> {
+    Ok(triangular("sr_triangular_mode", min, max, mode)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// StudentsT（均矩与域）
+// ---------------------------------------------------------------------------
+
+/// 学生 t 分布均值。
+#[duck_scalar_function(
+    description = "Student's t distribution mean",
+    example = "SELECT sr_students_t_mean(0.0, 1.0, 2.0)"
+)]
+fn sr_students_t_mean(location: f64, scale: f64, freedom: f64) -> DuckOptionResult<f64> {
+    Ok(students_t("sr_students_t_mean", location, scale, freedom)?.mean())
+}
+
+/// 学生 t 分布方差。
+#[duck_scalar_function(
+    description = "Student's t distribution variance",
+    example = "SELECT sr_students_t_variance(0.0, 1.0, 10.0)"
+)]
+fn sr_students_t_variance(location: f64, scale: f64, freedom: f64) -> DuckOptionResult<f64> {
+    Ok(students_t("sr_students_t_variance", location, scale, freedom)?.variance())
+}
+
+/// 学生 t 分布标准差。
+#[duck_scalar_function(
+    description = "Student's t distribution standard deviation",
+    example = "SELECT sr_students_t_std_dev(0.0, 1.0, 10.0)"
+)]
+fn sr_students_t_std_dev(location: f64, scale: f64, freedom: f64) -> DuckOptionResult<f64> {
+    Ok(students_t("sr_students_t_std_dev", location, scale, freedom)?.std_dev())
+}
+
+/// 学生 t 分布微分熵。
+#[duck_scalar_function(
+    description = "Student's t distribution differential entropy",
+    example = "SELECT sr_students_t_entropy(0.0, 1.0, 10.0)"
+)]
+fn sr_students_t_entropy(location: f64, scale: f64, freedom: f64) -> DuckOptionResult<f64> {
+    Ok(students_t("sr_students_t_entropy", location, scale, freedom)?.entropy())
+}
+
+/// 学生 t 分布偏度。
+#[duck_scalar_function(
+    description = "Student's t distribution skewness",
+    example = "SELECT sr_students_t_skewness(0.0, 1.0, 10.0)"
+)]
+fn sr_students_t_skewness(location: f64, scale: f64, freedom: f64) -> DuckOptionResult<f64> {
+    Ok(students_t("sr_students_t_skewness", location, scale, freedom)?.skewness())
+}
+
+/// 学生 t 分布支撑域下确界（-inf，无界）。
+#[duck_scalar_function(
+    description = "Student's t distribution support minimum (negative infinity)",
+    example = "SELECT sr_students_t_min(0.0, 1.0, 10.0)"
+)]
+fn sr_students_t_min(location: f64, scale: f64, freedom: f64) -> DuckOptionResult<f64> {
+    Ok(Some(students_t("sr_students_t_min", location, scale, freedom)?.min()))
+}
+
+/// 学生 t 分布支撑域上确界（+inf，无界）。
+#[duck_scalar_function(
+    description = "Student's t distribution support maximum (positive infinity)",
+    example = "SELECT sr_students_t_max(0.0, 1.0, 10.0)"
+)]
+fn sr_students_t_max(location: f64, scale: f64, freedom: f64) -> DuckOptionResult<f64> {
+    Ok(Some(students_t("sr_students_t_max", location, scale, freedom)?.max()))
+}
+
+/// 学生 t 分布中位数。
+#[duck_scalar_function(
+    description = "Student's t distribution median",
+    example = "SELECT sr_students_t_median(0.0, 1.0, 10.0)"
+)]
+fn sr_students_t_median(location: f64, scale: f64, freedom: f64) -> DuckOptionResult<f64> {
+    Ok(Some(students_t("sr_students_t_median", location, scale, freedom)?.median()))
+}
+
+/// 学生 t 分布众数。
+#[duck_scalar_function(
+    description = "Student's t distribution mode",
+    example = "SELECT sr_students_t_mode(0.0, 1.0, 10.0)"
+)]
+fn sr_students_t_mode(location: f64, scale: f64, freedom: f64) -> DuckOptionResult<f64> {
+    Ok(students_t("sr_students_t_mode", location, scale, freedom)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Dirac（均矩与域）
+// ---------------------------------------------------------------------------
+
+/// Dirac 退化分布均值（恒为 v）。
+#[duck_scalar_function(
+    description = "Dirac delta distribution mean (always v)",
+    example = "SELECT sr_dirac_mean(1.0)"
+)]
+fn sr_dirac_mean(v: f64) -> DuckOptionResult<f64> {
+    Ok(dirac("sr_dirac_mean", v)?.mean())
+}
+
+/// Dirac 退化分布方差（恒为 0）。
+#[duck_scalar_function(
+    description = "Dirac delta distribution variance (always 0)",
+    example = "SELECT sr_dirac_variance(1.0)"
+)]
+fn sr_dirac_variance(v: f64) -> DuckOptionResult<f64> {
+    Ok(dirac("sr_dirac_variance", v)?.variance())
+}
+
+/// Dirac 退化分布标准差（恒为 0）。
+#[duck_scalar_function(
+    description = "Dirac delta distribution standard deviation (always 0)",
+    example = "SELECT sr_dirac_std_dev(1.0)"
+)]
+fn sr_dirac_std_dev(v: f64) -> DuckOptionResult<f64> {
+    Ok(dirac("sr_dirac_std_dev", v)?.std_dev())
+}
+
+/// Dirac 退化分布微分熵。
+#[duck_scalar_function(
+    description = "Dirac delta distribution differential entropy",
+    example = "SELECT sr_dirac_entropy(1.0)"
+)]
+fn sr_dirac_entropy(v: f64) -> DuckOptionResult<f64> {
+    Ok(dirac("sr_dirac_entropy", v)?.entropy())
+}
+
+/// Dirac 退化分布偏度（恒为 0）。
+#[duck_scalar_function(
+    description = "Dirac delta distribution skewness (always 0)",
+    example = "SELECT sr_dirac_skewness(1.0)"
+)]
+fn sr_dirac_skewness(v: f64) -> DuckOptionResult<f64> {
+    Ok(dirac("sr_dirac_skewness", v)?.skewness())
+}
+
+/// Dirac 退化分布支撑域下确界（v）。
+#[duck_scalar_function(
+    description = "Dirac delta distribution support minimum (v)",
+    example = "SELECT sr_dirac_min(1.0)"
+)]
+fn sr_dirac_min(v: f64) -> DuckOptionResult<f64> {
+    Ok(Some(dirac("sr_dirac_min", v)?.min()))
+}
+
+/// Dirac 退化分布支撑域上确界（v）。
+#[duck_scalar_function(
+    description = "Dirac delta distribution support maximum (v)",
+    example = "SELECT sr_dirac_max(1.0)"
+)]
+fn sr_dirac_max(v: f64) -> DuckOptionResult<f64> {
+    Ok(Some(dirac("sr_dirac_max", v)?.max()))
+}
+
+/// Dirac 退化分布中位数（恒为 v）。
+#[duck_scalar_function(
+    description = "Dirac delta distribution median (always v)",
+    example = "SELECT sr_dirac_median(1.0)"
+)]
+fn sr_dirac_median(v: f64) -> DuckOptionResult<f64> {
+    Ok(Some(dirac("sr_dirac_median", v)?.median()))
+}
+
+/// Dirac 退化分布众数（恒为 v）。
+#[duck_scalar_function(
+    description = "Dirac delta distribution mode (always v)",
+    example = "SELECT sr_dirac_mode(1.0)"
+)]
+fn sr_dirac_mode(v: f64) -> DuckOptionResult<f64> {
+    Ok(dirac("sr_dirac_mode", v)?.mode())
 }

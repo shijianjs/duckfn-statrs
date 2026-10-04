@@ -1,11 +1,11 @@
 // ============================================================================
-// statrs::stats_tests 的 8 个假设检验（对应关系见 ../mod.rs）。
+// statrs::stats_tests 的 9 个假设检验（对应关系见 ../mod.rs）。
 //
 // 样本经 LIST(DOUBLE) 参数进来（聚合列可以先 `list(x)` 聚上来）；返回
 // LIST(DOUBLE) [statistic, p_value]，与 statrs 的元组一一对应。检验自身的
 // 前置不满足（样本太小、类别数不足）是 statrs 的 Err → 查询错误。
 //
-// All eight statrs hypothesis tests. Samples arrive as LIST(DOUBLE); the result is
+// All nine statrs hypothesis tests. Samples arrive as LIST(DOUBLE); the result is
 // LIST(DOUBLE) [statistic, p_value], the tuple statrs returns.
 // ============================================================================
 
@@ -14,11 +14,14 @@ use quack_rs::error::ExtensionError;
 use statrs::distribution::{
     ContinuousCDF, Exp as Exponential, Gumbel, LogNormal, Normal, Uniform as ContUniform, Weibull,
 };
+use statrs::stats_tests::NaNPolicy;
 use statrs::stats_tests::anderson_darling::anderson_darling;
 use statrs::stats_tests::chisquare::chisquare;
 use statrs::stats_tests::f_oneway::f_oneway;
 use statrs::stats_tests::fisher::{fishers_exact, fishers_exact_with_odds_ratio};
-use statrs::stats_tests::ks_test::{ks_twosample, KSTwoSampleAlternativeMethod};
+use statrs::stats_tests::ks_test::{
+    ks_onesample, ks_twosample, KSOneSampleAlternativeMethod, KSTwoSampleAlternativeMethod,
+};
 use statrs::stats_tests::mannwhitneyu::{mannwhitneyu, MannWhitneyUMethod};
 use statrs::stats_tests::skewtest::skewtest;
 use statrs::stats_tests::ttest_onesample::ttest_onesample;
@@ -127,6 +130,100 @@ fn sr_anderson_darling(
         }
         other => Err(duck_error(format!(
             "sr_anderson_darling: unknown distribution '{other}' (supported: normal, lognormal, exponential, gumbel, weibull, uniform)"
+        ))),
+    }
+}
+
+/// 单样本 KS 的泛型入口：同 ad，statrs 的 ks_onesample 对 dist 要求 `T: ContinuousCDF`，
+/// 按名字分发到各具体分布后逐个调用（不能走 &dyn 动态分发）。
+fn kso<T: ContinuousCDF<f64, f64>>(
+    x: Vec<f64>,
+    d: &T,
+    m: KSOneSampleAlternativeMethod,
+    np: NaNPolicy,
+) -> Result<Option<Vec<f64>>, ExtensionError> {
+    ks_onesample(x, d, m, np)
+        .map(|(statistic, p_value)| Some(pair(statistic, p_value)))
+        .map_err(kso_bad)
+}
+
+/// 泛型错误包装（同 ad_bad）：各 *Error 类型都 impl Display。
+fn kso_bad<E: core::fmt::Display>(e: E) -> ExtensionError {
+    duck_error(format!("sr_ks_onesample: {e}"))
+}
+
+/// `sr_ks_onesample(x, dist, params, method, nan_policy)`：单样本 Kolmogorov-Smirnov
+/// 拟合优度检验（statrs::ks_onesample，泛型 dist 按名字实例化）。返回 [KS 统计量, p 值]。
+/// dist ∈ { normal(mu,sd), lognormal(loc,scale), exponential(rate), gumbel(loc,scale),
+/// weibull(shape,scale), uniform(min,max) }；其余名字报查询错误。method 1 = less、
+/// 2 = greater、3 = two-sided(精确)、4 = two-sided(渐近)、5 = two-sided(近似)，
+/// 对应 KSOneSampleAlternativeMethod。
+#[duck_scalar_function(
+    description = "One-sample Kolmogorov-Smirnov test of a LIST(DOUBLE) sample against a named distribution (normal / lognormal / exponential / gumbel / weibull / uniform) with its parameter LIST: LIST [KS statistic, p-value]; method 1 less 2 greater 3 two-sided exact 4 two-sided asymptotic 5 two-sided approximate",
+    example = "SELECT sr_ks_onesample([1.0, 2.0, 3.0, 4.0], 'normal', [2.5, 1.0], 4.0, 1.0)"
+)]
+fn sr_ks_onesample(
+    x: Vec<f64>,
+    dist: String,
+    params: Vec<f64>,
+    method: f64,
+    nan: f64,
+) -> DuckOptionResult<Vec<f64>> {
+    let method = match method {
+        1.0 => KSOneSampleAlternativeMethod::Less,
+        2.0 => KSOneSampleAlternativeMethod::Greater,
+        3.0 => KSOneSampleAlternativeMethod::TwoSidedExact,
+        4.0 => KSOneSampleAlternativeMethod::TwoSidedAsymptotic,
+        5.0 => KSOneSampleAlternativeMethod::TwoSidedApproximate,
+        other => {
+            return Err(duck_error(format!(
+                "sr_ks_onesample: the method must be 1 (less), 2 (greater), 3 (two-sided exact), 4 (two-sided asymptotic) or 5 (two-sided approximate), got {other}"
+            )));
+        }
+    };
+    let nan_policy = nan_policy("sr_ks_onesample", nan)?;
+    let expect = |name: &str, need: usize| -> Result<Vec<f64>, ExtensionError> {
+        if params.len() != need {
+            return Err(duck_error(format!(
+                "sr_ks_onesample: {name} takes {need} parameters, got {}",
+                params.len()
+            )));
+        }
+        Ok(params.clone())
+    };
+    match dist.as_str() {
+        "normal" => {
+            let p = expect("normal", 2)?;
+            let d = Normal::new(p[0], p[1]).map_err(kso_bad)?;
+            kso(x, &d, method, nan_policy)
+        }
+        "lognormal" => {
+            let p = expect("lognormal", 2)?;
+            let d = LogNormal::new(p[0], p[1]).map_err(kso_bad)?;
+            kso(x, &d, method, nan_policy)
+        }
+        "exponential" => {
+            let p = expect("exponential", 1)?;
+            let d = Exponential::new(p[0]).map_err(kso_bad)?;
+            kso(x, &d, method, nan_policy)
+        }
+        "gumbel" => {
+            let p = expect("gumbel", 2)?;
+            let d = Gumbel::new(p[0], p[1]).map_err(kso_bad)?;
+            kso(x, &d, method, nan_policy)
+        }
+        "weibull" => {
+            let p = expect("weibull", 2)?;
+            let d = Weibull::new(p[0], p[1]).map_err(kso_bad)?;
+            kso(x, &d, method, nan_policy)
+        }
+        "uniform" => {
+            let p = expect("uniform", 2)?;
+            let d = ContUniform::new(p[0], p[1]).map_err(kso_bad)?;
+            kso(x, &d, method, nan_policy)
+        }
+        other => Err(duck_error(format!(
+            "sr_ks_onesample: unknown distribution '{other}' (supported: normal, lognormal, exponential, gumbel, weibull, uniform)"
         ))),
     }
 }

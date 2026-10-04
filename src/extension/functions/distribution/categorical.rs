@@ -68,3 +68,88 @@ fn sr_categorical_quantile(prob: f64, probs: Vec<f64>) -> DuckOptionResult<f64> 
     check_probability("sr_categorical_quantile", prob)?;
     Ok(Some(categorical("sr_categorical_quantile", probs)?.inverse_cdf(prob) as f64))
 }
+
+// ============================================================================
+// 分布矩与域（追加分区）：mean / variance / std_dev / entropy / skewness /
+// min / max / median
+//
+// 复用上面的 categorical helper。Distribution trait 的五个矩都是 Option<f64>，
+// 直接透传；min / max 是裸 u64（类别下标），转成 DOUBLE 呈现；median 是裸 f64。
+// statrs 未给 Categorical 实现 Mode，故无 mode。
+//
+// Moments and support for Categorical, built on the existing constructor.
+// ============================================================================
+
+use statrs::statistics::{Distribution, Max, Median, Min};
+
+/// 类别分布均值。
+#[duck_scalar_function(
+    description = "Categorical mean",
+    example = "SELECT sr_categorical_mean([1.0, 2.0, 1.0])"
+)]
+fn sr_categorical_mean(probs: Vec<f64>) -> DuckOptionResult<f64> {
+    Ok(categorical("sr_categorical_mean", probs)?.mean())
+}
+
+/// 类别分布方差。
+#[duck_scalar_function(
+    description = "Categorical variance",
+    example = "SELECT sr_categorical_variance([1.0, 2.0, 1.0])"
+)]
+fn sr_categorical_variance(probs: Vec<f64>) -> DuckOptionResult<f64> {
+    Ok(categorical("sr_categorical_variance", probs)?.variance())
+}
+
+/// 类别分布标准差。
+#[duck_scalar_function(
+    description = "Categorical standard deviation",
+    example = "SELECT sr_categorical_std_dev([1.0, 2.0, 1.0])"
+)]
+fn sr_categorical_std_dev(probs: Vec<f64>) -> DuckOptionResult<f64> {
+    Ok(categorical("sr_categorical_std_dev", probs)?.std_dev())
+}
+
+/// 类别分布熵。
+#[duck_scalar_function(
+    description = "Categorical entropy",
+    example = "SELECT sr_categorical_entropy([1.0, 2.0, 1.0])"
+)]
+fn sr_categorical_entropy(probs: Vec<f64>) -> DuckOptionResult<f64> {
+    Ok(categorical("sr_categorical_entropy", probs)?.entropy())
+}
+
+/// 类别分布偏度。
+#[duck_scalar_function(
+    description = "Categorical skewness",
+    example = "SELECT sr_categorical_skewness([1.0, 2.0, 1.0])"
+)]
+fn sr_categorical_skewness(probs: Vec<f64>) -> DuckOptionResult<f64> {
+    Ok(categorical("sr_categorical_skewness", probs)?.skewness())
+}
+
+/// 类别分布取值下界（类别下标 0）。
+#[duck_scalar_function(
+    description = "Categorical minimum of the support (category index 0)",
+    example = "SELECT sr_categorical_min([1.0, 2.0, 1.0])"
+)]
+fn sr_categorical_min(probs: Vec<f64>) -> DuckOptionResult<f64> {
+    Ok(Some(categorical("sr_categorical_min", probs)?.min() as f64))
+}
+
+/// 类别分布取值上界（最后一个类别下标）。
+#[duck_scalar_function(
+    description = "Categorical maximum of the support (last category index)",
+    example = "SELECT sr_categorical_max([1.0, 2.0, 1.0])"
+)]
+fn sr_categorical_max(probs: Vec<f64>) -> DuckOptionResult<f64> {
+    Ok(Some(categorical("sr_categorical_max", probs)?.max() as f64))
+}
+
+/// 类别分布中位数。
+#[duck_scalar_function(
+    description = "Categorical median",
+    example = "SELECT sr_categorical_median([1.0, 2.0, 1.0])"
+)]
+fn sr_categorical_median(probs: Vec<f64>) -> DuckOptionResult<f64> {
+    Ok(Some(categorical("sr_categorical_median", probs)?.median()))
+}

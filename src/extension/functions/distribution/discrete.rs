@@ -18,6 +18,8 @@ use statrs::distribution::{
     Bernoulli, Binomial, Discrete, DiscreteCDF, DiscreteUniform, Geometric, Hypergeometric,
     NegativeBinomial, Poisson,
 };
+// NegativeBinomial 是唯一实现 DiscreteDistribution 而非 Distribution 的分布，故两者都要在作用域内。
+use statrs::statistics::{DiscreteDistribution, Distribution, Max, Median, Min, Mode};
 
 use super::check_probability;
 use crate::extension::functions::{as_i64, as_u64};
@@ -438,4 +440,603 @@ fn sr_poisson_sf(x: f64, lambda: f64) -> DuckOptionResult<f64> {
 fn sr_poisson_quantile(prob: f64, lambda: f64) -> DuckOptionResult<f64> {
     check_probability("sr_poisson_quantile", prob)?;
     Ok(Some(poisson("sr_poisson_quantile", lambda)?.inverse_cdf(prob) as f64))
+}
+
+// ============================================================================
+// 分布矩与域（追加分区）：mean / variance / std_dev / entropy / skewness /
+// min / max / median / mode
+//
+// 复用上面的构造函数 helper。statrs 的 Distribution trait 把 mean / variance /
+// std_dev / entropy / skewness 都定为 Option<f64>，直接透传；min / max 是裸整数
+// （离散均匀是 i64，其余是 u64），转成 DOUBLE 呈现（支撑上界常为 u64::MAX，即
+// 1.8e19，属正常）；median 是裸 f64；mode 的类型是 Option<u64> / Option<i64>，
+// 负二项是 Option<f64>。
+//
+// Moments and support for the distributions above, built on the existing constructors.
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// Bernoulli（statrs::distribution::Bernoulli）
+// ---------------------------------------------------------------------------
+
+/// 伯努利均值。
+#[duck_scalar_function(
+    description = "Bernoulli mean",
+    example = "SELECT sr_bernoulli_mean(0.7)"
+)]
+fn sr_bernoulli_mean(p: f64) -> DuckOptionResult<f64> {
+    Ok(bernoulli("sr_bernoulli_mean", p)?.mean())
+}
+
+/// 伯努利方差。
+#[duck_scalar_function(
+    description = "Bernoulli variance",
+    example = "SELECT sr_bernoulli_variance(0.7)"
+)]
+fn sr_bernoulli_variance(p: f64) -> DuckOptionResult<f64> {
+    Ok(bernoulli("sr_bernoulli_variance", p)?.variance())
+}
+
+/// 伯努利标准差。
+#[duck_scalar_function(
+    description = "Bernoulli standard deviation",
+    example = "SELECT sr_bernoulli_std_dev(0.7)"
+)]
+fn sr_bernoulli_std_dev(p: f64) -> DuckOptionResult<f64> {
+    Ok(bernoulli("sr_bernoulli_std_dev", p)?.std_dev())
+}
+
+/// 伯努利熵。
+#[duck_scalar_function(
+    description = "Bernoulli entropy",
+    example = "SELECT sr_bernoulli_entropy(0.7)"
+)]
+fn sr_bernoulli_entropy(p: f64) -> DuckOptionResult<f64> {
+    Ok(bernoulli("sr_bernoulli_entropy", p)?.entropy())
+}
+
+/// 伯努利偏度。
+#[duck_scalar_function(
+    description = "Bernoulli skewness",
+    example = "SELECT sr_bernoulli_skewness(0.7)"
+)]
+fn sr_bernoulli_skewness(p: f64) -> DuckOptionResult<f64> {
+    Ok(bernoulli("sr_bernoulli_skewness", p)?.skewness())
+}
+
+/// 伯努利取值下界（0）。
+#[duck_scalar_function(
+    description = "Bernoulli minimum of the support (0)",
+    example = "SELECT sr_bernoulli_min(0.7)"
+)]
+fn sr_bernoulli_min(p: f64) -> DuckOptionResult<f64> {
+    Ok(Some(bernoulli("sr_bernoulli_min", p)?.min() as f64))
+}
+
+/// 伯努利取值上界（1）。
+#[duck_scalar_function(
+    description = "Bernoulli maximum of the support (1)",
+    example = "SELECT sr_bernoulli_max(0.7)"
+)]
+fn sr_bernoulli_max(p: f64) -> DuckOptionResult<f64> {
+    Ok(Some(bernoulli("sr_bernoulli_max", p)?.max() as f64))
+}
+
+/// 伯努利中位数。
+#[duck_scalar_function(
+    description = "Bernoulli median",
+    example = "SELECT sr_bernoulli_median(0.7)"
+)]
+fn sr_bernoulli_median(p: f64) -> DuckOptionResult<f64> {
+    Ok(Some(bernoulli("sr_bernoulli_median", p)?.median()))
+}
+
+/// 伯努利众数。
+#[duck_scalar_function(
+    description = "Bernoulli mode",
+    example = "SELECT sr_bernoulli_mode(0.7)"
+)]
+fn sr_bernoulli_mode(p: f64) -> DuckOptionResult<f64> {
+    Ok(bernoulli("sr_bernoulli_mode", p)?.mode().map(|m| m as f64))
+}
+
+// ---------------------------------------------------------------------------
+// Binomial（statrs::distribution::Binomial）
+// ---------------------------------------------------------------------------
+
+/// 二项均值。
+#[duck_scalar_function(
+    description = "Binomial mean",
+    example = "SELECT sr_binomial_mean(0.5, 10.0)"
+)]
+fn sr_binomial_mean(p: f64, n: f64) -> DuckOptionResult<f64> {
+    Ok(binomial("sr_binomial_mean", p, n)?.mean())
+}
+
+/// 二项方差。
+#[duck_scalar_function(
+    description = "Binomial variance",
+    example = "SELECT sr_binomial_variance(0.5, 10.0)"
+)]
+fn sr_binomial_variance(p: f64, n: f64) -> DuckOptionResult<f64> {
+    Ok(binomial("sr_binomial_variance", p, n)?.variance())
+}
+
+/// 二项标准差。
+#[duck_scalar_function(
+    description = "Binomial standard deviation",
+    example = "SELECT sr_binomial_std_dev(0.5, 10.0)"
+)]
+fn sr_binomial_std_dev(p: f64, n: f64) -> DuckOptionResult<f64> {
+    Ok(binomial("sr_binomial_std_dev", p, n)?.std_dev())
+}
+
+/// 二项熵。
+#[duck_scalar_function(
+    description = "Binomial entropy",
+    example = "SELECT sr_binomial_entropy(0.5, 10.0)"
+)]
+fn sr_binomial_entropy(p: f64, n: f64) -> DuckOptionResult<f64> {
+    Ok(binomial("sr_binomial_entropy", p, n)?.entropy())
+}
+
+/// 二项偏度。
+#[duck_scalar_function(
+    description = "Binomial skewness",
+    example = "SELECT sr_binomial_skewness(0.5, 10.0)"
+)]
+fn sr_binomial_skewness(p: f64, n: f64) -> DuckOptionResult<f64> {
+    Ok(binomial("sr_binomial_skewness", p, n)?.skewness())
+}
+
+/// 二项取值下界（0）。
+#[duck_scalar_function(
+    description = "Binomial minimum of the support (0)",
+    example = "SELECT sr_binomial_min(0.5, 10.0)"
+)]
+fn sr_binomial_min(p: f64, n: f64) -> DuckOptionResult<f64> {
+    Ok(Some(binomial("sr_binomial_min", p, n)?.min() as f64))
+}
+
+/// 二项取值上界（n）。
+#[duck_scalar_function(
+    description = "Binomial maximum of the support (n)",
+    example = "SELECT sr_binomial_max(0.5, 10.0)"
+)]
+fn sr_binomial_max(p: f64, n: f64) -> DuckOptionResult<f64> {
+    Ok(Some(binomial("sr_binomial_max", p, n)?.max() as f64))
+}
+
+/// 二项中位数。
+#[duck_scalar_function(
+    description = "Binomial median",
+    example = "SELECT sr_binomial_median(0.5, 10.0)"
+)]
+fn sr_binomial_median(p: f64, n: f64) -> DuckOptionResult<f64> {
+    Ok(Some(binomial("sr_binomial_median", p, n)?.median()))
+}
+
+/// 二项众数。
+#[duck_scalar_function(
+    description = "Binomial mode",
+    example = "SELECT sr_binomial_mode(0.5, 10.0)"
+)]
+fn sr_binomial_mode(p: f64, n: f64) -> DuckOptionResult<f64> {
+    Ok(binomial("sr_binomial_mode", p, n)?.mode().map(|m| m as f64))
+}
+
+// ---------------------------------------------------------------------------
+// DiscreteUniform（statrs::distribution::DiscreteUniform，边界为 i64）
+// ---------------------------------------------------------------------------
+
+/// 离散均匀均值。
+#[duck_scalar_function(
+    description = "Discrete uniform mean",
+    example = "SELECT sr_discrete_uniform_mean(1.0, 6.0)"
+)]
+fn sr_discrete_uniform_mean(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(discrete_uniform("sr_discrete_uniform_mean", min, max)?.mean())
+}
+
+/// 离散均匀方差。
+#[duck_scalar_function(
+    description = "Discrete uniform variance",
+    example = "SELECT sr_discrete_uniform_variance(1.0, 6.0)"
+)]
+fn sr_discrete_uniform_variance(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(discrete_uniform("sr_discrete_uniform_variance", min, max)?.variance())
+}
+
+/// 离散均匀标准差。
+#[duck_scalar_function(
+    description = "Discrete uniform standard deviation",
+    example = "SELECT sr_discrete_uniform_std_dev(1.0, 6.0)"
+)]
+fn sr_discrete_uniform_std_dev(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(discrete_uniform("sr_discrete_uniform_std_dev", min, max)?.std_dev())
+}
+
+/// 离散均匀熵。
+#[duck_scalar_function(
+    description = "Discrete uniform entropy",
+    example = "SELECT sr_discrete_uniform_entropy(1.0, 6.0)"
+)]
+fn sr_discrete_uniform_entropy(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(discrete_uniform("sr_discrete_uniform_entropy", min, max)?.entropy())
+}
+
+/// 离散均匀偏度。
+#[duck_scalar_function(
+    description = "Discrete uniform skewness",
+    example = "SELECT sr_discrete_uniform_skewness(1.0, 6.0)"
+)]
+fn sr_discrete_uniform_skewness(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(discrete_uniform("sr_discrete_uniform_skewness", min, max)?.skewness())
+}
+
+/// 离散均匀取值下界（min）。
+#[duck_scalar_function(
+    description = "Discrete uniform minimum of the support (min)",
+    example = "SELECT sr_discrete_uniform_min(1.0, 6.0)"
+)]
+fn sr_discrete_uniform_min(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(Some(discrete_uniform("sr_discrete_uniform_min", min, max)?.min() as f64))
+}
+
+/// 离散均匀取值上界（max）。
+#[duck_scalar_function(
+    description = "Discrete uniform maximum of the support (max)",
+    example = "SELECT sr_discrete_uniform_max(1.0, 6.0)"
+)]
+fn sr_discrete_uniform_max(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(Some(discrete_uniform("sr_discrete_uniform_max", min, max)?.max() as f64))
+}
+
+/// 离散均匀中位数。
+#[duck_scalar_function(
+    description = "Discrete uniform median",
+    example = "SELECT sr_discrete_uniform_median(1.0, 6.0)"
+)]
+fn sr_discrete_uniform_median(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(Some(discrete_uniform("sr_discrete_uniform_median", min, max)?.median()))
+}
+
+/// 离散均匀众数。
+#[duck_scalar_function(
+    description = "Discrete uniform mode",
+    example = "SELECT sr_discrete_uniform_mode(1.0, 6.0)"
+)]
+fn sr_discrete_uniform_mode(min: f64, max: f64) -> DuckOptionResult<f64> {
+    Ok(discrete_uniform("sr_discrete_uniform_mode", min, max)?
+        .mode()
+        .map(|m| m as f64))
+}
+
+// ---------------------------------------------------------------------------
+// Geometric（statrs::distribution::Geometric）
+// ---------------------------------------------------------------------------
+
+/// 几何分布的均值 `1/p`。函数名带 `_dist`：`sr_geometric_mean` 已被
+/// statistics/summary.rs 的聚合（一列的几何平均）占用，DuckDB 不允许标量与聚合同名。
+#[duck_scalar_function(
+    description = "Mean of the Geometric distribution, 1/p (named _dist to avoid clashing with the sr_geometric_mean aggregate over a column)",
+    example = "SELECT sr_geometric_dist_mean(0.5)"
+)]
+fn sr_geometric_dist_mean(p: f64) -> DuckOptionResult<f64> {
+    Ok(geometric("sr_geometric_dist_mean", p)?.mean())
+}
+
+/// 几何方差。
+#[duck_scalar_function(
+    description = "Geometric variance",
+    example = "SELECT sr_geometric_variance(0.5)"
+)]
+fn sr_geometric_variance(p: f64) -> DuckOptionResult<f64> {
+    Ok(geometric("sr_geometric_variance", p)?.variance())
+}
+
+/// 几何标准差。
+#[duck_scalar_function(
+    description = "Geometric standard deviation",
+    example = "SELECT sr_geometric_std_dev(0.5)"
+)]
+fn sr_geometric_std_dev(p: f64) -> DuckOptionResult<f64> {
+    Ok(geometric("sr_geometric_std_dev", p)?.std_dev())
+}
+
+/// 几何熵。
+#[duck_scalar_function(
+    description = "Geometric entropy",
+    example = "SELECT sr_geometric_entropy(0.5)"
+)]
+fn sr_geometric_entropy(p: f64) -> DuckOptionResult<f64> {
+    Ok(geometric("sr_geometric_entropy", p)?.entropy())
+}
+
+/// 几何偏度。
+#[duck_scalar_function(
+    description = "Geometric skewness",
+    example = "SELECT sr_geometric_skewness(0.5)"
+)]
+fn sr_geometric_skewness(p: f64) -> DuckOptionResult<f64> {
+    Ok(geometric("sr_geometric_skewness", p)?.skewness())
+}
+
+/// 几何取值下界（1）。
+#[duck_scalar_function(
+    description = "Geometric minimum of the support (1)",
+    example = "SELECT sr_geometric_min(0.5)"
+)]
+fn sr_geometric_min(p: f64) -> DuckOptionResult<f64> {
+    Ok(Some(geometric("sr_geometric_min", p)?.min() as f64))
+}
+
+/// 几何取值上界（u64::MAX，以 1.8e19 呈现）。
+#[duck_scalar_function(
+    description = "Geometric maximum of the support (u64::MAX, shown as 1.8e19)",
+    example = "SELECT sr_geometric_max(0.5)"
+)]
+fn sr_geometric_max(p: f64) -> DuckOptionResult<f64> {
+    Ok(Some(geometric("sr_geometric_max", p)?.max() as f64))
+}
+
+/// 几何中位数。
+#[duck_scalar_function(
+    description = "Geometric median",
+    example = "SELECT sr_geometric_median(0.5)"
+)]
+fn sr_geometric_median(p: f64) -> DuckOptionResult<f64> {
+    Ok(Some(geometric("sr_geometric_median", p)?.median()))
+}
+
+/// 几何众数。
+#[duck_scalar_function(
+    description = "Geometric mode",
+    example = "SELECT sr_geometric_mode(0.5)"
+)]
+fn sr_geometric_mode(p: f64) -> DuckOptionResult<f64> {
+    Ok(geometric("sr_geometric_mode", p)?.mode().map(|m| m as f64))
+}
+
+// ---------------------------------------------------------------------------
+// Hypergeometric（statrs::distribution::Hypergeometric，三个计数都是 u64）
+// ---------------------------------------------------------------------------
+
+/// 超几何均值。
+#[duck_scalar_function(
+    description = "Hypergeometric mean",
+    example = "SELECT sr_hypergeometric_mean(10.0, 5.0, 4.0)"
+)]
+fn sr_hypergeometric_mean(population: f64, successes: f64, draws: f64) -> DuckOptionResult<f64> {
+    Ok(hypergeometric("sr_hypergeometric_mean", population, successes, draws)?.mean())
+}
+
+/// 超几何方差。
+#[duck_scalar_function(
+    description = "Hypergeometric variance",
+    example = "SELECT sr_hypergeometric_variance(10.0, 5.0, 4.0)"
+)]
+fn sr_hypergeometric_variance(population: f64, successes: f64, draws: f64) -> DuckOptionResult<f64> {
+    Ok(hypergeometric("sr_hypergeometric_variance", population, successes, draws)?.variance())
+}
+
+/// 超几何标准差。
+#[duck_scalar_function(
+    description = "Hypergeometric standard deviation",
+    example = "SELECT sr_hypergeometric_std_dev(10.0, 5.0, 4.0)"
+)]
+fn sr_hypergeometric_std_dev(population: f64, successes: f64, draws: f64) -> DuckOptionResult<f64> {
+    Ok(hypergeometric("sr_hypergeometric_std_dev", population, successes, draws)?.std_dev())
+}
+
+/// 超几何熵。
+#[duck_scalar_function(
+    description = "Hypergeometric entropy",
+    example = "SELECT sr_hypergeometric_entropy(10.0, 5.0, 4.0)"
+)]
+fn sr_hypergeometric_entropy(population: f64, successes: f64, draws: f64) -> DuckOptionResult<f64> {
+    Ok(hypergeometric("sr_hypergeometric_entropy", population, successes, draws)?.entropy())
+}
+
+/// 超几何偏度。
+#[duck_scalar_function(
+    description = "Hypergeometric skewness",
+    example = "SELECT sr_hypergeometric_skewness(10.0, 5.0, 4.0)"
+)]
+fn sr_hypergeometric_skewness(population: f64, successes: f64, draws: f64) -> DuckOptionResult<f64> {
+    Ok(hypergeometric("sr_hypergeometric_skewness", population, successes, draws)?.skewness())
+}
+
+/// 超几何取值下界。
+#[duck_scalar_function(
+    description = "Hypergeometric minimum of the support",
+    example = "SELECT sr_hypergeometric_min(10.0, 5.0, 4.0)"
+)]
+fn sr_hypergeometric_min(population: f64, successes: f64, draws: f64) -> DuckOptionResult<f64> {
+    Ok(Some(
+        hypergeometric("sr_hypergeometric_min", population, successes, draws)?.min() as f64
+    ))
+}
+
+/// 超几何取值上界。
+#[duck_scalar_function(
+    description = "Hypergeometric maximum of the support",
+    example = "SELECT sr_hypergeometric_max(10.0, 5.0, 4.0)"
+)]
+fn sr_hypergeometric_max(population: f64, successes: f64, draws: f64) -> DuckOptionResult<f64> {
+    Ok(Some(
+        hypergeometric("sr_hypergeometric_max", population, successes, draws)?.max() as f64
+    ))
+}
+
+/// 超几何众数。
+#[duck_scalar_function(
+    description = "Hypergeometric mode",
+    example = "SELECT sr_hypergeometric_mode(10.0, 5.0, 4.0)"
+)]
+fn sr_hypergeometric_mode(population: f64, successes: f64, draws: f64) -> DuckOptionResult<f64> {
+    Ok(hypergeometric("sr_hypergeometric_mode", population, successes, draws)?
+        .mode()
+        .map(|m| m as f64))
+}
+
+// ---------------------------------------------------------------------------
+// NegativeBinomial（statrs::distribution::NegativeBinomial）
+// ---------------------------------------------------------------------------
+
+/// 负二项均值。
+#[duck_scalar_function(
+    description = "Negative-binomial mean",
+    example = "SELECT sr_negative_binomial_mean(2.0, 0.5)"
+)]
+fn sr_negative_binomial_mean(r: f64, p: f64) -> DuckOptionResult<f64> {
+    Ok(negative_binomial("sr_negative_binomial_mean", r, p)?.mean())
+}
+
+/// 负二项方差。
+#[duck_scalar_function(
+    description = "Negative-binomial variance",
+    example = "SELECT sr_negative_binomial_variance(2.0, 0.5)"
+)]
+fn sr_negative_binomial_variance(r: f64, p: f64) -> DuckOptionResult<f64> {
+    Ok(negative_binomial("sr_negative_binomial_variance", r, p)?.variance())
+}
+
+/// 负二项标准差。
+#[duck_scalar_function(
+    description = "Negative-binomial standard deviation",
+    example = "SELECT sr_negative_binomial_std_dev(2.0, 0.5)"
+)]
+fn sr_negative_binomial_std_dev(r: f64, p: f64) -> DuckOptionResult<f64> {
+    Ok(negative_binomial("sr_negative_binomial_std_dev", r, p)?.std_dev())
+}
+
+/// 负二项熵。
+#[duck_scalar_function(
+    description = "Negative-binomial entropy",
+    example = "SELECT sr_negative_binomial_entropy(2.0, 0.5)"
+)]
+fn sr_negative_binomial_entropy(r: f64, p: f64) -> DuckOptionResult<f64> {
+    Ok(negative_binomial("sr_negative_binomial_entropy", r, p)?.entropy())
+}
+
+/// 负二项偏度。
+#[duck_scalar_function(
+    description = "Negative-binomial skewness",
+    example = "SELECT sr_negative_binomial_skewness(2.0, 0.5)"
+)]
+fn sr_negative_binomial_skewness(r: f64, p: f64) -> DuckOptionResult<f64> {
+    Ok(negative_binomial("sr_negative_binomial_skewness", r, p)?.skewness())
+}
+
+/// 负二项取值下界（0）。
+#[duck_scalar_function(
+    description = "Negative-binomial minimum of the support (0)",
+    example = "SELECT sr_negative_binomial_min(2.0, 0.5)"
+)]
+fn sr_negative_binomial_min(r: f64, p: f64) -> DuckOptionResult<f64> {
+    Ok(Some(negative_binomial("sr_negative_binomial_min", r, p)?.min() as f64))
+}
+
+/// 负二项取值上界（u64::MAX，以 1.8e19 呈现）。
+#[duck_scalar_function(
+    description = "Negative-binomial maximum of the support (u64::MAX, shown as 1.8e19)",
+    example = "SELECT sr_negative_binomial_max(2.0, 0.5)"
+)]
+fn sr_negative_binomial_max(r: f64, p: f64) -> DuckOptionResult<f64> {
+    Ok(Some(negative_binomial("sr_negative_binomial_max", r, p)?.max() as f64))
+}
+
+/// 负二项众数（statrs 返回实数 Option<f64>）。
+#[duck_scalar_function(
+    description = "Negative-binomial mode (statrs returns a real-valued Option<f64>)",
+    example = "SELECT sr_negative_binomial_mode(2.0, 0.5)"
+)]
+fn sr_negative_binomial_mode(r: f64, p: f64) -> DuckOptionResult<f64> {
+    Ok(negative_binomial("sr_negative_binomial_mode", r, p)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Poisson（statrs::distribution::Poisson）
+// ---------------------------------------------------------------------------
+
+/// 泊松均值。
+#[duck_scalar_function(
+    description = "Poisson mean",
+    example = "SELECT sr_poisson_mean(3.0)"
+)]
+fn sr_poisson_mean(lambda: f64) -> DuckOptionResult<f64> {
+    Ok(poisson("sr_poisson_mean", lambda)?.mean())
+}
+
+/// 泊松方差。
+#[duck_scalar_function(
+    description = "Poisson variance",
+    example = "SELECT sr_poisson_variance(3.0)"
+)]
+fn sr_poisson_variance(lambda: f64) -> DuckOptionResult<f64> {
+    Ok(poisson("sr_poisson_variance", lambda)?.variance())
+}
+
+/// 泊松标准差。
+#[duck_scalar_function(
+    description = "Poisson standard deviation",
+    example = "SELECT sr_poisson_std_dev(3.0)"
+)]
+fn sr_poisson_std_dev(lambda: f64) -> DuckOptionResult<f64> {
+    Ok(poisson("sr_poisson_std_dev", lambda)?.std_dev())
+}
+
+/// 泊松熵。
+#[duck_scalar_function(
+    description = "Poisson entropy",
+    example = "SELECT sr_poisson_entropy(3.0)"
+)]
+fn sr_poisson_entropy(lambda: f64) -> DuckOptionResult<f64> {
+    Ok(poisson("sr_poisson_entropy", lambda)?.entropy())
+}
+
+/// 泊松偏度。
+#[duck_scalar_function(
+    description = "Poisson skewness",
+    example = "SELECT sr_poisson_skewness(3.0)"
+)]
+fn sr_poisson_skewness(lambda: f64) -> DuckOptionResult<f64> {
+    Ok(poisson("sr_poisson_skewness", lambda)?.skewness())
+}
+
+/// 泊松取值下界（0）。
+#[duck_scalar_function(
+    description = "Poisson minimum of the support (0)",
+    example = "SELECT sr_poisson_min(3.0)"
+)]
+fn sr_poisson_min(lambda: f64) -> DuckOptionResult<f64> {
+    Ok(Some(poisson("sr_poisson_min", lambda)?.min() as f64))
+}
+
+/// 泊松取值上界（u64::MAX，以 1.8e19 呈现）。
+#[duck_scalar_function(
+    description = "Poisson maximum of the support (u64::MAX, shown as 1.8e19)",
+    example = "SELECT sr_poisson_max(3.0)"
+)]
+fn sr_poisson_max(lambda: f64) -> DuckOptionResult<f64> {
+    Ok(Some(poisson("sr_poisson_max", lambda)?.max() as f64))
+}
+
+/// 泊松中位数。
+#[duck_scalar_function(
+    description = "Poisson median",
+    example = "SELECT sr_poisson_median(3.0)"
+)]
+fn sr_poisson_median(lambda: f64) -> DuckOptionResult<f64> {
+    Ok(Some(poisson("sr_poisson_median", lambda)?.median()))
+}
+
+/// 泊松众数。
+#[duck_scalar_function(
+    description = "Poisson mode",
+    example = "SELECT sr_poisson_mode(3.0)"
+)]
+fn sr_poisson_mode(lambda: f64) -> DuckOptionResult<f64> {
+    Ok(poisson("sr_poisson_mode", lambda)?.mode().map(|m| m as f64))
 }

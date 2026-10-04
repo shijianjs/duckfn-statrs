@@ -20,6 +20,10 @@ use statrs::distribution::{
 
 use super::check_probability;
 use crate::extension::functions::as_u64;
+// 分布的矩与域：Distribution 提供 mean/variance/std_dev/entropy/skewness，
+// Min/Max/Median/Mode 提供支撑集端点与典型值。刻意不导入 DiscreteDistribution ——
+// 它与 Distribution 的同名方法（mean 等）会造成方法解析歧义。
+use statrs::statistics::{Distribution, Max, Median, Min, Mode};
 
 // ---------------------------------------------------------------------------
 // Gamma（statrs::distribution::Gamma）
@@ -561,4 +565,810 @@ fn sr_fisher_snedecor_sf(x: f64, freedom_1: f64, freedom_2: f64) -> DuckOptionRe
 fn sr_fisher_snedecor_quantile(p: f64, freedom_1: f64, freedom_2: f64) -> DuckOptionResult<f64> {
     check_probability("sr_fisher_snedecor_quantile", p)?;
     Ok(Some(fisher_snedecor("sr_fisher_snedecor_quantile", freedom_1, freedom_2)?.inverse_cdf(p)))
+}
+
+// ============================================================================
+// 分布的矩 / 域 / 中位数 / 众数（statrs::statistics 的 Distribution / Min / Max /
+// Median / Mode）。每个分布一组：mean / variance / std_dev / entropy / skewness，
+// 再按 statrs 的实现情况补 min / max / median / mode。均无 x 参数，参数顺序与上文
+// 各构造函数（gamma / erlang / chi / …）完全一致。
+//
+// Distribution moments, support endpoints, median and mode for the shape/rate
+// family. No x argument; parameter order matches the constructors above.
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// Gamma（shape, rate）
+// ---------------------------------------------------------------------------
+
+/// Gamma 均值，对应 `Distribution::mean`。
+#[duck_scalar_function(
+    description = "Gamma mean (shape/rate parameterization)",
+    example = "SELECT sr_gamma_mean(2.0, 1.0)"
+)]
+fn sr_gamma_mean(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(gamma("sr_gamma_mean", shape, rate)?.mean())
+}
+
+/// Gamma 方差，对应 `Distribution::variance`。
+#[duck_scalar_function(
+    description = "Gamma variance (shape/rate parameterization)",
+    example = "SELECT sr_gamma_variance(2.0, 1.0)"
+)]
+fn sr_gamma_variance(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(gamma("sr_gamma_variance", shape, rate)?.variance())
+}
+
+/// Gamma 标准差，对应 `Distribution::std_dev`。
+#[duck_scalar_function(
+    description = "Gamma standard deviation (shape/rate parameterization)",
+    example = "SELECT sr_gamma_std_dev(2.0, 1.0)"
+)]
+fn sr_gamma_std_dev(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(gamma("sr_gamma_std_dev", shape, rate)?.std_dev())
+}
+
+/// Gamma 微分熵，对应 `Distribution::entropy`。
+#[duck_scalar_function(
+    description = "Gamma differential entropy (shape/rate parameterization)",
+    example = "SELECT sr_gamma_entropy(2.0, 1.0)"
+)]
+fn sr_gamma_entropy(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(gamma("sr_gamma_entropy", shape, rate)?.entropy())
+}
+
+/// Gamma 偏度，对应 `Distribution::skewness`。
+#[duck_scalar_function(
+    description = "Gamma skewness (shape/rate parameterization)",
+    example = "SELECT sr_gamma_skewness(2.0, 1.0)"
+)]
+fn sr_gamma_skewness(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(gamma("sr_gamma_skewness", shape, rate)?.skewness())
+}
+
+/// Gamma 支撑集下确界，对应 `Min::min`（恒为 0）。
+#[duck_scalar_function(
+    description = "Gamma minimum of the support (0)",
+    example = "SELECT sr_gamma_min(2.0, 1.0)"
+)]
+fn sr_gamma_min(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(Some(gamma("sr_gamma_min", shape, rate)?.min()))
+}
+
+/// Gamma 支撑集上确界，对应 `Max::max`（无界，返回 +inf）。
+#[duck_scalar_function(
+    description = "Gamma maximum of the support (positive infinity)",
+    example = "SELECT sr_gamma_max(2.0, 1.0)"
+)]
+fn sr_gamma_max(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(Some(gamma("sr_gamma_max", shape, rate)?.max()))
+}
+
+/// Gamma 众数，对应 `Mode::mode`（shape < 1 时无众数，返回 NULL）。
+#[duck_scalar_function(
+    description = "Gamma mode (shape/rate parameterization)",
+    example = "SELECT sr_gamma_mode(2.0, 1.0)"
+)]
+fn sr_gamma_mode(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(gamma("sr_gamma_mode", shape, rate)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Erlang（shape, rate；shape 为整数）
+// ---------------------------------------------------------------------------
+
+/// Erlang 均值，对应 `Distribution::mean`。
+#[duck_scalar_function(
+    description = "Erlang mean (whole-number shape, rate)",
+    example = "SELECT sr_erlang_mean(2.0, 1.0)"
+)]
+fn sr_erlang_mean(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(erlang("sr_erlang_mean", shape, rate)?.mean())
+}
+
+/// Erlang 方差，对应 `Distribution::variance`。
+#[duck_scalar_function(
+    description = "Erlang variance (whole-number shape, rate)",
+    example = "SELECT sr_erlang_variance(2.0, 1.0)"
+)]
+fn sr_erlang_variance(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(erlang("sr_erlang_variance", shape, rate)?.variance())
+}
+
+/// Erlang 标准差，对应 `Distribution::std_dev`。
+#[duck_scalar_function(
+    description = "Erlang standard deviation (whole-number shape, rate)",
+    example = "SELECT sr_erlang_std_dev(2.0, 1.0)"
+)]
+fn sr_erlang_std_dev(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(erlang("sr_erlang_std_dev", shape, rate)?.std_dev())
+}
+
+/// Erlang 微分熵，对应 `Distribution::entropy`。
+#[duck_scalar_function(
+    description = "Erlang differential entropy (whole-number shape, rate)",
+    example = "SELECT sr_erlang_entropy(2.0, 1.0)"
+)]
+fn sr_erlang_entropy(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(erlang("sr_erlang_entropy", shape, rate)?.entropy())
+}
+
+/// Erlang 偏度，对应 `Distribution::skewness`。
+#[duck_scalar_function(
+    description = "Erlang skewness (whole-number shape, rate)",
+    example = "SELECT sr_erlang_skewness(2.0, 1.0)"
+)]
+fn sr_erlang_skewness(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(erlang("sr_erlang_skewness", shape, rate)?.skewness())
+}
+
+/// Erlang 支撑集下确界，对应 `Min::min`（恒为 0）。
+#[duck_scalar_function(
+    description = "Erlang minimum of the support (0)",
+    example = "SELECT sr_erlang_min(2.0, 1.0)"
+)]
+fn sr_erlang_min(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(Some(erlang("sr_erlang_min", shape, rate)?.min()))
+}
+
+/// Erlang 支撑集上确界，对应 `Max::max`（无界，返回 +inf）。
+#[duck_scalar_function(
+    description = "Erlang maximum of the support (positive infinity)",
+    example = "SELECT sr_erlang_max(2.0, 1.0)"
+)]
+fn sr_erlang_max(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(Some(erlang("sr_erlang_max", shape, rate)?.max()))
+}
+
+/// Erlang 众数，对应 `Mode::mode`。
+#[duck_scalar_function(
+    description = "Erlang mode (whole-number shape, rate)",
+    example = "SELECT sr_erlang_mode(2.0, 1.0)"
+)]
+fn sr_erlang_mode(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+    Ok(erlang("sr_erlang_mode", shape, rate)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Chi（freedom；自由度为整数）
+// ---------------------------------------------------------------------------
+
+/// Chi 分布均值，对应 `Distribution::mean`。
+#[duck_scalar_function(
+    description = "Chi distribution mean, given whole-number freedom",
+    example = "SELECT sr_chi_mean(2.0)"
+)]
+fn sr_chi_mean(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi("sr_chi_mean", freedom)?.mean())
+}
+
+/// Chi 分布方差，对应 `Distribution::variance`。
+#[duck_scalar_function(
+    description = "Chi distribution variance, given whole-number freedom",
+    example = "SELECT sr_chi_variance(2.0)"
+)]
+fn sr_chi_variance(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi("sr_chi_variance", freedom)?.variance())
+}
+
+/// Chi 分布标准差，对应 `Distribution::std_dev`。
+#[duck_scalar_function(
+    description = "Chi distribution standard deviation, given whole-number freedom",
+    example = "SELECT sr_chi_std_dev(2.0)"
+)]
+fn sr_chi_std_dev(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi("sr_chi_std_dev", freedom)?.std_dev())
+}
+
+/// Chi 分布微分熵，对应 `Distribution::entropy`。
+#[duck_scalar_function(
+    description = "Chi distribution differential entropy, given whole-number freedom",
+    example = "SELECT sr_chi_entropy(2.0)"
+)]
+fn sr_chi_entropy(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi("sr_chi_entropy", freedom)?.entropy())
+}
+
+/// Chi 分布偏度，对应 `Distribution::skewness`。
+#[duck_scalar_function(
+    description = "Chi distribution skewness, given whole-number freedom",
+    example = "SELECT sr_chi_skewness(2.0)"
+)]
+fn sr_chi_skewness(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi("sr_chi_skewness", freedom)?.skewness())
+}
+
+/// Chi 分布支撑集下确界，对应 `Min::min`（恒为 0）。
+#[duck_scalar_function(
+    description = "Chi distribution minimum of the support (0)",
+    example = "SELECT sr_chi_min(2.0)"
+)]
+fn sr_chi_min(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(Some(chi("sr_chi_min", freedom)?.min()))
+}
+
+/// Chi 分布支撑集上确界，对应 `Max::max`（无界，返回 +inf）。
+#[duck_scalar_function(
+    description = "Chi distribution maximum of the support (positive infinity)",
+    example = "SELECT sr_chi_max(2.0)"
+)]
+fn sr_chi_max(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(Some(chi("sr_chi_max", freedom)?.max()))
+}
+
+/// Chi 分布众数，对应 `Mode::mode`。
+#[duck_scalar_function(
+    description = "Chi distribution mode, given whole-number freedom",
+    example = "SELECT sr_chi_mode(2.0)"
+)]
+fn sr_chi_mode(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi("sr_chi_mode", freedom)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// ChiSquared（freedom）
+// ---------------------------------------------------------------------------
+
+/// 卡方均值，对应 `Distribution::mean`。
+#[duck_scalar_function(
+    description = "Chi-squared mean, given degrees of freedom",
+    example = "SELECT sr_chi_squared_mean(2.0)"
+)]
+fn sr_chi_squared_mean(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi_squared("sr_chi_squared_mean", freedom)?.mean())
+}
+
+/// 卡方方差，对应 `Distribution::variance`。
+#[duck_scalar_function(
+    description = "Chi-squared variance, given degrees of freedom",
+    example = "SELECT sr_chi_squared_variance(2.0)"
+)]
+fn sr_chi_squared_variance(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi_squared("sr_chi_squared_variance", freedom)?.variance())
+}
+
+/// 卡方标准差，对应 `Distribution::std_dev`。
+#[duck_scalar_function(
+    description = "Chi-squared standard deviation, given degrees of freedom",
+    example = "SELECT sr_chi_squared_std_dev(2.0)"
+)]
+fn sr_chi_squared_std_dev(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi_squared("sr_chi_squared_std_dev", freedom)?.std_dev())
+}
+
+/// 卡方微分熵，对应 `Distribution::entropy`。
+#[duck_scalar_function(
+    description = "Chi-squared differential entropy, given degrees of freedom",
+    example = "SELECT sr_chi_squared_entropy(2.0)"
+)]
+fn sr_chi_squared_entropy(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi_squared("sr_chi_squared_entropy", freedom)?.entropy())
+}
+
+/// 卡方偏度，对应 `Distribution::skewness`。
+#[duck_scalar_function(
+    description = "Chi-squared skewness, given degrees of freedom",
+    example = "SELECT sr_chi_squared_skewness(2.0)"
+)]
+fn sr_chi_squared_skewness(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi_squared("sr_chi_squared_skewness", freedom)?.skewness())
+}
+
+/// 卡方支撑集下确界，对应 `Min::min`（恒为 0）。
+#[duck_scalar_function(
+    description = "Chi-squared minimum of the support (0)",
+    example = "SELECT sr_chi_squared_min(2.0)"
+)]
+fn sr_chi_squared_min(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(Some(chi_squared("sr_chi_squared_min", freedom)?.min()))
+}
+
+/// 卡方支撑集上确界，对应 `Max::max`（无界，返回 +inf）。
+#[duck_scalar_function(
+    description = "Chi-squared maximum of the support (positive infinity)",
+    example = "SELECT sr_chi_squared_max(2.0)"
+)]
+fn sr_chi_squared_max(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(Some(chi_squared("sr_chi_squared_max", freedom)?.max()))
+}
+
+/// 卡方中位数，对应 `Median::median`。
+#[duck_scalar_function(
+    description = "Chi-squared median, given degrees of freedom",
+    example = "SELECT sr_chi_squared_median(2.0)"
+)]
+fn sr_chi_squared_median(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(Some(chi_squared("sr_chi_squared_median", freedom)?.median()))
+}
+
+/// 卡方众数，对应 `Mode::mode`（freedom < 2 时无众数，返回 NULL）。
+#[duck_scalar_function(
+    description = "Chi-squared mode, given degrees of freedom",
+    example = "SELECT sr_chi_squared_mode(2.0)"
+)]
+fn sr_chi_squared_mode(freedom: f64) -> DuckOptionResult<f64> {
+    Ok(chi_squared("sr_chi_squared_mode", freedom)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Exp（rate）
+// ---------------------------------------------------------------------------
+
+/// 指数分布均值，对应 `Distribution::mean`。
+#[duck_scalar_function(
+    description = "Exponential mean, given the rate",
+    example = "SELECT sr_exp_mean(2.0)"
+)]
+fn sr_exp_mean(rate: f64) -> DuckOptionResult<f64> {
+    Ok(exp("sr_exp_mean", rate)?.mean())
+}
+
+/// 指数分布方差，对应 `Distribution::variance`。
+#[duck_scalar_function(
+    description = "Exponential variance, given the rate",
+    example = "SELECT sr_exp_variance(2.0)"
+)]
+fn sr_exp_variance(rate: f64) -> DuckOptionResult<f64> {
+    Ok(exp("sr_exp_variance", rate)?.variance())
+}
+
+/// 指数分布标准差，对应 `Distribution::std_dev`。
+#[duck_scalar_function(
+    description = "Exponential standard deviation, given the rate",
+    example = "SELECT sr_exp_std_dev(2.0)"
+)]
+fn sr_exp_std_dev(rate: f64) -> DuckOptionResult<f64> {
+    Ok(exp("sr_exp_std_dev", rate)?.std_dev())
+}
+
+/// 指数分布微分熵，对应 `Distribution::entropy`。
+#[duck_scalar_function(
+    description = "Exponential differential entropy, given the rate",
+    example = "SELECT sr_exp_entropy(2.0)"
+)]
+fn sr_exp_entropy(rate: f64) -> DuckOptionResult<f64> {
+    Ok(exp("sr_exp_entropy", rate)?.entropy())
+}
+
+/// 指数分布偏度，对应 `Distribution::skewness`。
+#[duck_scalar_function(
+    description = "Exponential skewness, given the rate",
+    example = "SELECT sr_exp_skewness(2.0)"
+)]
+fn sr_exp_skewness(rate: f64) -> DuckOptionResult<f64> {
+    Ok(exp("sr_exp_skewness", rate)?.skewness())
+}
+
+/// 指数分布支撑集下确界，对应 `Min::min`（恒为 0）。
+#[duck_scalar_function(
+    description = "Exponential minimum of the support (0)",
+    example = "SELECT sr_exp_min(2.0)"
+)]
+fn sr_exp_min(rate: f64) -> DuckOptionResult<f64> {
+    Ok(Some(exp("sr_exp_min", rate)?.min()))
+}
+
+/// 指数分布支撑集上确界，对应 `Max::max`（无界，返回 +inf）。
+#[duck_scalar_function(
+    description = "Exponential maximum of the support (positive infinity)",
+    example = "SELECT sr_exp_max(2.0)"
+)]
+fn sr_exp_max(rate: f64) -> DuckOptionResult<f64> {
+    Ok(Some(exp("sr_exp_max", rate)?.max()))
+}
+
+/// 指数分布中位数，对应 `Median::median`。
+#[duck_scalar_function(
+    description = "Exponential median, given the rate",
+    example = "SELECT sr_exp_median(2.0)"
+)]
+fn sr_exp_median(rate: f64) -> DuckOptionResult<f64> {
+    Ok(Some(exp("sr_exp_median", rate)?.median()))
+}
+
+/// 指数分布众数，对应 `Mode::mode`（恒为 0）。
+#[duck_scalar_function(
+    description = "Exponential mode, given the rate",
+    example = "SELECT sr_exp_mode(2.0)"
+)]
+fn sr_exp_mode(rate: f64) -> DuckOptionResult<f64> {
+    Ok(exp("sr_exp_mode", rate)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// InverseGamma（shape, scale）
+// ---------------------------------------------------------------------------
+
+/// 逆 Gamma 均值，对应 `Distribution::mean`。
+#[duck_scalar_function(
+    description = "Inverse-gamma mean, given shape and scale",
+    example = "SELECT sr_inverse_gamma_mean(2.0, 1.0)"
+)]
+fn sr_inverse_gamma_mean(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(inverse_gamma("sr_inverse_gamma_mean", shape, scale)?.mean())
+}
+
+/// 逆 Gamma 方差，对应 `Distribution::variance`。
+#[duck_scalar_function(
+    description = "Inverse-gamma variance, given shape and scale",
+    example = "SELECT sr_inverse_gamma_variance(3.0, 1.0)"
+)]
+fn sr_inverse_gamma_variance(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(inverse_gamma("sr_inverse_gamma_variance", shape, scale)?.variance())
+}
+
+/// 逆 Gamma 标准差，对应 `Distribution::std_dev`。
+#[duck_scalar_function(
+    description = "Inverse-gamma standard deviation, given shape and scale",
+    example = "SELECT sr_inverse_gamma_std_dev(3.0, 1.0)"
+)]
+fn sr_inverse_gamma_std_dev(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(inverse_gamma("sr_inverse_gamma_std_dev", shape, scale)?.std_dev())
+}
+
+/// 逆 Gamma 微分熵，对应 `Distribution::entropy`。
+#[duck_scalar_function(
+    description = "Inverse-gamma differential entropy, given shape and scale",
+    example = "SELECT sr_inverse_gamma_entropy(2.0, 1.0)"
+)]
+fn sr_inverse_gamma_entropy(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(inverse_gamma("sr_inverse_gamma_entropy", shape, scale)?.entropy())
+}
+
+/// 逆 Gamma 偏度，对应 `Distribution::skewness`。
+#[duck_scalar_function(
+    description = "Inverse-gamma skewness, given shape and scale",
+    example = "SELECT sr_inverse_gamma_skewness(4.0, 1.0)"
+)]
+fn sr_inverse_gamma_skewness(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(inverse_gamma("sr_inverse_gamma_skewness", shape, scale)?.skewness())
+}
+
+/// 逆 Gamma 支撑集下确界，对应 `Min::min`（恒为 0）。
+#[duck_scalar_function(
+    description = "Inverse-gamma minimum of the support (0)",
+    example = "SELECT sr_inverse_gamma_min(2.0, 1.0)"
+)]
+fn sr_inverse_gamma_min(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(inverse_gamma("sr_inverse_gamma_min", shape, scale)?.min()))
+}
+
+/// 逆 Gamma 支撑集上确界，对应 `Max::max`（无界，返回 +inf）。
+#[duck_scalar_function(
+    description = "Inverse-gamma maximum of the support (positive infinity)",
+    example = "SELECT sr_inverse_gamma_max(2.0, 1.0)"
+)]
+fn sr_inverse_gamma_max(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(inverse_gamma("sr_inverse_gamma_max", shape, scale)?.max()))
+}
+
+/// 逆 Gamma 众数，对应 `Mode::mode`。
+#[duck_scalar_function(
+    description = "Inverse-gamma mode, given shape and scale",
+    example = "SELECT sr_inverse_gamma_mode(2.0, 1.0)"
+)]
+fn sr_inverse_gamma_mode(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(inverse_gamma("sr_inverse_gamma_mode", shape, scale)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Pareto（scale, shape）
+// ---------------------------------------------------------------------------
+
+/// Pareto（I 型）均值，对应 `Distribution::mean`（shape <= 1 时不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Pareto (type-I) mean, given scale x_m and shape alpha",
+    example = "SELECT sr_pareto_mean(1.0, 2.0)"
+)]
+fn sr_pareto_mean(scale: f64, shape: f64) -> DuckOptionResult<f64> {
+    Ok(pareto("sr_pareto_mean", scale, shape)?.mean())
+}
+
+/// Pareto 方差，对应 `Distribution::variance`（shape <= 2 时不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Pareto (type-I) variance, given scale x_m and shape alpha",
+    example = "SELECT sr_pareto_variance(1.0, 3.0)"
+)]
+fn sr_pareto_variance(scale: f64, shape: f64) -> DuckOptionResult<f64> {
+    Ok(pareto("sr_pareto_variance", scale, shape)?.variance())
+}
+
+/// Pareto 标准差，对应 `Distribution::std_dev`。
+#[duck_scalar_function(
+    description = "Pareto (type-I) standard deviation, given scale x_m and shape alpha",
+    example = "SELECT sr_pareto_std_dev(1.0, 3.0)"
+)]
+fn sr_pareto_std_dev(scale: f64, shape: f64) -> DuckOptionResult<f64> {
+    Ok(pareto("sr_pareto_std_dev", scale, shape)?.std_dev())
+}
+
+/// Pareto 微分熵，对应 `Distribution::entropy`。
+#[duck_scalar_function(
+    description = "Pareto (type-I) differential entropy, given scale x_m and shape alpha",
+    example = "SELECT sr_pareto_entropy(1.0, 2.0)"
+)]
+fn sr_pareto_entropy(scale: f64, shape: f64) -> DuckOptionResult<f64> {
+    Ok(pareto("sr_pareto_entropy", scale, shape)?.entropy())
+}
+
+/// Pareto 偏度，对应 `Distribution::skewness`（shape <= 3 时不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Pareto (type-I) skewness, given scale x_m and shape alpha",
+    example = "SELECT sr_pareto_skewness(1.0, 4.0)"
+)]
+fn sr_pareto_skewness(scale: f64, shape: f64) -> DuckOptionResult<f64> {
+    Ok(pareto("sr_pareto_skewness", scale, shape)?.skewness())
+}
+
+/// Pareto 支撑集下确界，对应 `Min::min`（等于 scale）。
+#[duck_scalar_function(
+    description = "Pareto (type-I) minimum of the support (the scale)",
+    example = "SELECT sr_pareto_min(1.0, 2.0)"
+)]
+fn sr_pareto_min(scale: f64, shape: f64) -> DuckOptionResult<f64> {
+    Ok(Some(pareto("sr_pareto_min", scale, shape)?.min()))
+}
+
+/// Pareto 支撑集上确界，对应 `Max::max`（无界，返回 +inf）。
+#[duck_scalar_function(
+    description = "Pareto (type-I) maximum of the support (positive infinity)",
+    example = "SELECT sr_pareto_max(1.0, 2.0)"
+)]
+fn sr_pareto_max(scale: f64, shape: f64) -> DuckOptionResult<f64> {
+    Ok(Some(pareto("sr_pareto_max", scale, shape)?.max()))
+}
+
+/// Pareto 中位数，对应 `Median::median`。
+#[duck_scalar_function(
+    description = "Pareto (type-I) median, given scale x_m and shape alpha",
+    example = "SELECT sr_pareto_median(1.0, 2.0)"
+)]
+fn sr_pareto_median(scale: f64, shape: f64) -> DuckOptionResult<f64> {
+    Ok(Some(pareto("sr_pareto_median", scale, shape)?.median()))
+}
+
+/// Pareto 众数，对应 `Mode::mode`。
+#[duck_scalar_function(
+    description = "Pareto (type-I) mode, given scale x_m and shape alpha",
+    example = "SELECT sr_pareto_mode(1.0, 2.0)"
+)]
+fn sr_pareto_mode(scale: f64, shape: f64) -> DuckOptionResult<f64> {
+    Ok(pareto("sr_pareto_mode", scale, shape)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Weibull（shape, scale）
+// ---------------------------------------------------------------------------
+
+/// Weibull 均值，对应 `Distribution::mean`。
+#[duck_scalar_function(
+    description = "Weibull mean, given shape k and scale lambda",
+    example = "SELECT sr_weibull_mean(1.0, 1.0)"
+)]
+fn sr_weibull_mean(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(weibull("sr_weibull_mean", shape, scale)?.mean())
+}
+
+/// Weibull 方差，对应 `Distribution::variance`。
+#[duck_scalar_function(
+    description = "Weibull variance, given shape k and scale lambda",
+    example = "SELECT sr_weibull_variance(1.0, 1.0)"
+)]
+fn sr_weibull_variance(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(weibull("sr_weibull_variance", shape, scale)?.variance())
+}
+
+/// Weibull 标准差，对应 `Distribution::std_dev`。
+#[duck_scalar_function(
+    description = "Weibull standard deviation, given shape k and scale lambda",
+    example = "SELECT sr_weibull_std_dev(1.0, 1.0)"
+)]
+fn sr_weibull_std_dev(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(weibull("sr_weibull_std_dev", shape, scale)?.std_dev())
+}
+
+/// Weibull 微分熵，对应 `Distribution::entropy`。
+#[duck_scalar_function(
+    description = "Weibull differential entropy, given shape k and scale lambda",
+    example = "SELECT sr_weibull_entropy(1.0, 1.0)"
+)]
+fn sr_weibull_entropy(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(weibull("sr_weibull_entropy", shape, scale)?.entropy())
+}
+
+/// Weibull 偏度，对应 `Distribution::skewness`。
+#[duck_scalar_function(
+    description = "Weibull skewness, given shape k and scale lambda",
+    example = "SELECT sr_weibull_skewness(1.0, 1.0)"
+)]
+fn sr_weibull_skewness(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(weibull("sr_weibull_skewness", shape, scale)?.skewness())
+}
+
+/// Weibull 支撑集下确界，对应 `Min::min`（恒为 0）。
+#[duck_scalar_function(
+    description = "Weibull minimum of the support (0)",
+    example = "SELECT sr_weibull_min(1.0, 1.0)"
+)]
+fn sr_weibull_min(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(weibull("sr_weibull_min", shape, scale)?.min()))
+}
+
+/// Weibull 支撑集上确界，对应 `Max::max`（无界，返回 +inf）。
+#[duck_scalar_function(
+    description = "Weibull maximum of the support (positive infinity)",
+    example = "SELECT sr_weibull_max(1.0, 1.0)"
+)]
+fn sr_weibull_max(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(weibull("sr_weibull_max", shape, scale)?.max()))
+}
+
+/// Weibull 中位数，对应 `Median::median`。
+#[duck_scalar_function(
+    description = "Weibull median, given shape k and scale lambda",
+    example = "SELECT sr_weibull_median(1.0, 1.0)"
+)]
+fn sr_weibull_median(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(Some(weibull("sr_weibull_median", shape, scale)?.median()))
+}
+
+/// Weibull 众数，对应 `Mode::mode`（shape <= 1 时返回 0）。
+#[duck_scalar_function(
+    description = "Weibull mode, given shape k and scale lambda",
+    example = "SELECT sr_weibull_mode(2.0, 1.0)"
+)]
+fn sr_weibull_mode(shape: f64, scale: f64) -> DuckOptionResult<f64> {
+    Ok(weibull("sr_weibull_mode", shape, scale)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// Beta（shape_a, shape_b）
+// ---------------------------------------------------------------------------
+
+/// Beta 均值，对应 `Distribution::mean`。
+#[duck_scalar_function(
+    description = "Beta mean, given shape_a and shape_b",
+    example = "SELECT sr_beta_mean(2.0, 3.0)"
+)]
+fn sr_beta_mean(shape_a: f64, shape_b: f64) -> DuckOptionResult<f64> {
+    Ok(beta("sr_beta_mean", shape_a, shape_b)?.mean())
+}
+
+/// Beta 方差，对应 `Distribution::variance`。
+#[duck_scalar_function(
+    description = "Beta variance, given shape_a and shape_b",
+    example = "SELECT sr_beta_variance(2.0, 3.0)"
+)]
+fn sr_beta_variance(shape_a: f64, shape_b: f64) -> DuckOptionResult<f64> {
+    Ok(beta("sr_beta_variance", shape_a, shape_b)?.variance())
+}
+
+/// Beta 标准差，对应 `Distribution::std_dev`。
+#[duck_scalar_function(
+    description = "Beta standard deviation, given shape_a and shape_b",
+    example = "SELECT sr_beta_std_dev(2.0, 3.0)"
+)]
+fn sr_beta_std_dev(shape_a: f64, shape_b: f64) -> DuckOptionResult<f64> {
+    Ok(beta("sr_beta_std_dev", shape_a, shape_b)?.std_dev())
+}
+
+/// Beta 微分熵，对应 `Distribution::entropy`。
+#[duck_scalar_function(
+    description = "Beta differential entropy, given shape_a and shape_b",
+    example = "SELECT sr_beta_entropy(2.0, 3.0)"
+)]
+fn sr_beta_entropy(shape_a: f64, shape_b: f64) -> DuckOptionResult<f64> {
+    Ok(beta("sr_beta_entropy", shape_a, shape_b)?.entropy())
+}
+
+/// Beta 偏度，对应 `Distribution::skewness`。
+#[duck_scalar_function(
+    description = "Beta skewness, given shape_a and shape_b",
+    example = "SELECT sr_beta_skewness(2.0, 3.0)"
+)]
+fn sr_beta_skewness(shape_a: f64, shape_b: f64) -> DuckOptionResult<f64> {
+    Ok(beta("sr_beta_skewness", shape_a, shape_b)?.skewness())
+}
+
+/// Beta 支撑集下确界，对应 `Min::min`（恒为 0）。
+#[duck_scalar_function(
+    description = "Beta minimum of the support (0)",
+    example = "SELECT sr_beta_min(2.0, 3.0)"
+)]
+fn sr_beta_min(shape_a: f64, shape_b: f64) -> DuckOptionResult<f64> {
+    Ok(Some(beta("sr_beta_min", shape_a, shape_b)?.min()))
+}
+
+/// Beta 支撑集上确界，对应 `Max::max`（恒为 1）。
+#[duck_scalar_function(
+    description = "Beta maximum of the support (1)",
+    example = "SELECT sr_beta_max(2.0, 3.0)"
+)]
+fn sr_beta_max(shape_a: f64, shape_b: f64) -> DuckOptionResult<f64> {
+    Ok(Some(beta("sr_beta_max", shape_a, shape_b)?.max()))
+}
+
+/// Beta 众数，对应 `Mode::mode`（shape_a <= 1 或 shape_b <= 1 时无众数，返回 NULL）。
+#[duck_scalar_function(
+    description = "Beta mode, given shape_a and shape_b",
+    example = "SELECT sr_beta_mode(2.0, 3.0)"
+)]
+fn sr_beta_mode(shape_a: f64, shape_b: f64) -> DuckOptionResult<f64> {
+    Ok(beta("sr_beta_mode", shape_a, shape_b)?.mode())
+}
+
+// ---------------------------------------------------------------------------
+// FisherSnedecor（freedom_1, freedom_2）
+// ---------------------------------------------------------------------------
+
+/// F 分布均值，对应 `Distribution::mean`（freedom_2 <= 2 时不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Fisher-Snedecor (F) mean, given the two degrees of freedom",
+    example = "SELECT sr_fisher_snedecor_mean(3.0, 5.0)"
+)]
+fn sr_fisher_snedecor_mean(freedom_1: f64, freedom_2: f64) -> DuckOptionResult<f64> {
+    Ok(fisher_snedecor("sr_fisher_snedecor_mean", freedom_1, freedom_2)?.mean())
+}
+
+/// F 分布方差，对应 `Distribution::variance`（freedom_2 <= 4 时不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Fisher-Snedecor (F) variance, given the two degrees of freedom",
+    example = "SELECT sr_fisher_snedecor_variance(3.0, 5.0)"
+)]
+fn sr_fisher_snedecor_variance(freedom_1: f64, freedom_2: f64) -> DuckOptionResult<f64> {
+    Ok(fisher_snedecor("sr_fisher_snedecor_variance", freedom_1, freedom_2)?.variance())
+}
+
+/// F 分布标准差，对应 `Distribution::std_dev`。
+#[duck_scalar_function(
+    description = "Fisher-Snedecor (F) standard deviation, given the two degrees of freedom",
+    example = "SELECT sr_fisher_snedecor_std_dev(3.0, 5.0)"
+)]
+fn sr_fisher_snedecor_std_dev(freedom_1: f64, freedom_2: f64) -> DuckOptionResult<f64> {
+    Ok(fisher_snedecor("sr_fisher_snedecor_std_dev", freedom_1, freedom_2)?.std_dev())
+}
+
+/// F 分布微分熵，对应 `Distribution::entropy`。
+#[duck_scalar_function(
+    description = "Fisher-Snedecor (F) differential entropy, given the two degrees of freedom",
+    example = "SELECT sr_fisher_snedecor_entropy(3.0, 5.0)"
+)]
+fn sr_fisher_snedecor_entropy(freedom_1: f64, freedom_2: f64) -> DuckOptionResult<f64> {
+    Ok(fisher_snedecor("sr_fisher_snedecor_entropy", freedom_1, freedom_2)?.entropy())
+}
+
+/// F 分布偏度，对应 `Distribution::skewness`（freedom_2 <= 6 时不存在，返回 NULL）。
+#[duck_scalar_function(
+    description = "Fisher-Snedecor (F) skewness, given the two degrees of freedom",
+    example = "SELECT sr_fisher_snedecor_skewness(3.0, 7.0)"
+)]
+fn sr_fisher_snedecor_skewness(freedom_1: f64, freedom_2: f64) -> DuckOptionResult<f64> {
+    Ok(fisher_snedecor("sr_fisher_snedecor_skewness", freedom_1, freedom_2)?.skewness())
+}
+
+/// F 分布支撑集下确界，对应 `Min::min`（恒为 0）。
+#[duck_scalar_function(
+    description = "Fisher-Snedecor (F) minimum of the support (0)",
+    example = "SELECT sr_fisher_snedecor_min(3.0, 5.0)"
+)]
+fn sr_fisher_snedecor_min(freedom_1: f64, freedom_2: f64) -> DuckOptionResult<f64> {
+    Ok(Some(fisher_snedecor("sr_fisher_snedecor_min", freedom_1, freedom_2)?.min()))
+}
+
+/// F 分布支撑集上确界，对应 `Max::max`（无界，返回 +inf）。
+#[duck_scalar_function(
+    description = "Fisher-Snedecor (F) maximum of the support (positive infinity)",
+    example = "SELECT sr_fisher_snedecor_max(3.0, 5.0)"
+)]
+fn sr_fisher_snedecor_max(freedom_1: f64, freedom_2: f64) -> DuckOptionResult<f64> {
+    Ok(Some(fisher_snedecor("sr_fisher_snedecor_max", freedom_1, freedom_2)?.max()))
+}
+
+/// F 分布众数，对应 `Mode::mode`（freedom_1 <= 2 时无众数，返回 NULL）。
+#[duck_scalar_function(
+    description = "Fisher-Snedecor (F) mode, given the two degrees of freedom",
+    example = "SELECT sr_fisher_snedecor_mode(3.0, 5.0)"
+)]
+fn sr_fisher_snedecor_mode(freedom_1: f64, freedom_2: f64) -> DuckOptionResult<f64> {
+    Ok(fisher_snedecor("sr_fisher_snedecor_mode", freedom_1, freedom_2)?.mode())
 }

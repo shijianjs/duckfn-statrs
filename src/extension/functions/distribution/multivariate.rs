@@ -19,6 +19,7 @@ use quack_rs::error::ExtensionError;
 use statrs::distribution::{
     Continuous, Dirichlet, Discrete, Multinomial, MultivariateNormal, MultivariateStudent,
 };
+use statrs::statistics::{MeanN, Mode, VarianceN};
 
 use crate::extension::functions::as_u64;
 
@@ -149,4 +150,70 @@ fn sr_multivariate_students_t_pdf(
 ) -> DuckOptionResult<f64> {
     let dist = multivariate_student("sr_multivariate_students_t_pdf", location, scale, freedom)?;
     Ok(Some(dist.pdf(&DVector::from_vec(x))))
+}
+
+// ---------------------------------------------------------------------------
+// 补充：MultivariateNormal / MultivariateStudent 的矩、熵、众数
+// ---------------------------------------------------------------------------
+
+/// 多元正态微分熵。
+#[duck_scalar_function(
+    description = "Differential entropy of the multivariate normal distribution given the mean and a row-major flattened covariance matrix",
+    example = "SELECT sr_multivariate_normal_entropy([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])"
+)]
+fn sr_multivariate_normal_entropy(mean: Vec<f64>, cov: Vec<f64>) -> DuckOptionResult<f64> {
+    let dist = multivariate_normal("sr_multivariate_normal_entropy", mean, cov)?;
+    Ok(dist.entropy())
+}
+
+/// 多元正态均值向量（LIST(DOUBLE)）。
+#[duck_scalar_function(
+    description = "Mean vector of the multivariate normal distribution given the mean and a row-major flattened covariance matrix",
+    example = "SELECT sr_multivariate_normal_mean([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])"
+)]
+fn sr_multivariate_normal_mean(mean: Vec<f64>, cov: Vec<f64>) -> DuckOptionResult<Vec<f64>> {
+    let dist = multivariate_normal("sr_multivariate_normal_mean", mean, cov)?;
+    Ok(dist.mean().map(|v| v.iter().copied().collect::<Vec<f64>>()))
+}
+
+/// 多元正态协方差矩阵（行主序摊平成 LIST(DOUBLE)）。
+#[duck_scalar_function(
+    description = "Covariance matrix of the multivariate normal distribution (row-major flattened LIST) given the mean and a row-major flattened covariance matrix",
+    example = "SELECT sr_multivariate_normal_variance([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])"
+)]
+fn sr_multivariate_normal_variance(mean: Vec<f64>, cov: Vec<f64>) -> DuckOptionResult<Vec<f64>> {
+    let dist = multivariate_normal("sr_multivariate_normal_variance", mean, cov)?;
+    Ok(dist.variance().map(|m| {
+        let mut out = Vec::with_capacity(m.nrows() * m.ncols());
+        for i in 0..m.nrows() {
+            for j in 0..m.ncols() {
+                out.push(m[(i, j)]);
+            }
+        }
+        out
+    }))
+}
+
+/// 多元正态众数向量（LIST(DOUBLE)）。
+#[duck_scalar_function(
+    description = "Mode vector of the multivariate normal distribution given the mean and a row-major flattened covariance matrix",
+    example = "SELECT sr_multivariate_normal_mode([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])"
+)]
+fn sr_multivariate_normal_mode(mean: Vec<f64>, cov: Vec<f64>) -> DuckOptionResult<Vec<f64>> {
+    let dist = multivariate_normal("sr_multivariate_normal_mode", mean, cov)?;
+    Ok(Some(dist.mode().iter().copied().collect::<Vec<f64>>()))
+}
+
+/// 多元 t 众数向量（LIST(DOUBLE)）。
+#[duck_scalar_function(
+    description = "Mode vector of the multivariate Student's t distribution given location, a row-major flattened scale matrix and the degrees of freedom",
+    example = "SELECT sr_multivariate_students_t_mode([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)"
+)]
+fn sr_multivariate_students_t_mode(
+    location: Vec<f64>,
+    scale: Vec<f64>,
+    freedom: f64,
+) -> DuckOptionResult<Vec<f64>> {
+    let dist = multivariate_student("sr_multivariate_students_t_mode", location, scale, freedom)?;
+    Ok(Some(dist.mode().iter().copied().collect::<Vec<f64>>()))
 }

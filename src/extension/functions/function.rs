@@ -3,15 +3,11 @@
 //
 // 与 statrs 的对应关系逐条写在每个函数的注释里（statrs 原名）。有意不包装的：
 //   - checked_* 变体：SQL 侧统一「算不出 → NULL」，checked 的错误路径与直接版的 NAN 收敛到
-//     同一个出口，包两份只是把同一个函数注册两次；
-//   - factorial::multinomial：参数是 &[u64]（向量），不匹配「对外只有 DOUBLE 标量」的形状；
-//   - kernel（KDE 带宽用）与 evaluate::polynomial（内部求值宏的支撑件）：不是用户可算的函数。
+//     同一个出口，包两份只是把同一个函数注册两次。
 //
 // Wrapping statrs::function: the special functions (erf / gamma / beta / factorial / harmonic /
 // logistic). Each note below names the statrs item it delegates to. Deliberately not wrapped:
-// the checked_* variants (the SQL side folds "undefined" into NULL either way), multinomial
-// (vector argument — does not fit the DOUBLE-only scalar surface), kernel and evaluate::polynomial
-// (support pieces, not user-facing computations).
+// the checked_* variants (the SQL side folds "undefined" into NULL either way).
 // ============================================================================
 
 use duckfn::{DuckOptionResult, duck_error, duck_scalar_function};
@@ -185,7 +181,7 @@ fn sr_inv_beta_regularized(a: f64, b: f64, p: f64) -> DuckOptionResult<f64> {
 }
 
 // ---------------------------------------------------------------------------
-// 阶乘与二项系数（statrs::function::factorial；multinomial 因向量参数不包装）
+// 阶乘与二项/多项式系数（statrs::function::factorial）
 // ---------------------------------------------------------------------------
 
 /// n 的阶乘（`factorial::factorial`）。
@@ -229,6 +225,21 @@ fn sr_ln_choose(n: f64, k: f64) -> DuckOptionResult<f64> {
         as_u64("sr_ln_choose", n)?,
         as_u64("sr_ln_choose", k)?,
     ))
+}
+
+/// 多项式系数 `n! / (n1! n2! …)`（statrs 原名 `factorial::multinomial`，用其 checked 版：
+/// 各 ni 之和 ≠ n 时给 None → SQL NULL）。counts 为 LIST(BIGINT)。
+#[duck_scalar_function(
+    description = "Multinomial coefficient n! / (n1! n2! ...) over a whole-number n and a count LIST(BIGINT); NULL when the counts do not sum to n",
+    example = "SELECT sr_multinomial_coefficient(5.0, [2, 2, 1])"
+)]
+fn sr_multinomial_coefficient(total: f64, counts: Vec<i64>) -> DuckOptionResult<f64> {
+    let n = as_u64("sr_multinomial_coefficient", total)?;
+    let ni = counts
+        .iter()
+        .map(|c| as_u64("sr_multinomial_coefficient", *c as f64))
+        .collect::<Result<Vec<u64>, _>>()?;
+    Ok(factorial::checked_multinomial(n, &ni))
 }
 
 // ---------------------------------------------------------------------------
@@ -335,6 +346,32 @@ fn sr_kernel_eval(kind: f64, x: f64) -> DuckOptionResult<f64> {
         other => {
             return Err(duck_error(format!(
                 "sr_kernel_eval: the kernel kind must be 1..9 (gaussian, epanechnikov, triangular, tricube, quartic, uniform, cosine, logistic, sigmoid), got {other}"
+            )));
+        }
+    };
+    nan_to_null(value)
+}
+
+/// 带宽缩放后的核函数 `K(x / h) / h`（statrs::Kernel::evaluate_with_bandwidth），
+/// 确保缩放后仍积分为 1；kind 语义与 sr_kernel_eval 完全一致。
+#[duck_scalar_function(
+    description = "Kernel function with bandwidth scaling K(x / h) / h (same kind codes as sr_kernel_eval)",
+    example = "SELECT sr_kernel_eval_with_bandwidth(1.0, 0.0, 0.5)"
+)]
+fn sr_kernel_eval_with_bandwidth(kind: f64, x: f64, bandwidth: f64) -> DuckOptionResult<f64> {
+    let value = match kind {
+        1.0 => Gaussian.evaluate_with_bandwidth(x, bandwidth),
+        2.0 => Epanechnikov.evaluate_with_bandwidth(x, bandwidth),
+        3.0 => TriangularKernel.evaluate_with_bandwidth(x, bandwidth),
+        4.0 => Tricube.evaluate_with_bandwidth(x, bandwidth),
+        5.0 => Quartic.evaluate_with_bandwidth(x, bandwidth),
+        6.0 => UniformKernel.evaluate_with_bandwidth(x, bandwidth),
+        7.0 => Cosine.evaluate_with_bandwidth(x, bandwidth),
+        8.0 => LogisticKernel.evaluate_with_bandwidth(x, bandwidth),
+        9.0 => Sigmoid.evaluate_with_bandwidth(x, bandwidth),
+        other => {
+            return Err(duck_error(format!(
+                "sr_kernel_eval_with_bandwidth: the kernel kind must be 1..9 (gaussian, epanechnikov, triangular, tricube, quartic, uniform, cosine, logistic, sigmoid), got {other}"
             )));
         }
     };
