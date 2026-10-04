@@ -6,7 +6,7 @@
 // 为什么是聚合而不是「LIST + 标量」：`SELECT sr_mean(x) FROM t GROUP BY g` 是数据库用户
 // 写统计查询的默认形状，换成标量就得先 `list(x)` 再喂给函数，SQL 更长、也更绕。
 //
-// 形状：`#[duck_aggregate_function(auto_collect = true)]`（duckfn 0.0.18 起）—— 被注解
+// 形状：`#[duck_aggregate_function(auto_collect = true)]`（duckfn 0.0.28 起）—— 被注解
 // 函数就是 finalize 处理器，`Vec<f64>` 参数是逐行收集的列，状态由宏生成。
 //
 // NULL 语义（与 statrs 对齐、向 SQL 用户侧传播）：SQL NULL 行不进收集；statrs 算不出的

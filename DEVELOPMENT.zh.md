@@ -8,7 +8,7 @@
 
 duckfn 自身的通用约定（入口链路、新增函数的流程、动手前该查哪份源码）在这里**不重复**：
 它们在 [AGENTS.md](AGENTS.md) 里，那里也写明了 duckfn 的文档与示例扩展在本机 cargo registry 里的位置
-（0.0.11 起随 crate 发布，不需要 clone duckfn 仓库）。
+（0.0.21 起随 crate 发布，不需要 clone duckfn 仓库）。
 
 本仓库是 [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template)，
 从 DuckDB 官方 [extension-template-rs](https://github.com/duckdb/extension-template-rs) 起步，
@@ -100,7 +100,7 @@ community-extension/    社区扩展注册的两份文件与流程说明
   空组要回 NULL 就得覆盖 `result` 返回 `Ok(None)`。
 
 本扩展里这些都不手写：每个统计量都是一个 `#[duck_aggregate_function(auto_collect = true)]`
-函数（duckfn 0.0.18 起）—— 被注解函数**就是** finalize 处理器（`Vec<f64>` 参数是收集好的列，
+函数（duckfn 0.0.28 起）—— 被注解函数**就是** finalize 处理器（`Vec<f64>` 参数是收集好的列，
 `DuckFirst<f64>` 是每查询常量），状态、合并的 `simple_combine` 与把 statrs 的 NAN（空组、
 样本不足、无定义的统计量）经共享的 `nan_to_null` 折成 SQL NULL 的 `result` 都由宏生成。
 
