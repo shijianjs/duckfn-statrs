@@ -1,21 +1,20 @@
 ---
-title: Special functions
+title: 特殊函数
 sidebar_position: 14
-description: Error functions, gamma and beta families, factorials, harmonic numbers, logistic/logit, polynomial evaluation, and kernel helpers.
+description: 误差函数、Gamma 与 Beta 族、阶乘、调和数、Logistic/logit、多项式求值与核函数。
 ---
 
-# Special functions
+# 特殊函数
 
-Scalar functions evaluating the mathematical primitives statrs exposes under `function/`.
-Every argument is DOUBLE unless the signature says otherwise.
+计算 statrs 在 `function/` 下暴露的数学本原的标量函数。除签名另有声明，参数一律是 DOUBLE。
 
-## Error function family
+## 误差函数族
 
 ### sr_erf(x)
 
-**Signature**: `sr_erf(x DOUBLE) -> DOUBLE`
+**签名**：`sr_erf(x DOUBLE) -> DOUBLE`
 
-The error function `erf(x)`. `erf(0) = 0`.
+误差函数 `erf(x)`。`erf(0) = 0`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_erf(0.0)
@@ -29,9 +28,9 @@ SELECT sr_erf(1.0)::DECIMAL(12,6)
 
 ### sr_erfc(x)
 
-**Signature**: `sr_erfc(x DOUBLE) -> DOUBLE`
+**签名**：`sr_erfc(x DOUBLE) -> DOUBLE`
 
-Complementary error function `erfc(x) = 1 - erf(x)`.
+互补误差函数 `erfc(x) = 1 - erf(x)`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_erfc(1.0)::DECIMAL(12,6)
@@ -40,9 +39,9 @@ SELECT sr_erfc(1.0)::DECIMAL(12,6)
 
 ### sr_erf_inv(y)
 
-**Signature**: `sr_erf_inv(y DOUBLE) -> DOUBLE`
+**签名**：`sr_erf_inv(y DOUBLE) -> DOUBLE`
 
-Inverse error function: the x with `erf(x) = y`.
+反误差函数：使 `erf(x) = y` 的那个 x。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_erf_inv(sr_erf(0.7))::DECIMAL(12,8)
@@ -51,22 +50,22 @@ SELECT sr_erf_inv(sr_erf(0.7))::DECIMAL(12,8)
 
 ### sr_erfc_inv(y)
 
-**Signature**: `sr_erfc_inv(y DOUBLE) -> DOUBLE`
+**签名**：`sr_erfc_inv(y DOUBLE) -> DOUBLE`
 
-Inverse complementary error function.
+反互补误差函数。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_erfc_inv(0.15729920705028513)::DECIMAL(12,6)
 -- 1.000000
 ```
 
-## Gamma family
+## Gamma 族
 
 ### sr_gamma(x)
 
-**Signature**: `sr_gamma(x DOUBLE) -> DOUBLE`
+**签名**：`sr_gamma(x DOUBLE) -> DOUBLE`
 
-Gamma function `Γ(x)`. For whole-number inputs `Γ(n+1) = n!`.
+Gamma 函数 `Γ(x)`。整数入参时 `Γ(n+1) = n!`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_gamma(5.0)
@@ -75,9 +74,9 @@ SELECT sr_gamma(5.0)
 
 ### sr_ln_gamma(x)
 
-**Signature**: `sr_ln_gamma(x DOUBLE) -> DOUBLE`
+**签名**：`sr_ln_gamma(x DOUBLE) -> DOUBLE`
 
-Natural log of the Gamma function, `ln(Γ(x))`.
+Gamma 函数的自然对数 `ln(Γ(x))`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ln_gamma(5.0)::DECIMAL(12,6)
@@ -86,9 +85,9 @@ SELECT sr_ln_gamma(5.0)::DECIMAL(12,6)
 
 ### sr_digamma(x)
 
-**Signature**: `sr_digamma(x DOUBLE) -> DOUBLE`
+**签名**：`sr_digamma(x DOUBLE) -> DOUBLE`
 
-Digamma function `ψ(x)`, the derivative of `ln(Γ(x))`.
+digamma 函数 `ψ(x)`，`ln(Γ(x))` 的导数。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_digamma(2.0)::DECIMAL(12,8)
@@ -97,9 +96,9 @@ SELECT sr_digamma(2.0)::DECIMAL(12,8)
 
 ### sr_inv_digamma(y)
 
-**Signature**: `sr_inv_digamma(y DOUBLE) -> DOUBLE`
+**签名**：`sr_inv_digamma(y DOUBLE) -> DOUBLE`
 
-Inverse digamma: the x with `ψ(x) = y`.
+反 digamma：使 `ψ(x) = y` 的那个 x。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_inv_digamma(0.42278433509846713)::DECIMAL(12,8)
@@ -108,9 +107,9 @@ SELECT sr_inv_digamma(0.42278433509846713)::DECIMAL(12,8)
 
 ### sr_gamma_lower_incomplete(a, x)
 
-**Signature**: `sr_gamma_lower_incomplete(a DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_gamma_lower_incomplete(a DOUBLE, x DOUBLE) -> DOUBLE`
 
-Lower incomplete Gamma `γ(a, x)` — integrates from 0 to x.
+下不完全 Gamma `γ(a, x)` —— 从 0 到 x 的积分。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_gamma_lower_incomplete(1.0, 1.0)::DECIMAL(12,8)
@@ -119,9 +118,9 @@ SELECT sr_gamma_lower_incomplete(1.0, 1.0)::DECIMAL(12,8)
 
 ### sr_gamma_upper_incomplete(a, x)
 
-**Signature**: `sr_gamma_upper_incomplete(a DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_gamma_upper_incomplete(a DOUBLE, x DOUBLE) -> DOUBLE`
 
-Upper incomplete Gamma `Γ(a, x)` — integrates from x to infinity.
+上不完全 Gamma `Γ(a, x)` —— 从 x 到无穷大的积分。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_gamma_upper_incomplete(1.0, 1.0)::DECIMAL(12,8)
@@ -130,9 +129,9 @@ SELECT sr_gamma_upper_incomplete(1.0, 1.0)::DECIMAL(12,8)
 
 ### sr_gamma_lower_regularized(a, x)
 
-**Signature**: `sr_gamma_lower_regularized(a DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_gamma_lower_regularized(a DOUBLE, x DOUBLE) -> DOUBLE`
 
-Regularized lower incomplete Gamma `P(a, x) = γ(a, x) / Γ(a)`.
+正则化下不完全 Gamma `P(a, x) = γ(a, x) / Γ(a)`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_gamma_lower_regularized(1.0, 1.0)::DECIMAL(12,8)
@@ -141,23 +140,22 @@ SELECT sr_gamma_lower_regularized(1.0, 1.0)::DECIMAL(12,8)
 
 ### sr_gamma_upper_regularized(a, x)
 
-**Signature**: `sr_gamma_upper_regularized(a DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_gamma_upper_regularized(a DOUBLE, x DOUBLE) -> DOUBLE`
 
-Regularized upper incomplete Gamma `Q(a, x) = Γ(a, x) / Γ(a)`. Complementary to the lower
-regularized form: `P(a, x) + Q(a, x) = 1`.
+正则化上不完全 Gamma `Q(a, x) = Γ(a, x) / Γ(a)`，与下正则化式互补：`P(a, x) + Q(a, x) = 1`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_gamma_upper_regularized(1.0, 1.0)::DECIMAL(12,8)
 -- 0.36787944
 ```
 
-## Beta family
+## Beta 族
 
 ### sr_beta(a, b)
 
-**Signature**: `sr_beta(a DOUBLE, b DOUBLE) -> DOUBLE`
+**签名**：`sr_beta(a DOUBLE, b DOUBLE) -> DOUBLE`
 
-Beta function `B(a, b)`.
+Beta 函数 `B(a, b)`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_beta(2.0, 3.0)::DECIMAL(12,8)
@@ -166,9 +164,9 @@ SELECT sr_beta(2.0, 3.0)::DECIMAL(12,8)
 
 ### sr_ln_beta(a, b)
 
-**Signature**: `sr_ln_beta(a DOUBLE, b DOUBLE) -> DOUBLE`
+**签名**：`sr_ln_beta(a DOUBLE, b DOUBLE) -> DOUBLE`
 
-Natural log of the Beta function.
+Beta 函数的自然对数。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ln_beta(2.0, 3.0)::DECIMAL(12,8)
@@ -177,9 +175,9 @@ SELECT sr_ln_beta(2.0, 3.0)::DECIMAL(12,8)
 
 ### sr_beta_incomplete(x, a, b)
 
-**Signature**: `sr_beta_incomplete(a DOUBLE, b DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_beta_incomplete(a DOUBLE, b DOUBLE, x DOUBLE) -> DOUBLE`
 
-Incomplete Beta function `B(x; a, b)`, integrating from 0 to x.
+不完全 Beta 函数 `B(x; a, b)`，从 0 到 x 积分。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_beta_incomplete(2.0, 3.0, 0.5)
@@ -187,9 +185,9 @@ SELECT sr_beta_incomplete(2.0, 3.0, 0.5)
 
 ### sr_beta_regularized(a, b, x)
 
-**Signature**: `sr_beta_regularized(a DOUBLE, b DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_beta_regularized(a DOUBLE, b DOUBLE, x DOUBLE) -> DOUBLE`
 
-Regularized incomplete Beta `I(x; a, b)`.
+正则化不完全 Beta `I(x; a, b)`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_beta_regularized(2.0, 3.0, 0.5)::DECIMAL(12,8)
@@ -198,22 +196,22 @@ SELECT sr_beta_regularized(2.0, 3.0, 0.5)::DECIMAL(12,8)
 
 ### sr_inv_beta_regularized(a, b, p)
 
-**Signature**: `sr_inv_beta_regularized(a DOUBLE, b DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_inv_beta_regularized(a DOUBLE, b DOUBLE, p DOUBLE) -> DOUBLE`
 
-Inverse of the regularized incomplete Beta: the x where `I(x; a, b) = p`.
+正则化不完全 Beta 的反函数：使 `I(x; a, b) = p` 的那个 x。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_inv_beta_regularized(2.0, 3.0, 0.5)::DECIMAL(12,8)
 -- 0.38572757
 ```
 
-## Factorial and combinatorial
+## 阶乘与组合
 
 ### sr_factorial(n)
 
-**Signature**: `sr_factorial(n DOUBLE) -> DOUBLE`
+**签名**：`sr_factorial(n DOUBLE) -> DOUBLE`
 
-Factorial `n!`. `n` must be a whole-number DOUBLE.
+阶乘 `n!`。`n` 必须是整数值 DOUBLE。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_factorial(10.0)
@@ -222,9 +220,9 @@ SELECT sr_factorial(10.0)
 
 ### sr_ln_factorial(n)
 
-**Signature**: `sr_ln_factorial(n DOUBLE) -> DOUBLE`
+**签名**：`sr_ln_factorial(n DOUBLE) -> DOUBLE`
 
-Natural log of `n!`.
+`n!` 的自然对数。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ln_factorial(10.0)::DECIMAL(12,8)
@@ -233,9 +231,9 @@ SELECT sr_ln_factorial(10.0)::DECIMAL(12,8)
 
 ### sr_choose(n, k)
 
-**Signature**: `sr_choose(n DOUBLE, k DOUBLE) -> DOUBLE`
+**签名**：`sr_choose(n DOUBLE, k DOUBLE) -> DOUBLE`
 
-Binomial coefficient `C(n, k)`. Both arguments must be whole-number DOUBLEs.
+二项系数 `C(n, k)`。两个参数都必须是整数值 DOUBLE。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_choose(10.0, 3.0)
@@ -244,22 +242,22 @@ SELECT sr_choose(10.0, 3.0)
 
 ### sr_ln_choose(n, k)
 
-**Signature**: `sr_ln_choose(n DOUBLE, k DOUBLE) -> DOUBLE`
+**签名**：`sr_ln_choose(n DOUBLE, k DOUBLE) -> DOUBLE`
 
-Natural log of the binomial coefficient.
+二项系数的自然对数。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT exp(sr_ln_choose(10.0, 3.0))::DECIMAL(12,8)
 -- 120.00000000
 ```
 
-## Harmonic numbers
+## 调和数
 
 ### sr_harmonic(n)
 
-**Signature**: `sr_harmonic(n DOUBLE) -> DOUBLE`
+**签名**：`sr_harmonic(n DOUBLE) -> DOUBLE`
 
-Harmonic number `H(n) = sum_{k=1..n} 1/k`.
+调和数 `H(n) = sum_{k=1..n} 1/k`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_harmonic(10.0)::DECIMAL(12,8)
@@ -268,9 +266,9 @@ SELECT sr_harmonic(10.0)::DECIMAL(12,8)
 
 ### sr_generalized_harmonic(n, m)
 
-**Signature**: `sr_generalized_harmonic(n DOUBLE, m DOUBLE) -> DOUBLE`
+**签名**：`sr_generalized_harmonic(n DOUBLE, m DOUBLE) -> DOUBLE`
 
-Generalized harmonic number `sum_{k=1..n} 1/k^m`.
+广义调和数 `sum_{k=1..n} 1/k^m`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_generalized_harmonic(10.0, 2.0)::DECIMAL(12,8)
@@ -281,9 +279,9 @@ SELECT sr_generalized_harmonic(10.0, 2.0)::DECIMAL(12,8)
 
 ### sr_logistic(p)
 
-**Signature**: `sr_logistic(p DOUBLE) -> DOUBLE`
+**签名**：`sr_logistic(p DOUBLE) -> DOUBLE`
 
-Sigmoid `1 / (1 + exp(-p))`.
+sigmoid `1 / (1 + exp(-p))`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_logistic(0.0)
@@ -292,10 +290,9 @@ SELECT sr_logistic(0.0)
 
 ### sr_logit(p)
 
-**Signature**: `sr_logit(p DOUBLE) -> DOUBLE`
+**签名**：`sr_logit(p DOUBLE) -> DOUBLE`
 
-Inverse sigmoid `ln(p / (1 - p))`. Endpoints (`0` and `1`) yield infinity; values outside `[0, 1]`
-yield NULL.
+反 sigmoid `ln(p / (1 - p))`。端点（`0` 与 `1`）给无穷大；`[0, 1]` 之外的值给 NULL。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_logit(sr_logistic(1.3))::DECIMAL(12,8)
@@ -307,40 +304,40 @@ SELECT sr_logit(1.2)
 -- NULL (out of [0, 1])
 ```
 
-## Exponential integral
+## 指数积分
 
 ### sr_exponential_integral(n, x)
 
-**Signature**: `sr_exponential_integral(n DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_exponential_integral(n DOUBLE, x DOUBLE) -> DOUBLE`
 
-Exponential integral `E_n(x)` for `n >= 0` and `x >= 0`. NULL where statrs leaves it undefined.
+指数积分 `E_n(x)`，要求 `n >= 0` 且 `x >= 0`。statrs 算不出的地方给 NULL。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_exponential_integral(1.0, 0.0)
 -- inf
 ```
 
-## Polynomial
+## 多项式
 
 ### sr_polynomial(x, coefficients)
 
-**Signature**: `sr_polynomial(x DOUBLE, coefficients LIST(DOUBLE)) -> DOUBLE`
+**签名**：`sr_polynomial(x DOUBLE, coefficients LIST(DOUBLE)) -> DOUBLE`
 
-Evaluate `sum coeff[i] * x^i` where `coefficients` is in ascending order.
+求 `sum coeff[i] * x^i`，`coefficients` 按幂次升序。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_polynomial(2.0, [1.0, 0.0, 3.0])
 -- 13.0
 ```
 
-## Kernel functions
+## 核函数
 
 ### sr_kernel_eval(x, kind)
 
-**Signature**: `sr_kernel_eval(x DOUBLE, kind DOUBLE) -> DOUBLE`
+**签名**：`sr_kernel_eval(x DOUBLE, kind DOUBLE) -> DOUBLE`
 
-Evaluate kernel `K(x)`. Kind codes: 1=gaussian, 2=epanechnikov, 3=triangular, 4=tricube,
-5=quartic, 6=uniform, 7=cosine, 8=logistic, 9=sigmoid.
+核函数 `K(x)` 求值。kind 代码：1=gaussian、2=epanechnikov、3=triangular、4=tricube、
+5=quartic、6=uniform、7=cosine、8=logistic、9=sigmoid。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_kernel_eval(2.0, 0.0)
@@ -348,10 +345,9 @@ SELECT sr_kernel_eval(2.0, 0.0)
 
 ### sr_kernel_support(kind)
 
-**Signature**: `sr_kernel_support(kind DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_kernel_support(kind DOUBLE) -> LIST(DOUBLE)`
 
-Compact support interval `[lo, hi]` of the kernel. NULL for kernels with unbounded support
-(gaussian, sigmoid, logistic).
+核的紧支撑区间 `[lo, hi]`。非紧支撑核（gaussian、sigmoid、logistic）给 NULL。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_kernel_support(2.0)

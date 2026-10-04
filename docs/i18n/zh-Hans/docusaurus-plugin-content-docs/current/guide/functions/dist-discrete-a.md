@@ -1,14 +1,12 @@
 ---
-title: "Discrete distributions (A)"
+title: "离散分布 (A)"
 sidebar_position: 10
-description: Bernoulli, Binomial, Negative binomial and Geometric — pmf, ln_pmf, cdf, sf, quantile for each.
+description: Bernoulli、二项、负二项与几何分布——每种都提供 pmf / ln_pmf / cdf / sf / quantile。
 ---
 
-# Discrete distributions (A)
+# 离散分布 (A)
 
-For discrete distributions, integer-valued slots (`x`, trial counts, success counts) take
-**whole-number DOUBLE** literals like `10.0`, not `10` or `3.5` — a non-integer is a query
-error, never a silent round. Each distribution exposes 5 functions:
+离散分布里吃整数的槽位（`x`、试验次数、成功次数）接受**整数值 DOUBLE** 字面量（如 `10.0`），不是 `10` 也不是 `3.5`——非整数会报查询错误，不会四舍五入。每种分布 5 个函数：
 
 ```
 sr_<name>_pmf(x, params...)     probability mass P(X = x)
@@ -20,11 +18,11 @@ sr_<name>_quantile(p, params...) inverse CDF
 
 ## Bernoulli
 
-Parameters: `p` — success probability, must be in [0, 1]. Support: `{0, 1}`.
+参数：`p` — 成功概率，必须在 [0, 1]. 支撑：`{0, 1}`.
 
 ### sr_bernoulli_pmf(x, p)
 
-**Signature**: `sr_bernoulli_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_bernoulli_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_bernoulli_pmf(1.0, 0.7)
@@ -33,7 +31,7 @@ SELECT sr_bernoulli_pmf(1.0, 0.7)
 
 ### sr_bernoulli_ln_pmf(x, p)
 
-**Signature**: `sr_bernoulli_ln_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_bernoulli_ln_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_bernoulli_ln_pmf(1.0, 0.7)
@@ -41,7 +39,7 @@ SELECT sr_bernoulli_ln_pmf(1.0, 0.7)
 
 ### sr_bernoulli_cdf(x, p)
 
-**Signature**: `sr_bernoulli_cdf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_bernoulli_cdf(x DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_bernoulli_cdf(0.0, 0.7)
@@ -50,7 +48,7 @@ SELECT sr_bernoulli_cdf(0.0, 0.7)
 
 ### sr_bernoulli_sf(x, p)
 
-**Signature**: `sr_bernoulli_sf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_bernoulli_sf(x DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_bernoulli_sf(0.0, 0.7)
@@ -59,22 +57,22 @@ SELECT sr_bernoulli_sf(0.0, 0.7)
 
 ### sr_bernoulli_quantile(p, prob)
 
-**Signature**: `sr_bernoulli_quantile(p DOUBLE, prob DOUBLE) -> DOUBLE`
+**签名**：`sr_bernoulli_quantile(p DOUBLE, prob DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_bernoulli_quantile(0.5, 0.7)
 -- 1.0
 ```
 
-## Binomial
+## 二项
 
-Parameters: `p` (success probability), `n` (number of trials, whole-number DOUBLE).
+参数：`p`（成功概率）、`n`（试验次数，整数值 DOUBLE）。
 
 ### sr_binomial_pmf(x, p, n)
 
-**Signature**: `sr_binomial_pmf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
+**签名**：`sr_binomial_pmf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
 
-Probability mass `P(X = x)`.
+概率质量 `P(X = x)`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_binomial_pmf(3.0, 0.5, 10.0)::DECIMAL(12,8)
@@ -83,7 +81,7 @@ SELECT sr_binomial_pmf(3.0, 0.5, 10.0)::DECIMAL(12,8)
 
 ### sr_binomial_ln_pmf(x, p, n)
 
-**Signature**: `sr_binomial_ln_pmf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
+**签名**：`sr_binomial_ln_pmf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_binomial_ln_pmf(3.0, 0.5, 10.0)
@@ -91,7 +89,7 @@ SELECT sr_binomial_ln_pmf(3.0, 0.5, 10.0)
 
 ### sr_binomial_cdf(x, p, n)
 
-**Signature**: `sr_binomial_cdf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
+**签名**：`sr_binomial_cdf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_binomial_cdf(3.0, 0.5, 10.0)
@@ -99,7 +97,7 @@ SELECT sr_binomial_cdf(3.0, 0.5, 10.0)
 
 ### sr_binomial_sf(x, p, n)
 
-**Signature**: `sr_binomial_sf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
+**签名**：`sr_binomial_sf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_binomial_sf(3.0, 0.5, 10.0)
@@ -107,21 +105,21 @@ SELECT sr_binomial_sf(3.0, 0.5, 10.0)
 
 ### sr_binomial_quantile(p, prob, n)
 
-**Signature**: `sr_binomial_quantile(p DOUBLE, prob DOUBLE, n DOUBLE) -> DOUBLE`
+**签名**：`sr_binomial_quantile(p DOUBLE, prob DOUBLE, n DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_binomial_quantile(0.5, 0.5, 10.0)
 -- 5.0
 ```
 
-## Negative binomial
+## 负二项
 
-Parameters: `r` (number of successes; real-valued in statrs), `p` (success probability).
-Support: number of failures before the r-th success.
+参数：`r`（成功次数，statrs 里可取实数）、`p`（成功概率）。
+支撑：第 r 次成功前的失败次数。
 
 ### sr_negative_binomial_pmf(x, r, p)
 
-**Signature**: `sr_negative_binomial_pmf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_negative_binomial_pmf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_negative_binomial_pmf(3.0, 2.0, 0.5)::DECIMAL(12,8)
@@ -130,7 +128,7 @@ SELECT sr_negative_binomial_pmf(3.0, 2.0, 0.5)::DECIMAL(12,8)
 
 ### sr_negative_binomial_ln_pmf(x, r, p)
 
-**Signature**: `sr_negative_binomial_ln_pmf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_negative_binomial_ln_pmf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_negative_binomial_ln_pmf(3.0, 2.0, 0.5)
@@ -138,7 +136,7 @@ SELECT sr_negative_binomial_ln_pmf(3.0, 2.0, 0.5)
 
 ### sr_negative_binomial_cdf(x, r, p)
 
-**Signature**: `sr_negative_binomial_cdf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_negative_binomial_cdf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_negative_binomial_cdf(3.0, 2.0, 0.5)
@@ -146,7 +144,7 @@ SELECT sr_negative_binomial_cdf(3.0, 2.0, 0.5)
 
 ### sr_negative_binomial_sf(x, r, p)
 
-**Signature**: `sr_negative_binomial_sf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_negative_binomial_sf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_negative_binomial_sf(3.0, 2.0, 0.5)
@@ -154,7 +152,7 @@ SELECT sr_negative_binomial_sf(3.0, 2.0, 0.5)
 
 ### sr_negative_binomial_quantile(p, r, prob)
 
-**Signature**: `sr_negative_binomial_quantile(p DOUBLE, r DOUBLE, prob DOUBLE) -> DOUBLE`
+**签名**：`sr_negative_binomial_quantile(p DOUBLE, r DOUBLE, prob DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_negative_binomial_quantile(0.5, 2.0, 0.5)
@@ -162,12 +160,12 @@ SELECT sr_negative_binomial_quantile(0.5, 2.0, 0.5)
 
 ## Geometric
 
-Parameter: `p` — success probability. Support starts at 1 (statrs' convention: number of
+参数：`p` — 成功概率. Support starts at 1 (statrs' convention: number of
 trials until the first success).
 
 ### sr_geometric_pmf(x, p)
 
-**Signature**: `sr_geometric_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_geometric_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_geometric_pmf(2.0, 0.5)
@@ -176,7 +174,7 @@ SELECT sr_geometric_pmf(2.0, 0.5)
 
 ### sr_geometric_ln_pmf(x, p)
 
-**Signature**: `sr_geometric_ln_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_geometric_ln_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_geometric_ln_pmf(2.0, 0.5)
@@ -184,7 +182,7 @@ SELECT sr_geometric_ln_pmf(2.0, 0.5)
 
 ### sr_geometric_cdf(x, p)
 
-**Signature**: `sr_geometric_cdf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_geometric_cdf(x DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_geometric_cdf(1.0, 0.5)
@@ -193,7 +191,7 @@ SELECT sr_geometric_cdf(1.0, 0.5)
 
 ### sr_geometric_sf(x, p)
 
-**Signature**: `sr_geometric_sf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_geometric_sf(x DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_geometric_sf(1.0, 0.5)::DECIMAL(12,8)
@@ -202,13 +200,13 @@ SELECT sr_geometric_sf(1.0, 0.5)::DECIMAL(12,8)
 
 ### sr_geometric_quantile(p, prob)
 
-**Signature**: `sr_geometric_quantile(p DOUBLE, prob DOUBLE) -> DOUBLE`
+**签名**：`sr_geometric_quantile(p DOUBLE, prob DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_geometric_quantile(0.5, 0.5)
 ```
 
-## Errors and NULL
+## 错误与 NULL
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_binomial_pmf(2.5, 0.5, 10.0)

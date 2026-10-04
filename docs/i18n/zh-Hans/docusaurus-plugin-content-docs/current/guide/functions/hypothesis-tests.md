@@ -1,25 +1,24 @@
 ---
-title: Hypothesis tests
+title: 假设检验
 sidebar_position: 18
-description: Nine statistical hypothesis tests — t-test, chi-square, ANOVA, KS, Mann-Whitney U, skewness, Anderson-Darling, Fisher's exact.
+description: 9 个统计假设检验——t 检验、卡方、ANOVA、KS、Mann-Whitney U、偏度、Anderson-Darling、Fisher 精确。
 ---
 
-# Hypothesis tests
+# 假设检验
 
-Each test returns a `LIST(DOUBLE)` of the form `[statistic, p-value]` unless noted. Sample
-arguments are `LIST(DOUBLE)`. Coded arguments (`alternative`, `nan_policy`, `method`) are DOUBLE
-literals matching statrs' enum variants.
+除非另有说明，每个检验返回 `LIST(DOUBLE)` 形如 `[统计量, p 值]`。样本参数是 `LIST(DOUBLE)`。
+代码类参数（`alternative`、`nan_policy`、`method`）用 DOUBLE 字面量，与 statrs 的枚举对应。
 
 ## sr_ttest_onesample(sample, popmean, alternative, nan_policy)
 
-**Signature**: `sr_ttest_onesample(sample LIST(DOUBLE), popmean DOUBLE, alternative DOUBLE, nan_policy DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_ttest_onesample(sample LIST(DOUBLE), popmean DOUBLE, alternative DOUBLE, nan_policy DOUBLE) -> LIST(DOUBLE)`
 
-One-sample t-test against `popmean`. Returns `[t_statistic, p_value]`.
+单样本 t 检验，与 `popmean` 比较。返回 `[t 统计量, p 值]`。
 
-- `sample`: observations
-- `popmean`: hypothesised population mean
-- `alternative`: 1.0 = two-sided, 2.0 = less, 3.0 = greater
-- `nan_policy`: 1.0 = propagate, 2.0 = omit, 3.0 = raise
+- `sample`：观测值列表
+- `popmean`：待检验的总体均值
+- `alternative`：1.0 = 双侧，2.0 = less，3.0 = greater
+- `nan_policy`：1.0 = propagate，2.0 = omit，3.0 = raise
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ttest_onesample([1.0, 2.0, 3.0, 4.0, 5.0], 3.0, 1.0, 1.0)
@@ -28,12 +27,11 @@ SELECT sr_ttest_onesample([1.0, 2.0, 3.0, 4.0, 5.0], 3.0, 1.0, 1.0)
 
 ## sr_chisquare(observed, expected, ddof)
 
-**Signature**: `sr_chisquare(observed LIST(DOUBLE), expected LIST(DOUBLE), ddof DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_chisquare(observed LIST(DOUBLE), expected LIST(DOUBLE), ddof DOUBLE) -> LIST(DOUBLE)`
 
-Chi-square goodness-of-fit test. Pass NULL for `expected` to assume uniform frequencies; pass
-NULL for `ddof` to default to 0.
+卡方拟合优度检验。`expected` 传 NULL 表示均匀期望；`ddof` 传 NULL 默认为 0。
 
-Returns `[chi_statistic, p_value]`.
+返回 `[卡方统计量, p 值]`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_chisquare([16.0, 18.0, 16.0, 14.0, 12.0, 12.0], NULL, NULL)
@@ -42,9 +40,9 @@ SELECT sr_chisquare([16.0, 18.0, 16.0, 14.0, 12.0, 12.0], NULL, NULL)
 
 ## sr_f_oneway(groups, nan_policy)
 
-**Signature**: `sr_f_oneway(groups LIST(LIST(DOUBLE)), nan_policy DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_f_oneway(groups LIST(LIST(DOUBLE)), nan_policy DOUBLE) -> LIST(DOUBLE)`
 
-One-way ANOVA across a list of sample lists. Returns `[F_statistic, p_value]`.
+单因素 ANOVA，多组样本。返回 `[F 统计量, p 值]`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_f_oneway([[1.0, 3.0, 5.0], [2.0, 4.0, 8.0]], 1.0)
@@ -53,12 +51,11 @@ SELECT sr_f_oneway([[1.0, 3.0, 5.0], [2.0, 4.0, 8.0]], 1.0)
 
 ## sr_fishers_exact(table, alternative)
 
-**Signature**: `sr_fishers_exact(table LIST(DOUBLE), alternative DOUBLE) -> DOUBLE`
+**签名**：`sr_fishers_exact(table LIST(DOUBLE), alternative DOUBLE) -> DOUBLE`
 
-Fisher's exact test p-value on a 2x2 contingency table (4 whole-number DOUBLEs, row-major).
-Returns just the p-value (a DOUBLE, not a LIST).
+2x2 列联表（4 个整数值 DOUBLE，行主序）的 Fisher 精确检验 p 值。返回单个 DOUBLE，不是 LIST。
 
-- `alternative`: 1.0 = two-sided, 2.0 = less, 3.0 = greater
+- `alternative`：1.0 = 双侧，2.0 = less，3.0 = greater
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_fishers_exact([1.0, 2.0, 3.0, 4.0], 1.0)
@@ -67,9 +64,9 @@ SELECT sr_fishers_exact([1.0, 2.0, 3.0, 4.0], 1.0)
 
 ## sr_fishers_exact_with_odds_ratio(table, alternative)
 
-**Signature**: `sr_fishers_exact_with_odds_ratio(table LIST(DOUBLE), alternative DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_fishers_exact_with_odds_ratio(table LIST(DOUBLE), alternative DOUBLE) -> LIST(DOUBLE)`
 
-Same as `sr_fishers_exact`, but returns `[odds_ratio, p_value]`.
+与 `sr_fishers_exact` 同，返回 `[odds_ratio, p 值]`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_fishers_exact_with_odds_ratio([1.0, 2.0, 3.0, 4.0], 2.0)
@@ -78,12 +75,12 @@ SELECT sr_fishers_exact_with_odds_ratio([1.0, 2.0, 3.0, 4.0], 2.0)
 
 ## sr_ks_twosample(sample1, sample2, alternative, method)
 
-**Signature**: `sr_ks_twosample(sample1 LIST(DOUBLE), sample2 LIST(DOUBLE), alternative DOUBLE, method DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_ks_twosample(sample1 LIST(DOUBLE), sample2 LIST(DOUBLE), alternative DOUBLE, method DOUBLE) -> LIST(DOUBLE)`
 
-Two-sample Kolmogorov-Smirnov test. Returns `[D_statistic, p_value]`.
+两样本 Kolmogorov-Smirnov 检验。返回 `[D 统计量, p 值]`。
 
-- `alternative`: 1.0 = less, 2.0 = greater, 3.0 = two-sided-exact, 4.0 = two-sided-asymptotic
-- `method`: mode selector; usually 1.0 (auto)
+- `alternative`：1.0 = less，2.0 = greater，3.0 = 双侧精确，4.0 = 双侧渐近
+- `method`：模式选择，一般用 1.0（自动）
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ks_twosample([0.1, 0.2, 0.3], [0.4, 0.5, 0.6], 4.0, 1.0)
@@ -92,12 +89,12 @@ SELECT sr_ks_twosample([0.1, 0.2, 0.3], [0.4, 0.5, 0.6], 4.0, 1.0)
 
 ## sr_mannwhitneyu(sample1, sample2, alternative, method)
 
-**Signature**: `sr_mannwhitneyu(sample1 LIST(DOUBLE), sample2 LIST(DOUBLE), alternative DOUBLE, method DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_mannwhitneyu(sample1 LIST(DOUBLE), sample2 LIST(DOUBLE), alternative DOUBLE, method DOUBLE) -> LIST(DOUBLE)`
 
-Mann-Whitney U test. Returns `[U_statistic, p_value]`.
+Mann-Whitney U 检验。返回 `[U 统计量, p 值]`。
 
-- `alternative`: 1.0 = two-sided, 2.0 = less, 3.0 = greater
-- `method`: 1.0 = auto, 2.0 = exact, 3.0 = asymptotic with continuity correction, 4.0 = asymptotic without
+- `alternative`：1.0 = 双侧，2.0 = less，3.0 = greater
+- `method`：1.0 = 自动，2.0 = 精确，3.0 = 渐近含连续性校正，4.0 = 渐近不含
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_mannwhitneyu([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], 2.0, 2.0)
@@ -106,12 +103,12 @@ SELECT sr_mannwhitneyu([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], 2.0, 2.0)
 
 ## sr_skewtest(sample, alternative, nan_policy)
 
-**Signature**: `sr_skewtest(sample LIST(DOUBLE), alternative DOUBLE, nan_policy DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_skewtest(sample LIST(DOUBLE), alternative DOUBLE, nan_policy DOUBLE) -> LIST(DOUBLE)`
 
-Skewness z-test. Returns `[z_statistic, p_value]`.
+偏度 z 检验。返回 `[z 统计量, p 值]`。
 
-- `alternative`: 1.0 = two-sided, 2.0 = less (negatively skewed), 3.0 = greater (positively skewed)
-- `nan_policy`: same codes as ttest
+- `alternative`：1.0 = 双侧，2.0 = less（负偏），3.0 = greater（正偏）
+- `nan_policy`：与 t 检验同
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_skewtest([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0], 1.0, 1.0)
@@ -120,22 +117,21 @@ SELECT sr_skewtest([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0], 1.0, 1.0)
 
 ## sr_anderson_darling(sample, distribution, params)
 
-**Signature**: `sr_anderson_darling(sample LIST(DOUBLE), distribution VARCHAR, params LIST(DOUBLE)) -> LIST(DOUBLE)`
+**签名**：`sr_anderson_darling(sample LIST(DOUBLE), distribution VARCHAR, params LIST(DOUBLE)) -> LIST(DOUBLE)`
 
-Anderson-Darling goodness-of-fit test against a named distribution. Returns
-`[A_squared, critical_value_5_percent]`.
+对指定分布的 Anderson-Darling 拟合优度检验。返回 `[A², 5% 临界值]`。
 
-- `distribution`: one of `'normal'`, `'lognormal'`, `'exponential'`, `'gumbel'`, `'weibull'`, `'uniform'`
-- `params`: distribution parameter list (e.g. `[mean, std_dev]` for normal)
+- `distribution`：`'normal'`、`'lognormal'`、`'exponential'`、`'gumbel'`、`'weibull'`、`'uniform'` 之一
+- `params`：分布参数列表（正态是 `[mean, std_dev]`）
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_anderson_darling([1.0, 2.0, 3.0, 4.0, 5.0], 'normal', [3.0, 1.5])
 -- [0.15491765936161173, 0.8959843708415298]
 ```
 
-## Building a sample LIST from a column
+## 从列构造样本 LIST
 
-When the data lives in a table, use `list(x)` to feed a test:
+数据在表里时用 `list(x)` 喂给检验：
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ttest_onesample(list(x), 3.0, 1.0, 1.0)
@@ -143,7 +139,7 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0), (5.0)) t(x)
 -- [0.0, 1.0]
 ```
 
-## Invalid codes raise query errors
+## 非法 code 报查询错误
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_ttest_onesample([1.0, 2.0], 3.0, 9.0, 1.0)

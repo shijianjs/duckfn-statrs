@@ -1,21 +1,21 @@
 ---
-title: "Continuous: location-scale (B)"
+title: "连续：位置-尺度 (B)"
 sidebar_position: 5
-description: Laplace, Gumbel, Levy and Logistic distributions — pdf, ln_pdf, cdf, sf, quantile for each.
+description: Laplace、Gumbel、Levy、Logistic 分布——每种都有 pdf / ln_pdf / cdf / sf / quantile。
 ---
 
-# Continuous distributions: location-scale (B)
+# 连续分布：位置-尺度 (B)
 
-Each distribution exposes 5 functions: `pdf`, `ln_pdf`, `cdf`, `sf`, `quantile`. The `scale`
-parameter must be > 0; `p` in the quantile must be in [0, 1].
+每种分布 5 个函数：`pdf`、`ln_pdf`、`cdf`、`sf`、`quantile`。`scale` 必须 > 0；分位数的 `p` 
+必须在 [0, 1]。
 
 ## Laplace
 
-Parameters: `location` (any real), `scale` (must be > 0).
+参数：`location`（任意实数）、`scale`（> 0）。
 
 ### sr_laplace_pdf(x, location, scale)
 
-**Signature**: `sr_laplace_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_laplace_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_laplace_pdf(0.0, 0.0, 1.0)
@@ -24,7 +24,7 @@ SELECT sr_laplace_pdf(0.0, 0.0, 1.0)
 
 ### sr_laplace_ln_pdf(x, location, scale)
 
-**Signature**: `sr_laplace_ln_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_laplace_ln_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_laplace_ln_pdf(0.0, 0.0, 1.0)
@@ -33,7 +33,7 @@ SELECT sr_laplace_ln_pdf(0.0, 0.0, 1.0)
 
 ### sr_laplace_cdf(x, location, scale)
 
-**Signature**: `sr_laplace_cdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_laplace_cdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_laplace_cdf(1.0, 0.0, 1.0)
@@ -41,7 +41,7 @@ SELECT sr_laplace_cdf(1.0, 0.0, 1.0)
 
 ### sr_laplace_sf(x, location, scale)
 
-**Signature**: `sr_laplace_sf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_laplace_sf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_laplace_sf(1.0, 0.0, 1.0)
@@ -49,20 +49,20 @@ SELECT sr_laplace_sf(1.0, 0.0, 1.0)
 
 ### sr_laplace_quantile(p, location, scale)
 
-**Signature**: `sr_laplace_quantile(p DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_laplace_quantile(p DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_laplace_quantile(0.5, 0.0, 1.0)
 -- 0.0
 ```
 
-## Gumbel (Type-I extreme value)
+## Gumbel（I 型极值分布）
 
-Parameters: `location`, `scale` (must be > 0).
+参数：`location`、`scale`（> 0）。
 
 ### sr_gumbel_pdf(x, location, scale)
 
-**Signature**: `sr_gumbel_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_gumbel_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_gumbel_pdf(0.0, 0.0, 1.0)
@@ -71,7 +71,7 @@ SELECT sr_gumbel_pdf(0.0, 0.0, 1.0)
 
 ### sr_gumbel_ln_pdf(x, location, scale)
 
-**Signature**: `sr_gumbel_ln_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_gumbel_ln_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_gumbel_ln_pdf(0.0, 0.0, 1.0)
@@ -79,7 +79,7 @@ SELECT sr_gumbel_ln_pdf(0.0, 0.0, 1.0)
 
 ### sr_gumbel_cdf(x, location, scale)
 
-**Signature**: `sr_gumbel_cdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_gumbel_cdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_gumbel_cdf(1.0, 0.0, 1.0)
@@ -87,7 +87,7 @@ SELECT sr_gumbel_cdf(1.0, 0.0, 1.0)
 
 ### sr_gumbel_sf(x, location, scale)
 
-**Signature**: `sr_gumbel_sf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_gumbel_sf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_gumbel_sf(1.0, 0.0, 1.0)
@@ -95,7 +95,7 @@ SELECT sr_gumbel_sf(1.0, 0.0, 1.0)
 
 ### sr_gumbel_quantile(p, location, scale)
 
-**Signature**: `sr_gumbel_quantile(p DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_gumbel_quantile(p DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_gumbel_quantile(0.5, 0.0, 1.0)
@@ -103,11 +103,11 @@ SELECT sr_gumbel_quantile(0.5, 0.0, 1.0)
 
 ## Levy
 
-Parameters: `mu` (location, any real), `c` (scale, must be > 0).
+参数：`mu`（位置）、`c`（尺度，> 0）。
 
 ### sr_levy_pdf(x, mu, c)
 
-**Signature**: `sr_levy_pdf(x DOUBLE, mu DOUBLE, c DOUBLE) -> DOUBLE`
+**签名**：`sr_levy_pdf(x DOUBLE, mu DOUBLE, c DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_levy_pdf(1.0, 0.0, 1.0)
@@ -115,7 +115,7 @@ SELECT sr_levy_pdf(1.0, 0.0, 1.0)
 
 ### sr_levy_ln_pdf(x, mu, c)
 
-**Signature**: `sr_levy_ln_pdf(x DOUBLE, mu DOUBLE, c DOUBLE) -> DOUBLE`
+**签名**：`sr_levy_ln_pdf(x DOUBLE, mu DOUBLE, c DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_levy_ln_pdf(1.0, 0.0, 1.0)
@@ -123,7 +123,7 @@ SELECT sr_levy_ln_pdf(1.0, 0.0, 1.0)
 
 ### sr_levy_cdf(x, mu, c)
 
-**Signature**: `sr_levy_cdf(x DOUBLE, mu DOUBLE, c DOUBLE) -> DOUBLE`
+**签名**：`sr_levy_cdf(x DOUBLE, mu DOUBLE, c DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_levy_cdf(1.0, 0.0, 1.0)
@@ -131,7 +131,7 @@ SELECT sr_levy_cdf(1.0, 0.0, 1.0)
 
 ### sr_levy_sf(x, mu, c)
 
-**Signature**: `sr_levy_sf(x DOUBLE, mu DOUBLE, c DOUBLE) -> DOUBLE`
+**签名**：`sr_levy_sf(x DOUBLE, mu DOUBLE, c DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_levy_sf(1.0, 0.0, 1.0)
@@ -139,24 +139,23 @@ SELECT sr_levy_sf(1.0, 0.0, 1.0)
 
 ### sr_levy_quantile(p, mu, c)
 
-**Signature**: `sr_levy_quantile(p DOUBLE, mu DOUBLE, c DOUBLE) -> DOUBLE`
+**签名**：`sr_levy_quantile(p DOUBLE, mu DOUBLE, c DOUBLE) -> DOUBLE`
 
-Solved numerically (bisection) by statrs; accuracy is lower than the closed-form quantiles.
+statrs 用二分法数值求解，精度低于闭式解的分布。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_levy_quantile(0.5, 0.0, 1.0)
 ```
 
-## Logistic
+## Logistic（分布）
 
-Parameters: `location`, `scale` (must be > 0). Same functional shape as the sigmoid.
+参数：`location`、`scale`（> 0）。
 
-### sr_logistic_dist_pdf(x, location, scale)
+### sr_logistic_pdf(x, location, scale)
 
-The registered SQL name is `sr_logistic_pdf` — distinct from `sr_logistic(p)` (the sigmoid
-function on the special-functions page).
+注册的 SQL 名是 `sr_logistic_pdf` —— 与特殊函数页的 `sr_logistic(p)`（sigmoid 函数）不同。
 
-**Signature**: `sr_logistic_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_logistic_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_logistic_pdf(0.0, 0.0, 1.0)
@@ -165,7 +164,7 @@ SELECT sr_logistic_pdf(0.0, 0.0, 1.0)
 
 ### sr_logistic_ln_pdf(x, location, scale)
 
-**Signature**: `sr_logistic_ln_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_logistic_ln_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_logistic_ln_pdf(0.0, 0.0, 1.0)
@@ -173,7 +172,7 @@ SELECT sr_logistic_ln_pdf(0.0, 0.0, 1.0)
 
 ### sr_logistic_cdf(x, location, scale)
 
-**Signature**: `sr_logistic_cdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_logistic_cdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_logistic_cdf(1.0, 0.0, 1.0)
@@ -181,7 +180,7 @@ SELECT sr_logistic_cdf(1.0, 0.0, 1.0)
 
 ### sr_logistic_sf(x, location, scale)
 
-**Signature**: `sr_logistic_sf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_logistic_sf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_logistic_sf(1.0, 0.0, 1.0)
@@ -189,7 +188,7 @@ SELECT sr_logistic_sf(1.0, 0.0, 1.0)
 
 ### sr_logistic_quantile(p, location, scale)
 
-**Signature**: `sr_logistic_quantile(p DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
+**签名**：`sr_logistic_quantile(p DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_logistic_quantile(0.5, 0.0, 1.0)

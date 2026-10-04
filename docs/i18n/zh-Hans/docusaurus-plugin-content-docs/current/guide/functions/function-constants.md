@@ -1,18 +1,18 @@
 ---
-title: Constants
+title: 常量
 sidebar_position: 13
-description: Nine mathematical constants from statrs::consts, exposed as zero-argument scalar functions.
+description: statrs::consts 里的 9 个数学常量，做成零参标量函数。
 ---
 
-# Constants
+# 常量
 
-Zero-argument scalar functions returning mathematical constants as DOUBLE.
+零参标量函数，返回 DOUBLE 类型的数学常量。
 
 ### sr_ln_pi()
 
-**Signature**: `sr_ln_pi() -> DOUBLE`
+**签名**：`sr_ln_pi() -> DOUBLE`
 
-The constant ln(PI).
+常量 ln(PI)。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ln_pi()
@@ -21,9 +21,9 @@ SELECT sr_ln_pi()
 
 ### sr_sqrt_2pi()
 
-**Signature**: `sr_sqrt_2pi() -> DOUBLE`
+**签名**：`sr_sqrt_2pi() -> DOUBLE`
 
-The constant sqrt(2*PI), the normalizing factor for the Gaussian density.
+常量 sqrt(2*PI)，正态密度里的归一化因子。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_sqrt_2pi()
@@ -32,9 +32,9 @@ SELECT sr_sqrt_2pi()
 
 ### sr_ln_sqrt_2pi()
 
-**Signature**: `sr_ln_sqrt_2pi() -> DOUBLE`
+**签名**：`sr_ln_sqrt_2pi() -> DOUBLE`
 
-The constant ln(sqrt(2*PI)).
+常量 ln(sqrt(2*PI))。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ln_sqrt_2pi()
@@ -43,9 +43,9 @@ SELECT sr_ln_sqrt_2pi()
 
 ### sr_ln_sqrt_2pie()
 
-**Signature**: `sr_ln_sqrt_2pie() -> DOUBLE`
+**签名**：`sr_ln_sqrt_2pie() -> DOUBLE`
 
-The constant ln(sqrt(2*PI*e)).
+常量 ln(sqrt(2*PI*e))。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ln_sqrt_2pie()
@@ -54,9 +54,9 @@ SELECT sr_ln_sqrt_2pie()
 
 ### sr_2_sqrt_e_over_pi()
 
-**Signature**: `sr_2_sqrt_e_over_pi() -> DOUBLE`
+**签名**：`sr_2_sqrt_e_over_pi() -> DOUBLE`
 
-The constant 2*sqrt(e/PI).
+常量 2*sqrt(e/PI)。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_2_sqrt_e_over_pi()
@@ -65,9 +65,9 @@ SELECT sr_2_sqrt_e_over_pi()
 
 ### sr_ln_2_sqrt_e_over_pi()
 
-**Signature**: `sr_ln_2_sqrt_e_over_pi() -> DOUBLE`
+**签名**：`sr_ln_2_sqrt_e_over_pi() -> DOUBLE`
 
-The constant ln(2*sqrt(e/PI)).
+常量 ln(2*sqrt(e/PI))。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ln_2_sqrt_e_over_pi()
@@ -76,9 +76,9 @@ SELECT sr_ln_2_sqrt_e_over_pi()
 
 ### sr_euler_mascheroni()
 
-**Signature**: `sr_euler_mascheroni() -> DOUBLE`
+**签名**：`sr_euler_mascheroni() -> DOUBLE`
 
-The Euler-Mascheroni constant (gamma).
+欧拉-马斯刻若尼常数（γ）。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_euler_mascheroni()
@@ -87,9 +87,9 @@ SELECT sr_euler_mascheroni()
 
 ### sr_frac_1_sqrt_pi()
 
-**Signature**: `sr_frac_1_sqrt_pi() -> DOUBLE`
+**签名**：`sr_frac_1_sqrt_pi() -> DOUBLE`
 
-The constant 1/sqrt(PI).
+常量 1/sqrt(PI)。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_frac_1_sqrt_pi()
@@ -98,9 +98,9 @@ SELECT sr_frac_1_sqrt_pi()
 
 ### sr_ln_2()
 
-**Signature**: `sr_ln_2() -> DOUBLE`
+**签名**：`sr_ln_2() -> DOUBLE`
 
-The constant ln(2).
+常量 ln(2)。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ln_2()

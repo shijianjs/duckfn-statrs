@@ -1,22 +1,21 @@
 ---
-title: Empirical distribution
+title: 经验分布
 sidebar_position: 4
-description: Empirical CDF, survival function and quantile — aggregates over a DOUBLE column.
+description: 经验 CDF、生存函数与分位数——按 DOUBLE 列聚合。
 ---
 
-# Empirical distribution (aggregates)
+# 经验分布（聚合函数）
 
-The three functions on this page are **aggregates**: they collect a whole DOUBLE column as the
-sample, then evaluate an empirical statistic at a constant second argument.
+本节的三个函数都是**聚合函数**：整列 DOUBLE 作为样本收集，然后在常量第二参数上求一个经验
+统计量。
 
 ## sr_empirical_cdf(v, x)
 
-**Signature**: `sr_empirical_cdf(v DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_cdf(v DOUBLE, x DOUBLE) -> DOUBLE`
 
-Empirical cumulative distribution function of the collected column `v`, evaluated at the constant
-`x`. Equivalent to the fraction of rows with `v <= x`.
+所收集列 `v` 的经验累积分布在常量 `x` 处的取值。等价于「`v <= x` 的行占比」。
 
-An empty group yields NULL.
+空组返回 NULL。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_empirical_cdf(v, 2.0)
@@ -26,9 +25,9 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
 
 ## sr_empirical_sf(v, x)
 
-**Signature**: `sr_empirical_sf(v DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_sf(v DOUBLE, x DOUBLE) -> DOUBLE`
 
-Empirical survival function of `v` evaluated at `x`. Equivalent to `1 - cdf(x)`.
+在常量 `x` 处的经验生存函数。等价于 `1 - cdf(x)`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_empirical_sf(v, 2.0)
@@ -38,9 +37,9 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
 
 ## sr_empirical_quantile(v, p)
 
-**Signature**: `sr_empirical_quantile(v DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_quantile(v DOUBLE, p DOUBLE) -> DOUBLE`
 
-Empirical quantile function of `v` at the constant probability `p` in [0, 1].
+在常量概率 `p`（范围 [0, 1]）处的经验分位数。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_empirical_quantile(v, 0.5)::DECIMAL(12,6)
@@ -48,10 +47,9 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
 -- 1.999969
 ```
 
-## NULL rows and empty groups
+## NULL 行与空组
 
-NULL rows are skipped by the collector, matching the SQL aggregate convention. An empty group
-reports NULL:
+NULL 行不进收集器，与 SQL 聚合惯例一致。空组返回 NULL：
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_empirical_cdf(v, 2.0)
@@ -59,7 +57,7 @@ FROM (VALUES (1.0)) t(v) WHERE 1 = 0
 -- NULL
 ```
 
-## With GROUP BY
+## 配合 GROUP BY
 
 ```sql {"type":"duckfn","show":"table"}
 SELECT g, sr_empirical_cdf(v, 2.0) AS cdf_at_2

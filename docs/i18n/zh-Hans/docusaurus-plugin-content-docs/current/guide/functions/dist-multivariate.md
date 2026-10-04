@@ -1,37 +1,35 @@
 ---
-title: Multivariate distributions
+title: 多元分布
 sidebar_position: 12
-description: Multivariate normal, Student-t, Dirichlet and multinomial densities — vectors as LIST(DOUBLE), matrices as row-major flattened LIST.
+description: 多元正态、Dirichlet、多项式与多元 t 密度——向量走 LIST(DOUBLE)，矩阵走行主序摊平 LIST。
 ---
 
-# Multivariate distributions
+# 多元分布
 
-Vectors are `LIST(DOUBLE)`; matrices (covariance, scale) are `LIST(DOUBLE)` in **row-major**
-flattened form. A 2x2 identity matrix is written `[1.0, 0.0, 0.0, 1.0]`.
+向量一律是 `LIST(DOUBLE)`；矩阵（协方差、尺度）是**行主序**摊平的 `LIST(DOUBLE)`。
+2x2 单位矩阵写成 `[1.0, 0.0, 0.0, 1.0]`。
 
 ## sr_multivariate_normal_pdf(x, mean, covariance)
 
-**Signature**: `sr_multivariate_normal_pdf(x LIST(DOUBLE), mean LIST(DOUBLE), covariance LIST(DOUBLE)) -> DOUBLE`
+**签名**：`sr_multivariate_normal_pdf(x LIST(DOUBLE), mean LIST(DOUBLE), covariance LIST(DOUBLE)) -> DOUBLE`
 
-Probability density of `x` under a multivariate normal distribution with the given mean vector
-and covariance matrix.
+x 在给定均值向量与协方差矩阵下的多元正态密度。
 
-The size of `covariance` must equal `len(mean)²`. A mismatch is a query error (statrs' internal
-`panic` is caught at the SQL boundary).
+`covariance` 的长度必须是 `len(mean)²`。不匹配会报查询错误（statrs 内部 `nalgebra::from_vec`
+的 panic 已在 SQL 边界拦下）。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0])::DECIMAL(12,8)
 -- 0.15915494
 ```
 
-The value is `1 / (2π)` — the density of a standard bivariate normal at the origin.
+数值 `1/(2π)` 就是标准二元正态在原点的密度。
 
 ## sr_multivariate_students_t_pdf(x, location, scale, freedom)
 
-**Signature**: `sr_multivariate_students_t_pdf(x LIST(DOUBLE), location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_multivariate_students_t_pdf(x LIST(DOUBLE), location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE) -> DOUBLE`
 
-Density under a multivariate Student's t distribution. At `location = 0`, `scale = I` and
-symmetric `x = 0`, the density matches the multivariate normal at the origin.
+多元 Student's t 密度。当 `location = 0`、`scale = I`、`x = 0` 时与多元正态同形。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)::DECIMAL(12,8)
@@ -40,24 +38,22 @@ SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.
 
 ## sr_dirichlet_pdf(x, alpha)
 
-**Signature**: `sr_dirichlet_pdf(x LIST(DOUBLE), alpha LIST(DOUBLE)) -> DOUBLE`
+**签名**：`sr_dirichlet_pdf(x LIST(DOUBLE), alpha LIST(DOUBLE)) -> DOUBLE`
 
-Density of `x` on the simplex under a Dirichlet distribution with concentration vector `alpha`.
-`x` and `alpha` must have the same length.
+x 在单纯形上、Dirichlet(alpha) 分布下的密度。`x` 与 `alpha` 长度必须一致。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_dirichlet_pdf([0.5, 0.5], [1.0, 1.0])::DECIMAL(12,8)
 -- 1.00000000
 ```
 
-For `alpha = (1, 1)` the Dirichlet is uniform on the simplex, so the density is 1 everywhere
-on `{(x1, x2) : x1 + x2 = 1, xi >= 0}`.
+`alpha = (1, 1)` 时 Dirichlet 就是单纯形上的均匀分布，密度处处为 1。
 
 ## sr_dirichlet_entropy(alpha)
 
-**Signature**: `sr_dirichlet_entropy(alpha LIST(DOUBLE)) -> DOUBLE`
+**签名**：`sr_dirichlet_entropy(alpha LIST(DOUBLE)) -> DOUBLE`
 
-Differential entropy of `Dir(alpha)`.
+`Dir(alpha)` 的微分熵。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_dirichlet_entropy([1.0, 1.0])::DECIMAL(12,8)
@@ -66,15 +62,15 @@ SELECT sr_dirichlet_entropy([1.0, 1.0])::DECIMAL(12,8)
 
 ## sr_multinomial_pmf(probs, trials, counts)
 
-**Signature**: `sr_multinomial_pmf(probs LIST(DOUBLE), trials DOUBLE, counts LIST(BIGINT)) -> DOUBLE`
+**签名**：`sr_multinomial_pmf(probs LIST(DOUBLE), trials DOUBLE, counts LIST(BIGINT)) -> DOUBLE`
 
-Probability mass of a count vector under a multinomial distribution.
+多项式分布下计数向量的概率质量。
 
-- `probs`: category probabilities (must sum to 1 in effect; statrs normalises internally)
-- `trials`: total number of trials, a whole-number DOUBLE
-- `counts`: observations per category, `LIST(BIGINT)`
+- `probs`：各类别概率（statrs 内部会归一化）
+- `trials`：总试验次数，整数值 DOUBLE
+- `counts`：各类别的观测数，`LIST(BIGINT)`
 
-The counts must sum to `trials`. A non-integer `trials` is a query error.
+`counts` 之和必须等于 `trials`。`trials` 不是整数会报查询错误。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_multinomial_pmf([0.5, 0.5], 4.0, [2, 2])::DECIMAL(12,8)
@@ -86,9 +82,9 @@ SELECT sr_multinomial_pmf([0.5, 0.5], 4.5, [2, 2])
 -- error: expected a non-negative whole number, got 4.5
 ```
 
-## Shape validation
+## 形状校验
 
-A matrix argument is validated against the vector length:
+矩阵参数的长度会与向量长度对齐检查：
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0])
