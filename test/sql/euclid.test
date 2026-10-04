@@ -1,0 +1,16 @@
+# name: test/sql/euclid.test
+# description: doc example 全覆盖用例（取自函数源码 `example` 属性，实跑捕获期望值）。
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# ============================================================================
+# doc example 全覆盖：本组其余函数各一条用例。SQL 取自函数源码的 `example`
+# 属性（即 statrs 官方文档示例），期望值由已构建扩展实跑捕获。
+# ============================================================================
+
+# Canonical (Euclidean) modulus ((x % divisor) + divisor) % divisor, always in [0, divisor); NULL for a zero divisor
+query R
+SELECT sr_modulus(-1.0, 5.0)
+----
+4.0

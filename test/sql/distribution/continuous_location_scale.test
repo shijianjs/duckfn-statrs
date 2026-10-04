@@ -152,3 +152,710 @@ query R
 SELECT sr_normal_cdf(NULL, 0.0, 1.0)
 ----
 NULL
+
+# ============================================================================
+# doc example 全覆盖：本组其余函数各一条用例。SQL 取自函数源码的 `example`
+# 属性（即 statrs 官方文档示例），期望值由已构建扩展实跑捕获。
+# ============================================================================
+
+# Cauchy distribution differential entropy
+query R
+SELECT sr_cauchy_entropy(0.0, 1.0)
+----
+2.5310242469692907
+
+# Cauchy log-density at x
+query R
+SELECT sr_cauchy_ln_pdf(1.0, 0.0, 1.0)
+----
+-1.8378770664093453
+
+# Cauchy distribution support maximum (positive infinity)
+query R
+SELECT sr_cauchy_max(0.0, 1.0)
+----
+inf
+
+# Cauchy distribution mean (undefined)
+query R
+SELECT sr_cauchy_mean(0.0, 1.0)
+----
+NULL
+
+# Cauchy distribution median
+query R
+SELECT sr_cauchy_median(0.0, 1.0)
+----
+0.0
+
+# Cauchy distribution support minimum (negative infinity)
+query R
+SELECT sr_cauchy_min(0.0, 1.0)
+----
+-inf
+
+# Cauchy distribution mode
+query R
+SELECT sr_cauchy_mode(0.0, 1.0)
+----
+0.0
+
+# Cauchy probability density at x, given location and scale
+query R
+SELECT sr_cauchy_pdf(1.0, 0.0, 1.0)
+----
+0.15915494309189535
+
+# Cauchy survival function P(X > x)
+query R
+SELECT sr_cauchy_sf(1.0, 0.0, 1.0)
+----
+0.25
+
+# Cauchy distribution skewness (undefined)
+query R
+SELECT sr_cauchy_skewness(0.0, 1.0)
+----
+NULL
+
+# Cauchy distribution standard deviation (undefined)
+query R
+SELECT sr_cauchy_std_dev(0.0, 1.0)
+----
+NULL
+
+# Cauchy distribution variance (undefined)
+query R
+SELECT sr_cauchy_variance(0.0, 1.0)
+----
+NULL
+
+# Dirac delta distribution differential entropy
+query R
+SELECT sr_dirac_entropy(1.0)
+----
+0.0
+
+# Dirac delta distribution support maximum (v)
+query R
+SELECT sr_dirac_max(1.0)
+----
+1.0
+
+# Dirac delta distribution mean (always v)
+query R
+SELECT sr_dirac_mean(1.0)
+----
+1.0
+
+# Dirac delta distribution median (always v)
+query R
+SELECT sr_dirac_median(1.0)
+----
+1.0
+
+# Dirac delta distribution support minimum (v)
+query R
+SELECT sr_dirac_min(1.0)
+----
+1.0
+
+# Dirac delta distribution mode (always v)
+query R
+SELECT sr_dirac_mode(1.0)
+----
+1.0
+
+# Dirac delta distribution skewness (always 0)
+query R
+SELECT sr_dirac_skewness(1.0)
+----
+0.0
+
+# Dirac delta distribution standard deviation (always 0)
+query R
+SELECT sr_dirac_std_dev(1.0)
+----
+0.0
+
+# Dirac delta distribution variance (always 0)
+query R
+SELECT sr_dirac_variance(1.0)
+----
+0.0
+
+# Gumbel (type-I extreme value) distribution differential entropy
+query R
+SELECT sr_gumbel_entropy(0.0, 1.0)
+----
+1.5772156649015328
+
+# Gumbel log-density at x
+query R
+SELECT sr_gumbel_ln_pdf(1.0, 0.0, 1.0)
+----
+-1.3678794411714421
+
+# Gumbel (type-I extreme value) distribution support maximum (positive infinity)
+query R
+SELECT sr_gumbel_max(0.0, 1.0)
+----
+inf
+
+# Gumbel (type-I extreme value) distribution mean
+query R
+SELECT sr_gumbel_mean(0.0, 1.0)
+----
+0.5772156649015329
+
+# Gumbel (type-I extreme value) distribution median
+query R
+SELECT sr_gumbel_median(0.0, 1.0)
+----
+0.36651292058166435
+
+# Gumbel (type-I extreme value) distribution support minimum (negative infinity)
+query R
+SELECT sr_gumbel_min(0.0, 1.0)
+----
+-inf
+
+# Gumbel (type-I extreme value) distribution mode
+query R
+SELECT sr_gumbel_mode(0.0, 1.0)
+----
+0.0
+
+# Gumbel (type-I extreme value) probability density at x, given location and scale
+query R
+SELECT sr_gumbel_pdf(1.0, 0.0, 1.0)
+----
+0.25464638004358253
+
+# Gumbel quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_gumbel_quantile(0.5, 0.0, 1.0)
+----
+0.36651292058166435
+
+# Gumbel survival function P(X > x)
+query R
+SELECT sr_gumbel_sf(1.0, 0.0, 1.0)
+----
+0.3077993724446536
+
+# Gumbel (type-I extreme value) distribution skewness
+query R
+SELECT sr_gumbel_skewness(0.0, 1.0)
+----
+1.13955
+
+# Gumbel (type-I extreme value) distribution standard deviation
+query R
+SELECT sr_gumbel_std_dev(0.0, 1.0)
+----
+1.282549830161864
+
+# Gumbel (type-I extreme value) distribution variance
+query R
+SELECT sr_gumbel_variance(0.0, 1.0)
+----
+1.6449340668482264
+
+# Laplace distribution differential entropy
+query R
+SELECT sr_laplace_entropy(0.0, 1.0)
+----
+1.6931471805599454
+
+# Laplace log-density at x
+query R
+SELECT sr_laplace_ln_pdf(1.0, 0.0, 1.0)
+----
+-1.6931471805599452
+
+# Laplace distribution support maximum (positive infinity)
+query R
+SELECT sr_laplace_max(0.0, 1.0)
+----
+inf
+
+# Laplace distribution mean
+query R
+SELECT sr_laplace_mean(0.0, 1.0)
+----
+0.0
+
+# Laplace distribution median
+query R
+SELECT sr_laplace_median(0.0, 1.0)
+----
+0.0
+
+# Laplace distribution support minimum (negative infinity)
+query R
+SELECT sr_laplace_min(0.0, 1.0)
+----
+-inf
+
+# Laplace distribution mode
+query R
+SELECT sr_laplace_mode(0.0, 1.0)
+----
+0.0
+
+# Laplace probability density at x, given location and scale
+query R
+SELECT sr_laplace_pdf(1.0, 0.0, 1.0)
+----
+0.18393972058572117
+
+# Laplace quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_laplace_quantile(0.5, 0.0, 1.0)
+----
+0.0
+
+# Laplace distribution skewness (always 0)
+query R
+SELECT sr_laplace_skewness(0.0, 1.0)
+----
+0.0
+
+# Laplace distribution standard deviation
+query R
+SELECT sr_laplace_std_dev(0.0, 1.0)
+----
+1.4142135623730951
+
+# Laplace distribution variance
+query R
+SELECT sr_laplace_variance(0.0, 1.0)
+----
+2.0
+
+# Lévy distribution differential entropy
+query R
+SELECT sr_levy_entropy(0.0, 1.0)
+----
+3.32448280139689
+
+# Lévy log-density at x
+query R
+SELECT sr_levy_ln_pdf(1.0, 0.0, 1.0)
+----
+-1.4189385332046727
+
+# Lévy distribution support maximum (positive infinity)
+query R
+SELECT sr_levy_max(0.0, 1.0)
+----
+inf
+
+# Lévy distribution mean (undefined)
+query R
+SELECT sr_levy_mean(0.0, 1.0)
+----
+inf
+
+# Lévy distribution median
+query R
+SELECT sr_levy_median(0.0, 1.0)
+----
+2.1981093383177326
+
+# Lévy distribution support minimum (mu)
+query R
+SELECT sr_levy_min(0.0, 1.0)
+----
+0.0
+
+# Lévy distribution mode
+query R
+SELECT sr_levy_mode(0.0, 1.0)
+----
+0.3333333333333333
+
+# Lévy probability density at x, given location mu and scale c
+query R
+SELECT sr_levy_pdf(1.0, 0.0, 1.0)
+----
+0.24197072451914337
+
+# Lévy quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_levy_quantile(0.5, 0.0, 1.0)
+----
+2.198109338317732
+
+# Lévy survival function P(X > x)
+query R
+SELECT sr_levy_sf(1.0, 0.0, 1.0)
+----
+0.6826894921098856
+
+# Lévy distribution skewness (undefined)
+query R
+SELECT sr_levy_skewness(0.0, 1.0)
+----
+NULL
+
+# Lévy distribution standard deviation (undefined)
+query R
+SELECT sr_levy_std_dev(0.0, 1.0)
+----
+inf
+
+# Lévy distribution variance (undefined)
+query R
+SELECT sr_levy_variance(0.0, 1.0)
+----
+inf
+
+# Log-normal distribution differential entropy
+query R
+SELECT sr_log_normal_entropy(0.0, 1.0)
+----
+1.4189385332046727
+
+# Log-normal log-density at x
+query R
+SELECT sr_log_normal_ln_pdf(1.0, 0.0, 1.0)
+----
+-0.9189385332046728
+
+# Log-normal distribution support maximum (positive infinity)
+query R
+SELECT sr_log_normal_max(0.0, 1.0)
+----
+inf
+
+# Log-normal distribution mean
+query R
+SELECT sr_log_normal_mean(0.0, 1.0)
+----
+1.6487212707001282
+
+# Log-normal distribution median
+query R
+SELECT sr_log_normal_median(0.0, 1.0)
+----
+1.0
+
+# Log-normal distribution support minimum (0)
+query R
+SELECT sr_log_normal_min(0.0, 1.0)
+----
+0.0
+
+# Log-normal distribution mode
+query R
+SELECT sr_log_normal_mode(0.0, 1.0)
+----
+0.36787944117144233
+
+# Log-normal quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_log_normal_quantile(0.5, 0.0, 1.0)
+----
+1.0
+
+# Log-normal survival function P(X > x)
+query R
+SELECT sr_log_normal_sf(1.0, 0.0, 1.0)
+----
+0.5
+
+# Log-normal distribution skewness
+query R
+SELECT sr_log_normal_skewness(0.0, 1.0)
+----
+6.184877138632554
+
+# Log-normal distribution standard deviation
+query R
+SELECT sr_log_normal_std_dev(0.0, 1.0)
+----
+2.1611974158950877
+
+# Log-normal distribution variance
+query R
+SELECT sr_log_normal_variance(0.0, 1.0)
+----
+4.670774270471604
+
+# Normal (Gaussian) distribution differential entropy
+query R
+SELECT sr_normal_entropy(0.0, 1.0)
+----
+1.4189385332046727
+
+# Normal (Gaussian) distribution support maximum (positive infinity)
+query R
+SELECT sr_normal_max(0.0, 1.0)
+----
+inf
+
+# Normal (Gaussian) distribution mean
+query R
+SELECT sr_normal_mean(0.0, 1.0)
+----
+0.0
+
+# Normal (Gaussian) distribution median
+query R
+SELECT sr_normal_median(0.0, 1.0)
+----
+0.0
+
+# Normal (Gaussian) distribution support minimum (negative infinity)
+query R
+SELECT sr_normal_min(0.0, 1.0)
+----
+-inf
+
+# Normal (Gaussian) distribution mode
+query R
+SELECT sr_normal_mode(0.0, 1.0)
+----
+0.0
+
+# Normal (Gaussian) distribution skewness (always 0)
+query R
+SELECT sr_normal_skewness(0.0, 1.0)
+----
+0.0
+
+# Normal (Gaussian) distribution standard deviation
+query R
+SELECT sr_normal_std_dev(0.0, 1.0)
+----
+1.0
+
+# Normal (Gaussian) distribution variance
+query R
+SELECT sr_normal_variance(0.0, 1.0)
+----
+1.0
+
+# Student's t distribution differential entropy
+query R
+SELECT sr_students_t_entropy(0.0, 1.0, 10.0)
+----
+1.5212624929756853
+
+# Student's t log-density at x
+query R
+SELECT sr_students_t_ln_pdf(1.0, 0.0, 1.0, 2.0)
+----
+-1.647918433002162
+
+# Student's t distribution support maximum (positive infinity)
+query R
+SELECT sr_students_t_max(0.0, 1.0, 10.0)
+----
+inf
+
+# Student's t distribution mean
+query R
+SELECT sr_students_t_mean(0.0, 1.0, 2.0)
+----
+0.0
+
+# Student's t distribution median
+query R
+SELECT sr_students_t_median(0.0, 1.0, 10.0)
+----
+0.0
+
+# Student's t distribution support minimum (negative infinity)
+query R
+SELECT sr_students_t_min(0.0, 1.0, 10.0)
+----
+-inf
+
+# Student's t distribution mode
+query R
+SELECT sr_students_t_mode(0.0, 1.0, 10.0)
+----
+0.0
+
+# Student's t probability density at x, given location, scale and degrees of freedom
+query R
+SELECT sr_students_t_pdf(1.0, 0.0, 1.0, 2.0)
+----
+0.19245008972987573
+
+# Student's t quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_students_t_quantile(0.975, 0.0, 1.0, 10.0)
+----
+2.2281388519862744
+
+# Student's t survival function P(X > x)
+query R
+SELECT sr_students_t_sf(1.0, 0.0, 1.0, 2.0)
+----
+0.2113248654051864
+
+# Student's t distribution skewness
+query R
+SELECT sr_students_t_skewness(0.0, 1.0, 10.0)
+----
+0.0
+
+# Student's t distribution standard deviation
+query R
+SELECT sr_students_t_std_dev(0.0, 1.0, 10.0)
+----
+1.118033988749895
+
+# Student's t distribution variance
+query R
+SELECT sr_students_t_variance(0.0, 1.0, 10.0)
+----
+1.25
+
+# Triangular distribution differential entropy
+query R
+SELECT sr_triangular_entropy(0.0, 2.0, 1.0)
+----
+0.5
+
+# Triangular log-density at x
+query R
+SELECT sr_triangular_ln_pdf(1.0, 0.0, 2.0, 1.0)
+----
+0.0
+
+# Triangular distribution support maximum (max)
+query R
+SELECT sr_triangular_max(0.0, 2.0, 1.0)
+----
+2.0
+
+# Triangular distribution mean
+query R
+SELECT sr_triangular_mean(0.0, 2.0, 1.0)
+----
+1.0
+
+# Triangular distribution median
+query R
+SELECT sr_triangular_median(0.0, 2.0, 1.0)
+----
+1.0
+
+# Triangular distribution support minimum (min)
+query R
+SELECT sr_triangular_min(0.0, 2.0, 1.0)
+----
+0.0
+
+# Triangular distribution mode
+query R
+SELECT sr_triangular_mode(0.0, 2.0, 1.0)
+----
+1.0
+
+# Triangular probability density at x, given min, max and mode
+query R
+SELECT sr_triangular_pdf(1.0, 0.0, 2.0, 1.0)
+----
+1.0
+
+# Triangular quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_triangular_quantile(0.5, 0.0, 2.0, 1.0)
+----
+1.0
+
+# Triangular survival function P(X > x)
+query R
+SELECT sr_triangular_sf(1.0, 0.0, 2.0, 1.0)
+----
+0.5
+
+# Triangular distribution skewness
+query R
+SELECT sr_triangular_skewness(0.0, 2.0, 1.0)
+----
+0.0
+
+# Triangular distribution standard deviation
+query R
+SELECT sr_triangular_std_dev(0.0, 2.0, 1.0)
+----
+0.408248290463863
+
+# Triangular distribution variance
+query R
+SELECT sr_triangular_variance(0.0, 2.0, 1.0)
+----
+0.16666666666666666
+
+# Continuous uniform distribution differential entropy
+query R
+SELECT sr_uniform_entropy(0.0, 1.0)
+----
+0.0
+
+# Continuous uniform log-density at x
+query R
+SELECT sr_uniform_ln_pdf(0.5, 0.0, 1.0)
+----
+-0.0
+
+# Continuous uniform distribution support maximum (max)
+query R
+SELECT sr_uniform_max(0.0, 1.0)
+----
+1.0
+
+# Continuous uniform distribution mean
+query R
+SELECT sr_uniform_mean(0.0, 1.0)
+----
+0.5
+
+# Continuous uniform distribution median
+query R
+SELECT sr_uniform_median(0.0, 1.0)
+----
+0.5
+
+# Continuous uniform distribution support minimum (min)
+query R
+SELECT sr_uniform_min(0.0, 1.0)
+----
+0.0
+
+# Continuous uniform distribution mode
+query R
+SELECT sr_uniform_mode(0.0, 1.0)
+----
+0.5
+
+# Continuous uniform survival function P(X > x)
+query R
+SELECT sr_uniform_sf(0.5, 0.0, 1.0)
+----
+0.5
+
+# Continuous uniform distribution skewness (always 0)
+query R
+SELECT sr_uniform_skewness(0.0, 1.0)
+----
+0.0
+
+# Continuous uniform distribution standard deviation
+query R
+SELECT sr_uniform_std_dev(0.0, 1.0)
+----
+0.28867513459481287
+
+# Continuous uniform distribution variance
+query R
+SELECT sr_uniform_variance(0.0, 1.0)
+----
+0.08333333333333333

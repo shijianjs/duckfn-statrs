@@ -70,3 +70,140 @@ statement error
 SELECT sr_multinomial_pmf([0.5, 0.5], 4.5, [2, 2])
 ----
 expected a non-negative whole number, got 4.5
+
+# ============================================================================
+# doc example 全覆盖：本组其余函数各一条用例。SQL 取自函数源码的 `example`
+# 属性（即 statrs 官方文档示例），期望值由已构建扩展实跑捕获。
+# ============================================================================
+
+# Categorical entropy
+query R
+SELECT sr_categorical_entropy([1.0, 2.0, 1.0])
+----
+1.0397207708399179
+
+# Categorical log probability mass at x
+query R
+SELECT sr_categorical_ln_pmf(1.0, [1.0, 2.0, 1.0])
+----
+-0.6931471805599453
+
+# Categorical maximum of the support (last category index)
+query R
+SELECT sr_categorical_max([1.0, 2.0, 1.0])
+----
+2.0
+
+# Categorical mean
+query R
+SELECT sr_categorical_mean([1.0, 2.0, 1.0])
+----
+1.0
+
+# Categorical median
+query R
+SELECT sr_categorical_median([1.0, 2.0, 1.0])
+----
+1.0
+
+# Categorical minimum of the support (category index 0)
+query R
+SELECT sr_categorical_min([1.0, 2.0, 1.0])
+----
+0.0
+
+# Categorical survival function P(X > x)
+query R
+SELECT sr_categorical_sf(1.0, [1.0, 2.0, 1.0])
+----
+0.25
+
+# Categorical skewness
+query R
+SELECT sr_categorical_skewness([1.0, 2.0, 1.0])
+----
+NULL
+
+# Categorical standard deviation
+query R
+SELECT sr_categorical_std_dev([1.0, 2.0, 1.0])
+----
+0.7071067811865476
+
+# Categorical variance
+query R
+SELECT sr_categorical_variance([1.0, 2.0, 1.0])
+----
+0.5
+
+# Empirical entropy of a DOUBLE column; always NULL, since statrs implements no entropy for the empirical distribution
+query R
+SELECT sr_empirical_entropy(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
+----
+NULL
+
+# Empirical maximum of a DOUBLE column
+query R
+SELECT sr_empirical_max(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
+----
+3.0
+
+# Empirical mean of a DOUBLE column
+query R
+SELECT sr_empirical_mean(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
+----
+2.0
+
+# Empirical minimum of a DOUBLE column
+query R
+SELECT sr_empirical_min(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
+----
+1.0
+
+# Empirical skewness of a DOUBLE column; always NULL, since statrs implements no skewness for the empirical distribution
+query R
+SELECT sr_empirical_skewness(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
+----
+NULL
+
+# Empirical standard deviation of a DOUBLE column
+query R
+SELECT sr_empirical_std_dev(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
+----
+1.0
+
+# Empirical variance of a DOUBLE column
+query R
+SELECT sr_empirical_variance(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
+----
+1.0
+
+# Differential entropy of the multivariate normal distribution given the mean and a row-major flattened covariance matrix
+query R
+SELECT sr_multivariate_normal_entropy([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+----
+2.8378770664093453
+
+# Mean vector of the multivariate normal distribution given the mean and a row-major flattened covariance matrix
+query R
+SELECT sr_multivariate_normal_mean([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+----
+[0.0, 0.0]
+
+# Mode vector of the multivariate normal distribution given the mean and a row-major flattened covariance matrix
+query R
+SELECT sr_multivariate_normal_mode([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+----
+[0.0, 0.0]
+
+# Covariance matrix of the multivariate normal distribution (row-major flattened LIST) given the mean and a row-major flattened covariance matrix
+query R
+SELECT sr_multivariate_normal_variance([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+----
+[1.0, 0.0, 0.0, 1.0]
+
+# Mode vector of the multivariate Student's t distribution given location, a row-major flattened scale matrix and the degrees of freedom
+query R
+SELECT sr_multivariate_students_t_mode([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
+----
+[0.0, 0.0]

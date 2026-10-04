@@ -16,7 +16,7 @@
     "description": "The label for category 'Function reference' in sidebar 'userGuide'"
   },
   "sidebar.userGuide.category.Function reference.link.generated-index.description": {
-    "message": "全部 252 个 sr_ 函数的可执行 SQL 示例，按类别组织。",
+    "message": "全部 511 个 sr_ 函数的可执行 SQL 示例，按类别组织。",
     "description": "The generated-index page description for category 'Function reference' in sidebar 'userGuide'"
   },
   "sidebar.userGuide.category.Summary statistics": {

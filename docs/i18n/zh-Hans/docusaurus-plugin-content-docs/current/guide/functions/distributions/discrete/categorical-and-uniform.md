@@ -1,7 +1,7 @@
 ---
 title: 类别与离散均匀
 sidebar_position: 3
-description: 类别与离散均匀分布——每种都提供 pmf / ln_pmf / cdf / sf / quantile。
+description: 类别与离散均匀分布——每种都提供 pmf / ln_pmf / cdf / sf / quantile，以及各阶矩与支撑。
 ---
 
 # 类别与离散均匀
@@ -63,6 +63,94 @@ SELECT sr_categorical_pmf(1.5, [1.0, 2.0, 1.0])
 -- error: expected a non-negative whole number, got 1.5
 ```
 
+### sr_categorical_entropy(probs)
+
+**签名**：`sr_categorical_entropy(probs DOUBLE[]) -> DOUBLE`
+
+Categorical（类别）的熵。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_categorical_entropy([1.0, 2.0, 1.0])
+-- 1.0397207708399179
+```
+
+### sr_categorical_max(probs)
+
+**签名**：`sr_categorical_max(probs DOUBLE[]) -> DOUBLE`
+
+Categorical（类别）的最大值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_categorical_max([1.0, 2.0, 1.0])
+-- 2.0
+```
+
+### sr_categorical_mean(probs)
+
+**签名**：`sr_categorical_mean(probs DOUBLE[]) -> DOUBLE`
+
+Categorical（类别）的均值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_categorical_mean([1.0, 2.0, 1.0])
+-- 1.0
+```
+
+### sr_categorical_median(probs)
+
+**签名**：`sr_categorical_median(probs DOUBLE[]) -> DOUBLE`
+
+Categorical（类别）的中位数。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_categorical_median([1.0, 2.0, 1.0])
+-- 1.0
+```
+
+### sr_categorical_min(probs)
+
+**签名**：`sr_categorical_min(probs DOUBLE[]) -> DOUBLE`
+
+Categorical（类别）的最小值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_categorical_min([1.0, 2.0, 1.0])
+-- 0.0
+```
+
+### sr_categorical_skewness(probs)
+
+**签名**：`sr_categorical_skewness(probs DOUBLE[]) -> DOUBLE`
+
+Categorical（类别）的偏度。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_categorical_skewness([1.0, 2.0, 1.0])
+-- NULL
+```
+
+### sr_categorical_std_dev(probs)
+
+**签名**：`sr_categorical_std_dev(probs DOUBLE[]) -> DOUBLE`
+
+Categorical（类别）的标准差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_categorical_std_dev([1.0, 2.0, 1.0])
+-- 0.7071067811865476
+```
+
+### sr_categorical_variance(probs)
+
+**签名**：`sr_categorical_variance(probs DOUBLE[]) -> DOUBLE`
+
+Categorical（类别）的方差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_categorical_variance([1.0, 2.0, 1.0])
+-- 0.5
+```
+
 ## Discrete uniform（离散均匀）
 
 参数：`min`、`max`——整数值 DOUBLE。支撑：`[min, max]` 内的整数。
@@ -107,4 +195,103 @@ SELECT sr_discrete_uniform_sf(3.0, 1.0, 6.0)
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_discrete_uniform_quantile(0.5, 1.0, 6.0)
 -- 3.0
+```
+
+### sr_discrete_uniform_entropy(min, max)
+
+**签名**：`sr_discrete_uniform_entropy(min DOUBLE, max DOUBLE) -> DOUBLE`
+
+Discrete uniform（离散均匀）的熵。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_discrete_uniform_entropy(1.0, 6.0)
+-- 1.791759469228055
+```
+
+### sr_discrete_uniform_max(min, max)
+
+**签名**：`sr_discrete_uniform_max(min DOUBLE, max DOUBLE) -> DOUBLE`
+
+Discrete uniform（离散均匀）的最大值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_discrete_uniform_max(1.0, 6.0)
+-- 6.0
+```
+
+### sr_discrete_uniform_mean(min, max)
+
+**签名**：`sr_discrete_uniform_mean(min DOUBLE, max DOUBLE) -> DOUBLE`
+
+Discrete uniform（离散均匀）的均值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_discrete_uniform_mean(1.0, 6.0)
+-- 3.5
+```
+
+### sr_discrete_uniform_median(min, max)
+
+**签名**：`sr_discrete_uniform_median(min DOUBLE, max DOUBLE) -> DOUBLE`
+
+Discrete uniform（离散均匀）的中位数。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_discrete_uniform_median(1.0, 6.0)
+-- 3.5
+```
+
+### sr_discrete_uniform_min(min, max)
+
+**签名**：`sr_discrete_uniform_min(min DOUBLE, max DOUBLE) -> DOUBLE`
+
+Discrete uniform（离散均匀）的最小值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_discrete_uniform_min(1.0, 6.0)
+-- 1.0
+```
+
+### sr_discrete_uniform_mode(min, max)
+
+**签名**：`sr_discrete_uniform_mode(min DOUBLE, max DOUBLE) -> DOUBLE`
+
+Discrete uniform（离散均匀）的众数。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_discrete_uniform_mode(1.0, 6.0)
+-- 3.0
+```
+
+### sr_discrete_uniform_skewness(min, max)
+
+**签名**：`sr_discrete_uniform_skewness(min DOUBLE, max DOUBLE) -> DOUBLE`
+
+Discrete uniform（离散均匀）的偏度。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_discrete_uniform_skewness(1.0, 6.0)
+-- 0.0
+```
+
+### sr_discrete_uniform_std_dev(min, max)
+
+**签名**：`sr_discrete_uniform_std_dev(min DOUBLE, max DOUBLE) -> DOUBLE`
+
+Discrete uniform（离散均匀）的标准差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_discrete_uniform_std_dev(1.0, 6.0)
+-- 1.707825127659933
+```
+
+### sr_discrete_uniform_variance(min, max)
+
+**签名**：`sr_discrete_uniform_variance(min DOUBLE, max DOUBLE) -> DOUBLE`
+
+Discrete uniform（离散均匀）的方差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_discrete_uniform_variance(1.0, 6.0)
+-- 2.9166666666666665
 ```

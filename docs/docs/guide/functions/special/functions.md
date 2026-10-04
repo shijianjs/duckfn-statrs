@@ -1,7 +1,7 @@
 ---
 title: Special functions
 sidebar_position: 1
-description: Error functions, gamma and beta families, factorials, harmonic numbers, logistic/logit, polynomial evaluation, and kernel helpers.
+description: Error functions, gamma and beta families, factorials and combinatorial, harmonic numbers, logistic/logit, polynomial evaluation, kernel helpers, and Euclidean modulus.
 ---
 
 # Special functions
@@ -253,6 +253,17 @@ SELECT exp(sr_ln_choose(10.0, 3.0))::DECIMAL(12,8)
 -- 120.00000000
 ```
 
+### sr_multinomial_coefficient(total, counts)
+
+**Signature**: `sr_multinomial_coefficient(total DOUBLE, counts BIGINT[]) -> DOUBLE`
+
+Multinomial coefficient n! / (n1! n2! ...) over a whole-number n and a count LIST(BIGINT); NULL when the counts do not sum to n.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multinomial_coefficient(5.0, [2, 2, 1])
+-- 30.0
+```
+
 ## Harmonic numbers
 
 ### sr_harmonic(n)
@@ -356,4 +367,28 @@ Compact support interval `[lo, hi]` of the kernel. NULL for kernels with unbound
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_kernel_support(2.0)
 -- [-1.0, 1.0]
+```
+
+### sr_kernel_eval_with_bandwidth(kind, x, bandwidth)
+
+**Signature**: `sr_kernel_eval_with_bandwidth(kind DOUBLE, x DOUBLE, bandwidth DOUBLE) -> DOUBLE`
+
+Kernel function with bandwidth scaling K(x / h) / h (same kind codes as sr_kernel_eval).
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_kernel_eval_with_bandwidth(1.0, 0.0, 0.5)
+-- 0.7978845608028654
+```
+
+## Euclidean modulus
+
+### sr_modulus(x, divisor)
+
+**Signature**: `sr_modulus(x DOUBLE, divisor DOUBLE) -> DOUBLE`
+
+Canonical (Euclidean) modulus ((x % divisor) + divisor) % divisor, always in [0, divisor); NULL for a zero divisor.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_modulus(-1.0, 5.0)
+-- 4.0
 ```

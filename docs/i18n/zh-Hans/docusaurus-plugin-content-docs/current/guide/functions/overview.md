@@ -1,12 +1,12 @@
 ---
 title: 总览
 sidebar_position: 1
-description: 函数参考各分页的索引——252 个统计函数的可执行 SQL 示例，按类别组织。
+description: 函数参考各分页的索引——511 个统计函数的可执行 SQL 示例，按类别组织。
 ---
 
 # 函数参考总览
 
-`duckfn_statrs` 注册的 252 个函数都带 `sr_` 前缀。下面每个分页里的每个函数都至少配一个可在
+`duckfn_statrs` 注册的 511 个函数都带 `sr_` 前缀。下面每个分页里的每个函数都至少配一个可在
 浏览器里真跑的 SQL 示例。
 
 在 SQL 里检索所有注册函数：
@@ -54,3 +54,21 @@ sr_<name>_quantile(p, params...)  反 CDF
 ```
 
 离散分布用 `pmf` / `ln_pmf` 替代 `pdf` / `ln_pdf`，其余同名。
+
+在这五个之外，每种分布还会暴露 statrs 能给出的量——均值、方差、标准差、熵、偏度、中位数、
+众数与支撑边界：
+
+```text
+sr_<name>_mean(params...)      分布均值
+sr_<name>_variance(params...)  方差
+sr_<name>_std_dev(params...)   标准差
+sr_<name>_entropy(params...)   微分熵 / 香农熵
+sr_<name>_skewness(params...)  偏度
+sr_<name>_median(params...)    中位数
+sr_<name>_mode(params...)      众数
+sr_<name>_min(params...)       支撑下界
+sr_<name>_max(params...)       支撑上界
+```
+
+statrs 没有闭式解（或本就不存在）的量，函数仍然注册，只是返回 SQL NULL——例如柯西分布的
+均值与方差。

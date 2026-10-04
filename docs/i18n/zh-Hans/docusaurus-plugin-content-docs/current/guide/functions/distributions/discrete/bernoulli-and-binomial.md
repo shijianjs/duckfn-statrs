@@ -1,7 +1,7 @@
 ---
 title: Bernoulli 与二项试验
 sidebar_position: 1
-description: Bernoulli、二项、负二项与几何分布——每种都提供 pmf / ln_pmf / cdf / sf / quantile。
+description: Bernoulli、二项、负二项与几何分布——每种都提供 pmf / ln_pmf / cdf / sf / quantile，以及各阶矩与支撑。
 ---
 
 # Bernoulli 与二项试验
@@ -57,6 +57,105 @@ SELECT sr_bernoulli_quantile(0.5, 0.7)
 -- 1.0
 ```
 
+### sr_bernoulli_entropy(p)
+
+**签名**：`sr_bernoulli_entropy(p DOUBLE) -> DOUBLE`
+
+Bernoulli 的熵。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_bernoulli_entropy(0.7)
+-- 0.6108643020548935
+```
+
+### sr_bernoulli_max(p)
+
+**签名**：`sr_bernoulli_max(p DOUBLE) -> DOUBLE`
+
+Bernoulli 的最大值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_bernoulli_max(0.7)
+-- 1.0
+```
+
+### sr_bernoulli_mean(p)
+
+**签名**：`sr_bernoulli_mean(p DOUBLE) -> DOUBLE`
+
+Bernoulli 的均值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_bernoulli_mean(0.7)
+-- 0.7
+```
+
+### sr_bernoulli_median(p)
+
+**签名**：`sr_bernoulli_median(p DOUBLE) -> DOUBLE`
+
+Bernoulli 的中位数。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_bernoulli_median(0.7)
+-- 0.0
+```
+
+### sr_bernoulli_min(p)
+
+**签名**：`sr_bernoulli_min(p DOUBLE) -> DOUBLE`
+
+Bernoulli 的最小值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_bernoulli_min(0.7)
+-- 0.0
+```
+
+### sr_bernoulli_mode(p)
+
+**签名**：`sr_bernoulli_mode(p DOUBLE) -> DOUBLE`
+
+Bernoulli 的众数。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_bernoulli_mode(0.7)
+-- 1.0
+```
+
+### sr_bernoulli_skewness(p)
+
+**签名**：`sr_bernoulli_skewness(p DOUBLE) -> DOUBLE`
+
+Bernoulli 的偏度。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_bernoulli_skewness(0.7)
+-- -0.8728715609439692
+```
+
+### sr_bernoulli_std_dev(p)
+
+**签名**：`sr_bernoulli_std_dev(p DOUBLE) -> DOUBLE`
+
+Bernoulli 的标准差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_bernoulli_std_dev(0.7)
+-- 0.45825756949558405
+```
+
+### sr_bernoulli_variance(p)
+
+**签名**：`sr_bernoulli_variance(p DOUBLE) -> DOUBLE`
+
+Bernoulli 的方差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_bernoulli_variance(0.7)
+-- 0.21000000000000002
+```
+
 ## 二项
 
 参数：`p`（成功概率）、`n`（试验次数，整数值 DOUBLE）。
@@ -105,6 +204,105 @@ SELECT sr_binomial_quantile(0.5, 0.5, 10.0)
 -- 5.0
 ```
 
+### sr_binomial_entropy(p, n)
+
+**签名**：`sr_binomial_entropy(p DOUBLE, n DOUBLE) -> DOUBLE`
+
+二项的熵。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_binomial_entropy(0.5, 10.0)
+-- 1.8759536052468009
+```
+
+### sr_binomial_max(p, n)
+
+**签名**：`sr_binomial_max(p DOUBLE, n DOUBLE) -> DOUBLE`
+
+二项的最大值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_binomial_max(0.5, 10.0)
+-- 10.0
+```
+
+### sr_binomial_mean(p, n)
+
+**签名**：`sr_binomial_mean(p DOUBLE, n DOUBLE) -> DOUBLE`
+
+二项的均值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_binomial_mean(0.5, 10.0)
+-- 5.0
+```
+
+### sr_binomial_median(p, n)
+
+**签名**：`sr_binomial_median(p DOUBLE, n DOUBLE) -> DOUBLE`
+
+二项的中位数。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_binomial_median(0.5, 10.0)
+-- 5.0
+```
+
+### sr_binomial_min(p, n)
+
+**签名**：`sr_binomial_min(p DOUBLE, n DOUBLE) -> DOUBLE`
+
+二项的最小值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_binomial_min(0.5, 10.0)
+-- 0.0
+```
+
+### sr_binomial_mode(p, n)
+
+**签名**：`sr_binomial_mode(p DOUBLE, n DOUBLE) -> DOUBLE`
+
+二项的众数。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_binomial_mode(0.5, 10.0)
+-- 5.0
+```
+
+### sr_binomial_skewness(p, n)
+
+**签名**：`sr_binomial_skewness(p DOUBLE, n DOUBLE) -> DOUBLE`
+
+二项的偏度。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_binomial_skewness(0.5, 10.0)
+-- 0.0
+```
+
+### sr_binomial_std_dev(p, n)
+
+**签名**：`sr_binomial_std_dev(p DOUBLE, n DOUBLE) -> DOUBLE`
+
+二项的标准差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_binomial_std_dev(0.5, 10.0)
+-- 1.5811388300841898
+```
+
+### sr_binomial_variance(p, n)
+
+**签名**：`sr_binomial_variance(p DOUBLE, n DOUBLE) -> DOUBLE`
+
+二项的方差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_binomial_variance(0.5, 10.0)
+-- 2.5
+```
+
 ## 负二项
 
 参数：`r`（成功次数，statrs 里可取实数）、`p`（成功概率）。
@@ -149,6 +347,94 @@ SELECT sr_negative_binomial_sf(3.0, 2.0, 0.5)
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_negative_binomial_quantile(0.5, 2.0, 0.5)
+```
+
+### sr_negative_binomial_entropy(r, p)
+
+**签名**：`sr_negative_binomial_entropy(r DOUBLE, p DOUBLE) -> DOUBLE`
+
+负二项的熵。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_negative_binomial_entropy(2.0, 0.5)
+-- NULL
+```
+
+### sr_negative_binomial_max(r, p)
+
+**签名**：`sr_negative_binomial_max(r DOUBLE, p DOUBLE) -> DOUBLE`
+
+负二项的最大值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_negative_binomial_max(2.0, 0.5)
+-- 1.8446744073709552e+19
+```
+
+### sr_negative_binomial_mean(r, p)
+
+**签名**：`sr_negative_binomial_mean(r DOUBLE, p DOUBLE) -> DOUBLE`
+
+负二项的均值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_negative_binomial_mean(2.0, 0.5)
+-- 2.0
+```
+
+### sr_negative_binomial_min(r, p)
+
+**签名**：`sr_negative_binomial_min(r DOUBLE, p DOUBLE) -> DOUBLE`
+
+负二项的最小值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_negative_binomial_min(2.0, 0.5)
+-- 0.0
+```
+
+### sr_negative_binomial_mode(r, p)
+
+**签名**：`sr_negative_binomial_mode(r DOUBLE, p DOUBLE) -> DOUBLE`
+
+负二项的众数。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_negative_binomial_mode(2.0, 0.5)
+-- 1.0
+```
+
+### sr_negative_binomial_skewness(r, p)
+
+**签名**：`sr_negative_binomial_skewness(r DOUBLE, p DOUBLE) -> DOUBLE`
+
+负二项的偏度。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_negative_binomial_skewness(2.0, 0.5)
+-- 1.5
+```
+
+### sr_negative_binomial_std_dev(r, p)
+
+**签名**：`sr_negative_binomial_std_dev(r DOUBLE, p DOUBLE) -> DOUBLE`
+
+负二项的标准差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_negative_binomial_std_dev(2.0, 0.5)
+-- 2.0
+```
+
+### sr_negative_binomial_variance(r, p)
+
+**签名**：`sr_negative_binomial_variance(r DOUBLE, p DOUBLE) -> DOUBLE`
+
+负二项的方差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_negative_binomial_variance(2.0, 0.5)
+-- 4.0
 ```
 
 ## Geometric（几何）
@@ -196,6 +482,105 @@ SELECT sr_geometric_sf(1.0, 0.5)::DECIMAL(12,8)
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_geometric_quantile(0.5, 0.5)
+```
+
+### sr_geometric_dist_mean(p)
+
+**签名**：`sr_geometric_dist_mean(p DOUBLE) -> DOUBLE`
+
+Geometric（几何）的均值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_geometric_dist_mean(0.5)
+-- 2.0
+```
+
+### sr_geometric_entropy(p)
+
+**签名**：`sr_geometric_entropy(p DOUBLE) -> DOUBLE`
+
+Geometric（几何）的熵。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_geometric_entropy(0.5)
+-- 1.3862943611198906
+```
+
+### sr_geometric_max(p)
+
+**签名**：`sr_geometric_max(p DOUBLE) -> DOUBLE`
+
+Geometric（几何）的最大值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_geometric_max(0.5)
+-- 1.8446744073709552e+19
+```
+
+### sr_geometric_median(p)
+
+**签名**：`sr_geometric_median(p DOUBLE) -> DOUBLE`
+
+Geometric（几何）的中位数。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_geometric_median(0.5)
+-- 1.0
+```
+
+### sr_geometric_min(p)
+
+**签名**：`sr_geometric_min(p DOUBLE) -> DOUBLE`
+
+Geometric（几何）的最小值。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_geometric_min(0.5)
+-- 1.0
+```
+
+### sr_geometric_mode(p)
+
+**签名**：`sr_geometric_mode(p DOUBLE) -> DOUBLE`
+
+Geometric（几何）的众数。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_geometric_mode(0.5)
+-- 1.0
+```
+
+### sr_geometric_skewness(p)
+
+**签名**：`sr_geometric_skewness(p DOUBLE) -> DOUBLE`
+
+Geometric（几何）的偏度。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_geometric_skewness(0.5)
+-- 2.1213203435596424
+```
+
+### sr_geometric_std_dev(p)
+
+**签名**：`sr_geometric_std_dev(p DOUBLE) -> DOUBLE`
+
+Geometric（几何）的标准差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_geometric_std_dev(0.5)
+-- 1.4142135623730951
+```
+
+### sr_geometric_variance(p)
+
+**签名**：`sr_geometric_variance(p DOUBLE) -> DOUBLE`
+
+Geometric（几何）的方差。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_geometric_variance(0.5)
+-- 2.0
 ```
 
 ## 错误与 NULL

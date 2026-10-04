@@ -47,7 +47,7 @@ SELECT function_name, function_type
 FROM duckdb_functions()
 WHERE function_name LIKE 'sr_%'
 ORDER BY function_name;
--- 252 rows
+-- 511 rows
 ```
 
 ## First queries

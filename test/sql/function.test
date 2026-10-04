@@ -86,3 +86,26 @@ statement error
 SELECT sr_choose(10.0, 2.5);
 ----
 expected a non-negative whole number, got 2.5
+
+# ============================================================================
+# doc example 全覆盖：本组其余函数各一条用例。SQL 取自函数源码的 `example`
+# 属性（即 statrs 官方文档示例），期望值由已构建扩展实跑捕获。
+# ============================================================================
+
+# Inverse complementary error function, erfc(x) = y solved for x
+query R
+SELECT sr_erfc_inv(0.15729920705028513)
+----
+1.0
+
+# Inverse digamma function, ψ(x) = y solved for x
+query R
+SELECT sr_inv_digamma(0.42278433509846713)
+----
+2.0000000000000018
+
+# Multinomial coefficient n! / (n1! n2! ...) over a whole-number n and a count LIST(BIGINT); NULL when the counts do not sum to n
+query R
+SELECT sr_multinomial_coefficient(5.0, [2, 2, 1])
+----
+30.0

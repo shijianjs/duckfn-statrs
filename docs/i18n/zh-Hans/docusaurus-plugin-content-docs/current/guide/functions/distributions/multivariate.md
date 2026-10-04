@@ -1,7 +1,7 @@
 ---
 title: 多元分布
 sidebar_position: 3
-description: 多元正态、Dirichlet、多项式与多元 t 密度——向量走 LIST(DOUBLE)，矩阵走行主序摊平 LIST。
+description: 多元正态、Dirichlet、多项式与多元 t 的密度与各阶矩——向量走 LIST(DOUBLE)，矩阵走行主序摊平 LIST。
 ---
 
 # 多元分布
@@ -25,6 +25,50 @@ SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0]):
 
 数值 `1/(2π)` 就是标准二元正态在原点的密度。
 
+### sr_multivariate_normal_entropy(mean, cov)
+
+**签名**：`sr_multivariate_normal_entropy(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE`
+
+多元正态分布的微分熵（由均值向量与行主序展平的协方差矩阵给出）。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_entropy([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- 2.8378770664093453
+```
+
+### sr_multivariate_normal_mean(mean, cov)
+
+**签名**：`sr_multivariate_normal_mean(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE[]`
+
+多元正态分布的均值向量。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_mean([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- [0.0, 0.0]
+```
+
+### sr_multivariate_normal_mode(mean, cov)
+
+**签名**：`sr_multivariate_normal_mode(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE[]`
+
+多元正态分布的众数向量（等于均值向量）。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_mode([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- [0.0, 0.0]
+```
+
+### sr_multivariate_normal_variance(mean, cov)
+
+**签名**：`sr_multivariate_normal_variance(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE[]`
+
+多元正态分布的协方差矩阵（行主序展平为 LIST）。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_variance([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- [1.0, 0.0, 0.0, 1.0]
+```
+
 ## sr_multivariate_students_t_pdf(x, location, scale, freedom)
 
 **签名**：`sr_multivariate_students_t_pdf(x LIST(DOUBLE), location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE) -> DOUBLE`
@@ -34,6 +78,17 @@ SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0]):
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)::DECIMAL(12,8)
 -- 0.15915494
+```
+
+### sr_multivariate_students_t_mode(location, scale, freedom)
+
+**签名**：`sr_multivariate_students_t_mode(location DOUBLE[], scale DOUBLE[], freedom DOUBLE) -> DOUBLE[]`
+
+多元 Student's t 分布的众数向量。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_students_t_mode([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
+-- [0.0, 0.0]
 ```
 
 ## sr_dirichlet_pdf(x, alpha)

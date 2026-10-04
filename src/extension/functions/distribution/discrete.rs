@@ -168,7 +168,7 @@ fn sr_discrete_uniform_ln_pmf(x: f64, min: f64, max: f64) -> DuckOptionResult<f6
 /// 离散均匀累积分布 P(X <= x)。
 #[duck_scalar_function(
     description = "Discrete uniform cumulative distribution function P(X <= x)",
-    example = "SELECT sr_discrete_uniform_cdf(3.5, 1.0, 6.0)"
+    example = "SELECT sr_discrete_uniform_cdf(3.0, 1.0, 6.0)"
 )]
 fn sr_discrete_uniform_cdf(x: f64, min: f64, max: f64) -> DuckOptionResult<f64> {
     let x = as_i64("sr_discrete_uniform_cdf", x)?;

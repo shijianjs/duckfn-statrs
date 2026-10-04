@@ -289,7 +289,7 @@ function featuresContent(): FeaturesContent {
           id: 'homepage.features.null.details',
           description: 'Home page feature card description',
           message:
-            'Undefined results become SQL NULL, invalid parameters raise clear errors, NULL inputs never produce a number — consistent across all 252 functions.',
+            'Undefined results become SQL NULL, invalid parameters raise clear errors, NULL inputs never produce a number — consistent across all 511 functions.',
         }),
       },
     ],
@@ -331,7 +331,7 @@ function nextStepsContent(
           id: 'homepage.next.functions.details',
           description: 'Home page link card description',
           message:
-            'Browse all 252 functions organized by category: statistics, distributions, special functions, sampling, and tests.',
+            'Browse all 511 functions organized by category: statistics, distributions, special functions, sampling, and tests.',
         }),
       },
       {
@@ -379,7 +379,7 @@ function CodeShowcase(): ReactNode {
           <Translate
             id="homepage.showcase.lead"
             description="Home page paragraph introducing the SQL code block">
-            252 functions backed by the Rust statrs library, callable directly
+            511 functions backed by the Rust statrs library, callable directly
             from your DuckDB queries. Aggregates for summary statistics, scalars
             for distributions and special functions.
           </Translate>
@@ -429,7 +429,7 @@ export default function Home(): ReactNode {
   return (
     <Layout
       title={siteConfig.title}
-      description="Documentation for duckfn_statrs: 252 statistical functions for DuckDB SQL, from the Rust statrs crate.">
+      description="Documentation for duckfn_statrs: 511 statistical functions for DuckDB SQL, from the Rust statrs crate.">
       {/* Layout renders no <main> of its own: this is the page's only one. */}
       <main>
         {dfk(

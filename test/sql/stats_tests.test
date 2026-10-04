@@ -75,3 +75,14 @@ statement error
 SELECT sr_anderson_darling([1.0, 2.0], 'cauchy', [])
 ----
 unknown distribution 'cauchy'
+
+# ============================================================================
+# doc example 全覆盖：本组其余函数各一条用例。SQL 取自函数源码的 `example`
+# 属性（即 statrs 官方文档示例），期望值由已构建扩展实跑捕获。
+# ============================================================================
+
+# One-sample Kolmogorov-Smirnov test of a LIST(DOUBLE) sample against a named distribution (normal / lognormal / exponential / gumbel / weibull / uniform) with its parameter LIST: LIST [KS statistic, p-value]; method 1 less 2 greater 3 two-sided exact 4 two-sided asymptotic 5 two-sided approximate
+query R
+SELECT sr_ks_onesample([1.0, 2.0, 3.0, 4.0], 'normal', [2.5, 1.0], 4.0, 1.0)
+----
+[0.19146246127401312, 0.9985479186818191]

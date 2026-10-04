@@ -1,7 +1,7 @@
 ---
 title: 假设检验
 sidebar_position: 7
-description: 9 个统计假设检验——t 检验、卡方、ANOVA、KS、Mann-Whitney U、偏度、Anderson-Darling、Fisher 精确。
+description: 10 个统计假设检验——t 检验、卡方、ANOVA、KS、Mann-Whitney U、偏度、Anderson-Darling、Fisher 精确。
 ---
 
 # 假设检验
@@ -85,6 +85,17 @@ SELECT sr_fishers_exact_with_odds_ratio([1.0, 2.0, 3.0, 4.0], 2.0)
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ks_twosample([0.1, 0.2, 0.3], [0.4, 0.5, 0.6], 4.0, 1.0)
 -- [1.0, 0.09956184831478034]
+```
+
+### sr_ks_onesample(x, dist, params, method, nan)
+
+**签名**：`sr_ks_onesample(x DOUBLE[], dist VARCHAR, params DOUBLE[], method DOUBLE, nan DOUBLE) -> DOUBLE[]`
+
+单样本 Kolmogorov-Smirnov 检验：把 LIST(DOUBLE) 样本与命名分布（normal / lognormal / exponential / gumbel / weibull / uniform）及其参数 LIST 比较，返回 LIST [KS 统计量, p 值]；method 取 1 less、2 greater、3 双侧精确、4 双侧渐近、5 双侧近似。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_ks_onesample([1.0, 2.0, 3.0, 4.0], 'normal', [2.5, 1.0], 4.0, 1.0)
+-- [0.19146246127401312, 0.9985479186818191]
 ```
 
 ## sr_mannwhitneyu(sample1, sample2, alternative, method)

@@ -16,21 +16,21 @@ SELECT sr_mean(x)::DECIMAL(10,1) FROM (VALUES (1.0), (2.0), (3.0)) t(x);
 ----
 2.0
 
-# statrs 全能力覆盖：26 个聚合 + 226 个标量 = 252，
+# statrs 全能力覆盖：33 个聚合 + 478 个标量 = 511，
 # 与 statrs 模块树的对应关系见 functions/mod.rs 头注释
 query I
 SELECT count(*) FROM duckdb_functions() WHERE starts_with(function_name, 'sr_');
 ----
-252
+511
 
 query I
 SELECT count(*) FROM duckdb_functions()
 WHERE starts_with(function_name, 'sr_') AND function_type = 'aggregate';
 ----
-26
+33
 
 query I
 SELECT count(*) FROM duckdb_functions()
 WHERE starts_with(function_name, 'sr_') AND function_type = 'scalar';
 ----
-226
+478

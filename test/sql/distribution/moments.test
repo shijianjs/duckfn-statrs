@@ -1,0 +1,335 @@
+# name: test/sql/distribution/moments.test
+# description: 分布矩与恒等关系的独立校验：期望值不取自实跑值，而是用 SQL 内联的解析
+#   闭式（pi()/ln()/exp()/sqrt()/digamma 等）与函数输出相减得 0，或与已知常量比对。
+#   覆盖：mean/variance/std_dev/entropy/skewness/mode/median/support 的闭式，variance =
+#   std_dev²、cdf + sf = 1、quantile∘cdf ≈ id 等不变量，以及 statrs 未定义的矩落 NULL
+#   （Cauchy 的 mean/variance/skewness、Pareto(shape=2) 的 variance 等）。
+# group: [duckfn_statrs]
+
+require duckfn_statrs
+
+# ============================================================================
+# Normal(μ=3, σ=2)：mean=μ、variance=σ²、std_dev=σ、skewness=0、median=mode=μ
+# ============================================================================
+query RRRRRR
+SELECT (sr_normal_mean(3.0, 2.0) - 3.0)::DECIMAL(12,10),
+       (sr_normal_variance(3.0, 2.0) - 4.0)::DECIMAL(12,10),
+       (sr_normal_std_dev(3.0, 2.0) - 2.0)::DECIMAL(12,10),
+       (sr_normal_skewness(3.0, 2.0))::DECIMAL(12,10),
+       (sr_normal_median(3.0, 2.0) - 3.0)::DECIMAL(12,10),
+       (sr_normal_mode(3.0, 2.0) - 3.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# entropy = ln σ + ½(1 + ln 2π)；支撑为整条实轴；cdf + sf = 1；quantile∘cdf ≈ id
+query RRRRR
+SELECT (sr_normal_entropy(3.0, 2.0) - (ln(2.0) + 0.5 * (1.0 + ln(2.0 * pi()))))::DECIMAL(12,10),
+       sr_normal_min(3.0, 2.0),
+       sr_normal_max(3.0, 2.0),
+       (sr_normal_cdf(0.5, 1.0, 2.0) + sr_normal_sf(0.5, 1.0, 2.0) - 1.0)::DECIMAL(12,10),
+       (sr_normal_quantile(sr_normal_cdf(0.5, 1.0, 2.0), 1.0, 2.0) - 0.5)::DECIMAL(12,10)
+----
+0.0000000000	-inf	inf	0.0000000000	0.0000000000
+
+# ============================================================================
+# Exponential(rate=2)：mean=1/rate、variance=1/rate²、skewness=2、mode=0、
+#   median=ln2/rate、entropy=1-ln(rate)、sf(x)=e^(-rate·x)
+# ============================================================================
+query RRRRRRR
+SELECT (sr_exp_mean(2.0) - 0.5)::DECIMAL(12,10),
+       (sr_exp_variance(2.0) - 0.25)::DECIMAL(12,10),
+       (sr_exp_skewness(2.0) - 2.0)::DECIMAL(12,10),
+       (sr_exp_mode(2.0))::DECIMAL(12,10),
+       (sr_exp_median(2.0) - ln(2.0) / 2.0)::DECIMAL(12,10),
+       (sr_exp_entropy(2.0) - (1.0 - ln(2.0)))::DECIMAL(12,10),
+       (sr_exp_sf(1.0, 2.0) - exp(-2.0))::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Uniform(a=0, b=1)：mean=(a+b)/2、variance=(b-a)²/12、entropy=ln(b-a)、skewness=0、
+#   median=mode=(a+b)/2、support=[a, b]
+# ============================================================================
+query RRRRRRRR
+SELECT (sr_uniform_mean(0.0, 1.0) - 0.5)::DECIMAL(12,10),
+       (sr_uniform_variance(0.0, 1.0) - 1.0 / 12.0)::DECIMAL(12,10),
+       (sr_uniform_entropy(0.0, 1.0))::DECIMAL(12,10),
+       (sr_uniform_skewness(0.0, 1.0))::DECIMAL(12,10),
+       (sr_uniform_median(0.0, 1.0) - 0.5)::DECIMAL(12,10),
+       (sr_uniform_mode(0.0, 1.0) - 0.5)::DECIMAL(12,10),
+       sr_uniform_min(0.0, 1.0),
+       (sr_uniform_max(0.0, 1.0) - 1.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0	0.0000000000
+
+# ============================================================================
+# Gamma(shape=2, rate=1)：mean=shape/rate、variance=shape/rate²、std_dev=√variance、
+#   skewness=2/√shape、mode=(shape-1)/rate、
+#   entropy=shape-ln(rate)+lnΓ(shape)+(1-shape)ψ(shape)
+# ============================================================================
+query RRRRRR
+SELECT (sr_gamma_mean(2.0, 1.0) - 2.0)::DECIMAL(12,10),
+       (sr_gamma_variance(2.0, 1.0) - 2.0)::DECIMAL(12,10),
+       (sr_gamma_std_dev(2.0, 1.0) - sqrt(2.0))::DECIMAL(12,10),
+       (sr_gamma_skewness(2.0, 1.0) - sqrt(2.0))::DECIMAL(12,10),
+       (sr_gamma_mode(2.0, 1.0) - 1.0)::DECIMAL(12,10),
+       (sr_gamma_entropy(2.0, 1.0) - (2.0 - ln(1.0) + sr_ln_gamma(2.0) + (1.0 - 2.0) * sr_digamma(2.0)))::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Beta(a=2, b=3)：mean=a/(a+b)、variance=ab/((a+b)²(a+b+1))、mode=(a-1)/(a+b-2)、
+#   skewness=2(b-a)√(a+b+1)/((a+b+2)√(ab))
+# ============================================================================
+query RRRR
+SELECT (sr_beta_mean(2.0, 3.0) - 2.0 / 5.0)::DECIMAL(12,10),
+       (sr_beta_variance(2.0, 3.0) - 6.0 / 150.0)::DECIMAL(12,10),
+       (sr_beta_mode(2.0, 3.0) - 1.0 / 3.0)::DECIMAL(12,10),
+       (sr_beta_skewness(2.0, 3.0) - 2.0 * (3.0 - 2.0) * sqrt(6.0) / (7.0 * sqrt(6.0)))::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Bernoulli(p=0.7)：mean=p、variance=p(1-p)、skewness=(1-2p)/√(p(1-p))、
+#   entropy=-(p·ln p + q·ln q)、support={0,1}（min=0、max=1）
+# ============================================================================
+query RRRRR
+SELECT (sr_bernoulli_mean(0.7) - 0.7)::DECIMAL(12,10),
+       (sr_bernoulli_variance(0.7) - 0.21)::DECIMAL(12,10),
+       (sr_bernoulli_skewness(0.7) - (1.0 - 2.0 * 0.7) / sqrt(0.21))::DECIMAL(12,10),
+       (sr_bernoulli_entropy(0.7) - (-(0.7 * ln(0.7) + 0.3 * ln(0.3))))::DECIMAL(12,10),
+       (sr_bernoulli_min(0.7) + sr_bernoulli_max(0.7) - 1.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Binomial(p=0.5, n=10)：mean=np、variance=np(1-p)、skewness=(1-2p)/√(np(1-p))=0、
+#   mode=floor((n+1)p)=5、median=5；cdf + sf = 1
+# ============================================================================
+query RRRRRR
+SELECT (sr_binomial_mean(0.5, 10.0) - 5.0)::DECIMAL(12,10),
+       (sr_binomial_variance(0.5, 10.0) - 2.5)::DECIMAL(12,10),
+       (sr_binomial_skewness(0.5, 10.0))::DECIMAL(12,10),
+       (sr_binomial_mode(0.5, 10.0) - 5.0)::DECIMAL(12,10),
+       (sr_binomial_median(0.5, 10.0) - 5.0)::DECIMAL(12,10),
+       (sr_binomial_cdf(3.0, 0.5, 10.0) + sr_binomial_sf(3.0, 0.5, 10.0) - 1.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Poisson(rate=3)：mean=variance=rate、skewness=1/√rate、mode=floor(rate)=3、min=0
+# ============================================================================
+query RRRRR
+SELECT (sr_poisson_mean(3.0) - 3.0)::DECIMAL(12,10),
+       (sr_poisson_variance(3.0) - 3.0)::DECIMAL(12,10),
+       (sr_poisson_skewness(3.0) - 1.0 / sqrt(3.0))::DECIMAL(12,10),
+       (sr_poisson_mode(3.0) - 3.0)::DECIMAL(12,10),
+       (sr_poisson_min(3.0))::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# StudentsT(loc=0, scale=1, df=10)：mean=0、variance=df/(df-2)、skewness=0、
+#   median=mode=0；支撑为整条实轴
+# ============================================================================
+query RRRRRR
+SELECT (sr_students_t_mean(0.0, 1.0, 10.0))::DECIMAL(12,10),
+       (sr_students_t_variance(0.0, 1.0, 10.0) - 1.25)::DECIMAL(12,10),
+       (sr_students_t_skewness(0.0, 1.0, 10.0))::DECIMAL(12,10),
+       (sr_students_t_median(0.0, 1.0, 10.0))::DECIMAL(12,10),
+       (sr_students_t_mode(0.0, 1.0, 10.0))::DECIMAL(12,10),
+       sr_students_t_max(0.0, 1.0, 10.0)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000	inf
+
+# ============================================================================
+# Cauchy(0, 1)：均值/方差/偏度在 statrs 里未定义 → NULL；median=mode=0；entropy=ln(4π)
+# ============================================================================
+query RRRRR
+SELECT sr_cauchy_mean(0.0, 1.0),
+       sr_cauchy_variance(0.0, 1.0),
+       sr_cauchy_skewness(0.0, 1.0),
+       (sr_cauchy_median(0.0, 1.0))::DECIMAL(12,10),
+       (sr_cauchy_entropy(0.0, 1.0) - ln(4.0 * pi()))::DECIMAL(12,10)
+----
+NULL	NULL	NULL	0.0000000000	0.0000000000
+
+# ============================================================================
+# LogNormal(μ=0, σ=1)：mean=e^(μ+σ²/2)、variance=(e^σ²-1)e^(2μ+σ²)、median=e^μ、
+#   mode=e^(μ-σ²)、skewness=(e^σ²+2)√(e^σ²-1)
+# ============================================================================
+query RRRRR
+SELECT (sr_log_normal_mean(0.0, 1.0) - exp(0.5))::DECIMAL(12,10),
+       (sr_log_normal_variance(0.0, 1.0) - (exp(1.0) - 1.0) * exp(1.0))::DECIMAL(12,10),
+       (sr_log_normal_median(0.0, 1.0) - 1.0)::DECIMAL(12,10),
+       (sr_log_normal_mode(0.0, 1.0) - exp(-1.0))::DECIMAL(12,10),
+       (sr_log_normal_skewness(0.0, 1.0) - (exp(1.0) + 2.0) * sqrt(exp(1.0) - 1.0))::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Laplace(0, 1)：mean=median=mode=0、variance=2b²、skewness=0、entropy=1+ln(2b)
+# ============================================================================
+query RRRRR
+SELECT (sr_laplace_mean(0.0, 1.0))::DECIMAL(12,10),
+       (sr_laplace_variance(0.0, 1.0) - 2.0)::DECIMAL(12,10),
+       (sr_laplace_skewness(0.0, 1.0))::DECIMAL(12,10),
+       (sr_laplace_median(0.0, 1.0))::DECIMAL(12,10),
+       (sr_laplace_entropy(0.0, 1.0) - (1.0 + ln(2.0)))::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Gumbel(0, 1)：mean=γ、variance=π²/6、median=-ln(ln 2)、entropy=1+γ、mode=0
+# ============================================================================
+query RRRRR
+SELECT (sr_gumbel_mean(0.0, 1.0) - sr_euler_mascheroni())::DECIMAL(12,10),
+       (sr_gumbel_variance(0.0, 1.0) - pi() * pi() / 6.0)::DECIMAL(12,10),
+       (sr_gumbel_median(0.0, 1.0) - (-ln(ln(2.0))))::DECIMAL(12,10),
+       (sr_gumbel_entropy(0.0, 1.0) - (1.0 + sr_euler_mascheroni()))::DECIMAL(12,10),
+       (sr_gumbel_mode(0.0, 1.0))::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Triangular(a=0, b=2, c=1)：mean=(a+b+c)/3、variance=(a²+b²+c²-ab-ac-bc)/18、
+#   median=mode=c
+# ============================================================================
+query RRRR
+SELECT (sr_triangular_mean(0.0, 2.0, 1.0) - 1.0)::DECIMAL(12,10),
+       (sr_triangular_variance(0.0, 2.0, 1.0) - 3.0 / 18.0)::DECIMAL(12,10),
+       (sr_triangular_median(0.0, 2.0, 1.0) - 1.0)::DECIMAL(12,10),
+       (sr_triangular_mode(0.0, 2.0, 1.0) - 1.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# ChiSquared(df=2)：mean=df、variance=2df、mode=max(df-2,0)=0
+# ============================================================================
+query RRR
+SELECT (sr_chi_squared_mean(2.0) - 2.0)::DECIMAL(12,10),
+       (sr_chi_squared_variance(2.0) - 4.0)::DECIMAL(12,10),
+       (sr_chi_squared_mode(2.0))::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Chi(df=2)：mean=√(2π)/2、variance=df-mean²=2-π/2、mode=√(df-1)=1
+# ============================================================================
+query RRR
+SELECT (sr_chi_mean(2.0) - sqrt(2.0 * pi()) / 2.0)::DECIMAL(12,10),
+       (sr_chi_variance(2.0) - (2.0 - pi() / 2.0))::DECIMAL(12,10),
+       (sr_chi_mode(2.0) - 1.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Weibull(shape=1, scale=1) 即 Exp(1)：mean=variance=1、median=ln2
+# ============================================================================
+query RRR
+SELECT (sr_weibull_mean(1.0, 1.0) - 1.0)::DECIMAL(12,10),
+       (sr_weibull_variance(1.0, 1.0) - 1.0)::DECIMAL(12,10),
+       (sr_weibull_median(1.0, 1.0) - ln(2.0))::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Erlang(shape=2, rate=1) 即 Gamma(2,1)：mean=variance=2
+# ============================================================================
+query RR
+SELECT (sr_erlang_mean(2.0, 1.0) - 2.0)::DECIMAL(12,10),
+       (sr_erlang_variance(2.0, 1.0) - 2.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000
+
+# ============================================================================
+# Levy(0, 1)：mean/variance=inf（重尾）、mode=1/3
+# ============================================================================
+query RRR
+SELECT sr_levy_mean(0.0, 1.0),
+       sr_levy_variance(0.0, 1.0),
+       (sr_levy_mode(0.0, 1.0) - 1.0 / 3.0)::DECIMAL(12,10)
+----
+inf	inf	0.0000000000
+
+# ============================================================================
+# FisherSnedecor(d1=3, d2=5)：mean=d2/(d2-2)、variance=2·d2²(d1+d2-2)/(d1(d2-2)²(d2-4))、
+#   mode=((d1-2)/d1)·(d2/(d2+2))
+# ============================================================================
+query RRR
+SELECT (sr_fisher_snedecor_mean(3.0, 5.0) - 5.0 / 3.0)::DECIMAL(12,10),
+       (sr_fisher_snedecor_variance(3.0, 5.0) - 300.0 / 27.0)::DECIMAL(12,10),
+       (sr_fisher_snedecor_mode(3.0, 5.0) - 5.0 / 21.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000
+
+# ============================================================================
+# Pareto(scale=1, shape=2)：mean=shape·scale/(shape-1)=2；shape<=2 时方差未定义 → NULL
+# ============================================================================
+query RR
+SELECT (sr_pareto_mean(1.0, 2.0) - 2.0)::DECIMAL(12,10),
+       sr_pareto_variance(1.0, 2.0)
+----
+0.0000000000	NULL
+
+# ============================================================================
+# InverseGamma(shape=2, rate=1)：mean=rate/(shape-1)=1、mode=rate/(shape+1)=1/3；
+#   shape<=2 时方差未定义 → NULL
+# ============================================================================
+query RRR
+SELECT (sr_inverse_gamma_mean(2.0, 1.0) - 1.0)::DECIMAL(12,10),
+       (sr_inverse_gamma_mode(2.0, 1.0) - 1.0 / 3.0)::DECIMAL(12,10),
+       sr_inverse_gamma_variance(2.0, 1.0)
+----
+0.0000000000	0.0000000000	NULL
+
+# ============================================================================
+# 离散族：Geometric(0.5) mean=1/p、variance=(1-p)/p²、skewness=(2-p)/√(1-p)；
+#   NegativeBinomial(r=2, p=0.5) mean=r(1-p)/p、variance=r(1-p)/p²
+# ============================================================================
+query RRRRRR
+SELECT (sr_geometric_dist_mean(0.5) - 2.0)::DECIMAL(12,10),
+       (sr_geometric_variance(0.5) - 2.0)::DECIMAL(12,10),
+       (sr_geometric_skewness(0.5) - 1.5 / sqrt(0.5))::DECIMAL(12,10),
+       (sr_geometric_mode(0.5) - 1.0)::DECIMAL(12,10),
+       (sr_negative_binomial_mean(2.0, 0.5) - 2.0)::DECIMAL(12,10),
+       (sr_negative_binomial_variance(2.0, 0.5) - 4.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# Hypergeometric(N=10, K=5, n=4)：mean=nK/N、variance=n(K/N)(1-K/N)(N-n)/(N-1)、mode=2
+query RRR
+SELECT (sr_hypergeometric_mean(10.0, 5.0, 4.0) - 2.0)::DECIMAL(12,10),
+       (sr_hypergeometric_variance(10.0, 5.0, 4.0) - 4.0 * 0.5 * 0.5 * 6.0 / 9.0)::DECIMAL(12,10),
+       (sr_hypergeometric_mode(10.0, 5.0, 4.0) - 2.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000
+
+# DiscreteUniform(1, 6)：mean=(min+max)/2、variance=(n²-1)/12、median=3.5、mode=3
+query RRRR
+SELECT (sr_discrete_uniform_mean(1.0, 6.0) - 3.5)::DECIMAL(12,10),
+       (sr_discrete_uniform_variance(1.0, 6.0) - 35.0 / 12.0)::DECIMAL(12,10),
+       (sr_discrete_uniform_median(1.0, 6.0) - 3.5)::DECIMAL(12,10),
+       (sr_discrete_uniform_mode(1.0, 6.0) - 3.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000
+
+# Categorical([1,2,1] → [¼,½,¼])：mean=E[X]=1、variance=E[X²]-mean²=1.5-1=0.5
+query RR
+SELECT (sr_categorical_mean([1.0, 2.0, 1.0]) - 1.0)::DECIMAL(12,10),
+       (sr_categorical_variance([1.0, 2.0, 1.0]) - 0.5)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000
+
+# ============================================================================
+# Dirac(loc=1)：退化分布 mean=median=mode=loc、variance=entropy=0、support={1}
+# ============================================================================
+query RRRRRR
+SELECT (sr_dirac_mean(1.0) - 1.0)::DECIMAL(12,10),
+       (sr_dirac_variance(1.0))::DECIMAL(12,10),
+       (sr_dirac_entropy(1.0))::DECIMAL(12,10),
+       (sr_dirac_median(1.0) - 1.0)::DECIMAL(12,10),
+       (sr_dirac_mode(1.0) - 1.0)::DECIMAL(12,10),
+       (sr_dirac_min(1.0) + sr_dirac_max(1.0) - 2.0)::DECIMAL(12,10)
+----
+0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000

@@ -1,7 +1,7 @@
 ---
 title: Normal and log-normal
 sidebar_position: 1
-description: Normal (Gaussian) and log-normal distributions — pdf, ln_pdf, cdf, sf, quantile for each.
+description: Normal (Gaussian) and log-normal distributions — pdf, ln_pdf, cdf, sf, quantile, plus moments and support.
 ---
 
 # Normal and log-normal
@@ -65,6 +65,105 @@ SELECT sr_normal_quantile(0.975, 0.0, 1.0)
 -- 1.959963984540054
 ```
 
+### sr_normal_entropy(mean, std_dev)
+
+**Signature**: `sr_normal_entropy(mean DOUBLE, std_dev DOUBLE) -> DOUBLE`
+
+Normal (Gaussian) distribution differential entropy.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_normal_entropy(0.0, 1.0)
+-- 1.4189385332046727
+```
+
+### sr_normal_max(mean, std_dev)
+
+**Signature**: `sr_normal_max(mean DOUBLE, std_dev DOUBLE) -> DOUBLE`
+
+Normal (Gaussian) distribution support maximum (positive infinity).
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_normal_max(0.0, 1.0)
+-- inf
+```
+
+### sr_normal_mean(mean, std_dev)
+
+**Signature**: `sr_normal_mean(mean DOUBLE, std_dev DOUBLE) -> DOUBLE`
+
+Normal (Gaussian) distribution mean.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_normal_mean(0.0, 1.0)
+-- 0.0
+```
+
+### sr_normal_median(mean, std_dev)
+
+**Signature**: `sr_normal_median(mean DOUBLE, std_dev DOUBLE) -> DOUBLE`
+
+Normal (Gaussian) distribution median.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_normal_median(0.0, 1.0)
+-- 0.0
+```
+
+### sr_normal_min(mean, std_dev)
+
+**Signature**: `sr_normal_min(mean DOUBLE, std_dev DOUBLE) -> DOUBLE`
+
+Normal (Gaussian) distribution support minimum (negative infinity).
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_normal_min(0.0, 1.0)
+-- -inf
+```
+
+### sr_normal_mode(mean, std_dev)
+
+**Signature**: `sr_normal_mode(mean DOUBLE, std_dev DOUBLE) -> DOUBLE`
+
+Normal (Gaussian) distribution mode.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_normal_mode(0.0, 1.0)
+-- 0.0
+```
+
+### sr_normal_skewness(mean, std_dev)
+
+**Signature**: `sr_normal_skewness(mean DOUBLE, std_dev DOUBLE) -> DOUBLE`
+
+Normal (Gaussian) distribution skewness (always 0).
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_normal_skewness(0.0, 1.0)
+-- 0.0
+```
+
+### sr_normal_std_dev(mean, std_dev)
+
+**Signature**: `sr_normal_std_dev(mean DOUBLE, std_dev DOUBLE) -> DOUBLE`
+
+Normal (Gaussian) distribution standard deviation.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_normal_std_dev(0.0, 1.0)
+-- 1.0
+```
+
+### sr_normal_variance(mean, std_dev)
+
+**Signature**: `sr_normal_variance(mean DOUBLE, std_dev DOUBLE) -> DOUBLE`
+
+Normal (Gaussian) distribution variance.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_normal_variance(0.0, 1.0)
+-- 1.0
+```
+
 ## Log-normal
 
 ### sr_log_normal_pdf(x, location, scale)
@@ -112,4 +211,103 @@ SELECT sr_log_normal_sf(1.0, 0.0, 1.0)
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_log_normal_quantile(0.5, 0.0, 1.0)
 -- 1.0
+```
+
+### sr_log_normal_entropy(location, scale)
+
+**Signature**: `sr_log_normal_entropy(location DOUBLE, scale DOUBLE) -> DOUBLE`
+
+Log-normal distribution differential entropy.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_log_normal_entropy(0.0, 1.0)
+-- 1.4189385332046727
+```
+
+### sr_log_normal_max(location, scale)
+
+**Signature**: `sr_log_normal_max(location DOUBLE, scale DOUBLE) -> DOUBLE`
+
+Log-normal distribution support maximum (positive infinity).
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_log_normal_max(0.0, 1.0)
+-- inf
+```
+
+### sr_log_normal_mean(location, scale)
+
+**Signature**: `sr_log_normal_mean(location DOUBLE, scale DOUBLE) -> DOUBLE`
+
+Log-normal distribution mean.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_log_normal_mean(0.0, 1.0)
+-- 1.6487212707001282
+```
+
+### sr_log_normal_median(location, scale)
+
+**Signature**: `sr_log_normal_median(location DOUBLE, scale DOUBLE) -> DOUBLE`
+
+Log-normal distribution median.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_log_normal_median(0.0, 1.0)
+-- 1.0
+```
+
+### sr_log_normal_min(location, scale)
+
+**Signature**: `sr_log_normal_min(location DOUBLE, scale DOUBLE) -> DOUBLE`
+
+Log-normal distribution support minimum (0).
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_log_normal_min(0.0, 1.0)
+-- 0.0
+```
+
+### sr_log_normal_mode(location, scale)
+
+**Signature**: `sr_log_normal_mode(location DOUBLE, scale DOUBLE) -> DOUBLE`
+
+Log-normal distribution mode.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_log_normal_mode(0.0, 1.0)
+-- 0.36787944117144233
+```
+
+### sr_log_normal_skewness(location, scale)
+
+**Signature**: `sr_log_normal_skewness(location DOUBLE, scale DOUBLE) -> DOUBLE`
+
+Log-normal distribution skewness.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_log_normal_skewness(0.0, 1.0)
+-- 6.184877138632554
+```
+
+### sr_log_normal_std_dev(location, scale)
+
+**Signature**: `sr_log_normal_std_dev(location DOUBLE, scale DOUBLE) -> DOUBLE`
+
+Log-normal distribution standard deviation.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_log_normal_std_dev(0.0, 1.0)
+-- 2.1611974158950877
+```
+
+### sr_log_normal_variance(location, scale)
+
+**Signature**: `sr_log_normal_variance(location DOUBLE, scale DOUBLE) -> DOUBLE`
+
+Log-normal distribution variance.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_log_normal_variance(0.0, 1.0)
+-- 4.670774270471604
 ```

@@ -1,7 +1,7 @@
 ---
 title: Multivariate distributions
 sidebar_position: 3
-description: Multivariate normal, Student-t, Dirichlet and multinomial densities — vectors as LIST(DOUBLE), matrices as row-major flattened LIST.
+description: Multivariate normal, Student-t, Dirichlet and multinomial densities and moments — vectors as LIST(DOUBLE), matrices as row-major flattened LIST.
 ---
 
 # Multivariate distributions
@@ -26,6 +26,50 @@ SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0]):
 
 The value is `1 / (2π)` — the density of a standard bivariate normal at the origin.
 
+### sr_multivariate_normal_entropy(mean, cov)
+
+**Signature**: `sr_multivariate_normal_entropy(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE`
+
+Differential entropy of the multivariate normal distribution given the mean and a row-major flattened covariance matrix.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_entropy([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- 2.8378770664093453
+```
+
+### sr_multivariate_normal_mean(mean, cov)
+
+**Signature**: `sr_multivariate_normal_mean(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE[]`
+
+Mean vector of the multivariate normal distribution given the mean and a row-major flattened covariance matrix.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_mean([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- [0.0, 0.0]
+```
+
+### sr_multivariate_normal_mode(mean, cov)
+
+**Signature**: `sr_multivariate_normal_mode(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE[]`
+
+Mode vector of the multivariate normal distribution given the mean and a row-major flattened covariance matrix.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_mode([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- [0.0, 0.0]
+```
+
+### sr_multivariate_normal_variance(mean, cov)
+
+**Signature**: `sr_multivariate_normal_variance(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE[]`
+
+Covariance matrix of the multivariate normal distribution (row-major flattened LIST) given the mean and a row-major flattened covariance matrix.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_variance([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- [1.0, 0.0, 0.0, 1.0]
+```
+
 ## sr_multivariate_students_t_pdf(x, location, scale, freedom)
 
 **Signature**: `sr_multivariate_students_t_pdf(x LIST(DOUBLE), location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE) -> DOUBLE`
@@ -36,6 +80,17 @@ symmetric `x = 0`, the density matches the multivariate normal at the origin.
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)::DECIMAL(12,8)
 -- 0.15915494
+```
+
+### sr_multivariate_students_t_mode(location, scale, freedom)
+
+**Signature**: `sr_multivariate_students_t_mode(location DOUBLE[], scale DOUBLE[], freedom DOUBLE) -> DOUBLE[]`
+
+Mode vector of the multivariate Student's t distribution given location, a row-major flattened scale matrix and the degrees of freedom.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_students_t_mode([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
+-- [0.0, 0.0]
 ```
 
 ## sr_dirichlet_pdf(x, alpha)

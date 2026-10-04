@@ -1,12 +1,12 @@
 ---
 title: Overview
 sidebar_position: 1
-description: Index of all function reference pages — 252 statistical functions with executable SQL examples.
+description: Index of all function reference pages — 511 statistical functions with executable SQL examples.
 ---
 
 # Function reference overview
 
-All 252 functions registered by `duckfn_statrs` share the `sr_` prefix. Every function in the
+All 511 functions registered by `duckfn_statrs` share the `sr_` prefix. Every function in the
 sub-pages below includes at least one executable SQL example that runs directly in your browser.
 
 Search all registered functions at runtime:
@@ -57,3 +57,21 @@ sr_<name>_quantile(p, params...) inverse CDF
 ```
 
 All discrete distributions substitute `pmf`/`ln_pmf` for `pdf`/`ln_pdf`.
+
+On top of those five, each distribution also exposes the quantities statrs can define — mean,
+variance, standard deviation, entropy, skewness, median, mode and the support bounds:
+
+```text
+sr_<name>_mean(params...)      distribution mean
+sr_<name>_variance(params...)  variance
+sr_<name>_std_dev(params...)   standard deviation
+sr_<name>_entropy(params...)   differential / Shannon entropy
+sr_<name>_skewness(params...)  skewness
+sr_<name>_median(params...)    median
+sr_<name>_mode(params...)      mode
+sr_<name>_min(params...)       lower support bound
+sr_<name>_max(params...)       upper support bound
+```
+
+Where statrs has no closed form (or none exists), the function is still registered and returns
+SQL NULL — for example the mean and variance of a Cauchy distribution.

@@ -617,7 +617,7 @@
     "description": "Home page feature card title"
   },
   "homepage.features.null.details": {
-    "message": "算不出的结果是 SQL NULL，非法参数报清晰错误，NULL 输入永不产生数字——252 个函数保持一致。",
+    "message": "算不出的结果是 SQL NULL，非法参数报清晰错误，NULL 输入永不产生数字——511 个函数保持一致。",
     "description": "Home page feature card description"
   },
   "homepage.showcase.title": {
@@ -625,7 +625,7 @@
     "description": "Home page section title above the SQL code block"
   },
   "homepage.showcase.lead": {
-    "message": "252 个函数背后是 Rust statrs 库，直接在 DuckDB 查询里调用。统计量用聚合，分布与特殊函数用标量逐行求值。",
+    "message": "511 个函数背后是 Rust statrs 库，直接在 DuckDB 查询里调用。统计量用聚合，分布与特殊函数用标量逐行求值。",
     "description": "Home page paragraph introducing the SQL code block"
   },
   "homepage.showcase.link": {
@@ -649,7 +649,7 @@
     "description": "Home page link card title"
   },
   "homepage.next.functions.details": {
-    "message": "按类别浏览全部 252 个函数：统计量、分布、特殊函数、抽样、检验。",
+    "message": "按类别浏览全部 511 个函数：统计量、分布、特殊函数、抽样、检验。",
     "description": "Home page link card description"
   },
   "homepage.next.structure.title": {

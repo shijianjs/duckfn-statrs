@@ -81,3 +81,710 @@ statement error
 SELECT sr_beta_quantile(1.5, 2.0, 3.0)
 ----
 the probability must be within [0, 1], got 1.5
+
+# ============================================================================
+# doc example 全覆盖：本组其余函数各一条用例。SQL 取自函数源码的 `example`
+# 属性（即 statrs 官方文档示例），期望值由已构建扩展实跑捕获。
+# ============================================================================
+
+# Beta differential entropy, given shape_a and shape_b
+query R
+SELECT sr_beta_entropy(2.0, 3.0)
+----
+-0.2349066497880017
+
+# Incomplete Beta function B(x; a, b), integrating from 0 to x
+query R
+SELECT sr_beta_incomplete(2.0, 3.0, 0.5)
+----
+0.057291666666666595
+
+# Beta log-density at x
+query R
+SELECT sr_beta_ln_pdf(0.5, 2.0, 3.0)
+----
+0.4054651081081653
+
+# Beta maximum of the support (1)
+query R
+SELECT sr_beta_max(2.0, 3.0)
+----
+1.0
+
+# Beta mean, given shape_a and shape_b
+query R
+SELECT sr_beta_mean(2.0, 3.0)
+----
+0.4
+
+# Beta minimum of the support (0)
+query R
+SELECT sr_beta_min(2.0, 3.0)
+----
+0.0
+
+# Beta mode, given shape_a and shape_b
+query R
+SELECT sr_beta_mode(2.0, 3.0)
+----
+0.3333333333333333
+
+# Beta survival function P(X > x)
+query R
+SELECT sr_beta_sf(0.5, 2.0, 3.0)
+----
+0.3125000000000003
+
+# Beta skewness, given shape_a and shape_b
+query R
+SELECT sr_beta_skewness(2.0, 3.0)
+----
+0.28571428571428575
+
+# Beta standard deviation, given shape_a and shape_b
+query R
+SELECT sr_beta_std_dev(2.0, 3.0)
+----
+0.2
+
+# Beta variance, given shape_a and shape_b
+query R
+SELECT sr_beta_variance(2.0, 3.0)
+----
+0.04
+
+# Chi distribution differential entropy, given whole-number freedom
+query R
+SELECT sr_chi_entropy(2.0)
+----
+0.9420342421707942
+
+# Chi distribution log-density at x
+query R
+SELECT sr_chi_ln_pdf(1.0, 2.0)
+----
+-0.49999999999999956
+
+# Chi distribution maximum of the support (positive infinity)
+query R
+SELECT sr_chi_max(2.0)
+----
+inf
+
+# Chi distribution mean, given whole-number freedom
+query R
+SELECT sr_chi_mean(2.0)
+----
+1.2533141373155032
+
+# Chi distribution minimum of the support (0)
+query R
+SELECT sr_chi_min(2.0)
+----
+0.0
+
+# Chi distribution mode, given whole-number freedom
+query R
+SELECT sr_chi_mode(2.0)
+----
+1.0
+
+# Chi distribution probability density at x (the sqrt-chi-squared distribution), whole-number freedom
+query R
+SELECT sr_chi_pdf(1.0, 2.0)
+----
+0.6065306597126336
+
+# Chi distribution quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_chi_quantile(0.5, 2.0)
+----
+1.1774100225154744
+
+# Chi distribution survival function P(X > x)
+query R
+SELECT sr_chi_sf(1.0, 2.0)
+----
+0.6065306597126333
+
+# Chi distribution skewness, given whole-number freedom
+query R
+SELECT sr_chi_skewness(2.0)
+----
+0.6311106578190224
+
+# Chi-squared differential entropy, given degrees of freedom
+query R
+SELECT sr_chi_squared_entropy(2.0)
+----
+1.693147180559945
+
+# Chi-squared log-density at x
+query R
+SELECT sr_chi_squared_ln_pdf(1.0, 2.0)
+----
+-1.1931471805599454
+
+# Chi-squared maximum of the support (positive infinity)
+query R
+SELECT sr_chi_squared_max(2.0)
+----
+inf
+
+# Chi-squared mean, given degrees of freedom
+query R
+SELECT sr_chi_squared_mean(2.0)
+----
+2.0
+
+# Chi-squared median, given degrees of freedom
+query R
+SELECT sr_chi_squared_median(2.0)
+----
+1.3333333333333335
+
+# Chi-squared minimum of the support (0)
+query R
+SELECT sr_chi_squared_min(2.0)
+----
+0.0
+
+# Chi-squared mode, given degrees of freedom
+query R
+SELECT sr_chi_squared_mode(2.0)
+----
+0.0
+
+# Chi-squared probability density at x, given degrees of freedom
+query R
+SELECT sr_chi_squared_pdf(1.0, 2.0)
+----
+0.3032653298563167
+
+# Chi-squared quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_chi_squared_quantile(0.95, 2.0)
+----
+5.991464546114399
+
+# Chi-squared survival function P(X > x)
+query R
+SELECT sr_chi_squared_sf(1.0, 2.0)
+----
+0.6065306597126333
+
+# Chi-squared skewness, given degrees of freedom
+query R
+SELECT sr_chi_squared_skewness(2.0)
+----
+2.0
+
+# Chi-squared standard deviation, given degrees of freedom
+query R
+SELECT sr_chi_squared_std_dev(2.0)
+----
+2.0
+
+# Chi-squared variance, given degrees of freedom
+query R
+SELECT sr_chi_squared_variance(2.0)
+----
+4.0
+
+# Chi distribution standard deviation, given whole-number freedom
+query R
+SELECT sr_chi_std_dev(2.0)
+----
+0.6551363775620278
+
+# Chi distribution variance, given whole-number freedom
+query R
+SELECT sr_chi_variance(2.0)
+----
+0.4292036732050959
+
+# Erlang differential entropy (whole-number shape, rate)
+query R
+SELECT sr_erlang_entropy(2.0, 1.0)
+----
+1.5772156649015352
+
+# Erlang log-density at x
+query R
+SELECT sr_erlang_ln_pdf(1.0, 2.0, 2.0)
+----
+-0.6137056388801094
+
+# Erlang maximum of the support (positive infinity)
+query R
+SELECT sr_erlang_max(2.0, 1.0)
+----
+inf
+
+# Erlang mean (whole-number shape, rate)
+query R
+SELECT sr_erlang_mean(2.0, 1.0)
+----
+2.0
+
+# Erlang minimum of the support (0)
+query R
+SELECT sr_erlang_min(2.0, 1.0)
+----
+0.0
+
+# Erlang mode (whole-number shape, rate)
+query R
+SELECT sr_erlang_mode(2.0, 1.0)
+----
+1.0
+
+# Erlang quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_erlang_quantile(0.5, 2.0, 2.0)
+----
+0.8391734950083306
+
+# Erlang survival function P(X > x)
+query R
+SELECT sr_erlang_sf(1.0, 2.0, 2.0)
+----
+0.40600584970983833
+
+# Erlang skewness (whole-number shape, rate)
+query R
+SELECT sr_erlang_skewness(2.0, 1.0)
+----
+1.414213562373095
+
+# Erlang standard deviation (whole-number shape, rate)
+query R
+SELECT sr_erlang_std_dev(2.0, 1.0)
+----
+1.4142135623730951
+
+# Erlang variance (whole-number shape, rate)
+query R
+SELECT sr_erlang_variance(2.0, 1.0)
+----
+2.0
+
+# Exponential differential entropy, given the rate
+query R
+SELECT sr_exp_entropy(2.0)
+----
+0.3068528194400547
+
+# Exponential log-density at x
+query R
+SELECT sr_exp_ln_pdf(1.0, 2.0)
+----
+-1.3068528194400546
+
+# Exponential maximum of the support (positive infinity)
+query R
+SELECT sr_exp_max(2.0)
+----
+inf
+
+# Exponential mean, given the rate
+query R
+SELECT sr_exp_mean(2.0)
+----
+0.5
+
+# Exponential median, given the rate
+query R
+SELECT sr_exp_median(2.0)
+----
+0.34657359027997264
+
+# Exponential minimum of the support (0)
+query R
+SELECT sr_exp_min(2.0)
+----
+0.0
+
+# Exponential mode, given the rate
+query R
+SELECT sr_exp_mode(2.0)
+----
+0.0
+
+# Exponential probability density at x, given the rate
+query R
+SELECT sr_exp_pdf(1.0, 2.0)
+----
+0.2706705664732254
+
+# Exponential skewness, given the rate
+query R
+SELECT sr_exp_skewness(2.0)
+----
+2.0
+
+# Exponential standard deviation, given the rate
+query R
+SELECT sr_exp_std_dev(2.0)
+----
+0.5
+
+# Exponential variance, given the rate
+query R
+SELECT sr_exp_variance(2.0)
+----
+0.25
+
+# Fisher-Snedecor (F) differential entropy, given the two degrees of freedom
+query R
+SELECT sr_fisher_snedecor_entropy(3.0, 5.0)
+----
+NULL
+
+# Fisher-Snedecor (F) log-density at x
+query R
+SELECT sr_fisher_snedecor_ln_pdf(1.0, 2.0, 3.0)
+----
+-1.2770640594149751
+
+# Fisher-Snedecor (F) maximum of the support (positive infinity)
+query R
+SELECT sr_fisher_snedecor_max(3.0, 5.0)
+----
+inf
+
+# Fisher-Snedecor (F) mean, given the two degrees of freedom
+query R
+SELECT sr_fisher_snedecor_mean(3.0, 5.0)
+----
+1.6666666666666667
+
+# Fisher-Snedecor (F) minimum of the support (0)
+query R
+SELECT sr_fisher_snedecor_min(3.0, 5.0)
+----
+0.0
+
+# Fisher-Snedecor (F) mode, given the two degrees of freedom
+query R
+SELECT sr_fisher_snedecor_mode(3.0, 5.0)
+----
+0.23809523809523808
+
+# Fisher-Snedecor (F) probability density at x, given the two degrees of freedom
+query R
+SELECT sr_fisher_snedecor_pdf(1.0, 2.0, 3.0)
+----
+0.27885480092693443
+
+# Fisher-Snedecor (F) quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_fisher_snedecor_quantile(0.95, 2.0, 3.0)
+----
+9.552094495921166
+
+# Fisher-Snedecor (F) survival function P(X > x)
+query R
+SELECT sr_fisher_snedecor_sf(1.0, 2.0, 3.0)
+----
+0.46475800154488933
+
+# Fisher-Snedecor (F) skewness, given the two degrees of freedom
+query R
+SELECT sr_fisher_snedecor_skewness(3.0, 7.0)
+----
+11.0
+
+# Fisher-Snedecor (F) standard deviation, given the two degrees of freedom
+query R
+SELECT sr_fisher_snedecor_std_dev(3.0, 5.0)
+----
+3.3333333333333335
+
+# Fisher-Snedecor (F) variance, given the two degrees of freedom
+query R
+SELECT sr_fisher_snedecor_variance(3.0, 5.0)
+----
+11.11111111111111
+
+# Gamma differential entropy (shape/rate parameterization)
+query R
+SELECT sr_gamma_entropy(2.0, 1.0)
+----
+1.5772156649015352
+
+# Gamma maximum of the support (positive infinity)
+query R
+SELECT sr_gamma_max(2.0, 1.0)
+----
+inf
+
+# Gamma mean (shape/rate parameterization)
+query R
+SELECT sr_gamma_mean(2.0, 1.0)
+----
+2.0
+
+# Gamma minimum of the support (0)
+query R
+SELECT sr_gamma_min(2.0, 1.0)
+----
+0.0
+
+# Gamma mode (shape/rate parameterization)
+query R
+SELECT sr_gamma_mode(2.0, 1.0)
+----
+1.0
+
+# Gamma quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_gamma_quantile(0.5, 2.0, 2.0)
+----
+0.8391734950083306
+
+# Gamma survival function P(X > x)
+query R
+SELECT sr_gamma_sf(1.0, 2.0, 2.0)
+----
+0.40600584970983833
+
+# Gamma skewness (shape/rate parameterization)
+query R
+SELECT sr_gamma_skewness(2.0, 1.0)
+----
+1.414213562373095
+
+# Gamma standard deviation (shape/rate parameterization)
+query R
+SELECT sr_gamma_std_dev(2.0, 1.0)
+----
+1.4142135623730951
+
+# Gamma variance (shape/rate parameterization)
+query R
+SELECT sr_gamma_variance(2.0, 1.0)
+----
+2.0
+
+# Inverse-gamma cumulative distribution function P(X <= x)
+query R
+SELECT sr_inverse_gamma_cdf(1.0, 2.0, 2.0)
+----
+0.40600584970983833
+
+# Inverse-gamma differential entropy, given shape and scale
+query R
+SELECT sr_inverse_gamma_entropy(2.0, 1.0)
+----
+0.7316469947046054
+
+# Inverse-gamma log-density at x
+query R
+SELECT sr_inverse_gamma_ln_pdf(1.0, 2.0, 2.0)
+----
+-0.6137056388801093
+
+# Inverse-gamma maximum of the support (positive infinity)
+query R
+SELECT sr_inverse_gamma_max(2.0, 1.0)
+----
+inf
+
+# Inverse-gamma mean, given shape and scale
+query R
+SELECT sr_inverse_gamma_mean(2.0, 1.0)
+----
+1.0
+
+# Inverse-gamma minimum of the support (0)
+query R
+SELECT sr_inverse_gamma_min(2.0, 1.0)
+----
+0.0
+
+# Inverse-gamma mode, given shape and scale
+query R
+SELECT sr_inverse_gamma_mode(2.0, 1.0)
+----
+0.3333333333333333
+
+# Inverse-gamma quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_inverse_gamma_quantile(0.5, 2.0, 2.0)
+----
+1.191648694755395
+
+# Inverse-gamma survival function P(X > x)
+query R
+SELECT sr_inverse_gamma_sf(1.0, 2.0, 2.0)
+----
+0.5939941502901617
+
+# Inverse-gamma skewness, given shape and scale
+query R
+SELECT sr_inverse_gamma_skewness(4.0, 1.0)
+----
+5.656854249492381
+
+# Inverse-gamma standard deviation, given shape and scale
+query R
+SELECT sr_inverse_gamma_std_dev(3.0, 1.0)
+----
+0.5
+
+# Inverse-gamma variance, given shape and scale
+query R
+SELECT sr_inverse_gamma_variance(3.0, 1.0)
+----
+0.25
+
+# Pareto (type-I) differential entropy, given scale x_m and shape alpha
+query R
+SELECT sr_pareto_entropy(1.0, 2.0)
+----
+0.8068528194400547
+
+# Pareto log-density at x
+query R
+SELECT sr_pareto_ln_pdf(1.0, 1.0, 2.0)
+----
+0.6931471805599453
+
+# Pareto (type-I) maximum of the support (positive infinity)
+query R
+SELECT sr_pareto_max(1.0, 2.0)
+----
+inf
+
+# Pareto (type-I) mean, given scale x_m and shape alpha
+query R
+SELECT sr_pareto_mean(1.0, 2.0)
+----
+2.0
+
+# Pareto (type-I) median, given scale x_m and shape alpha
+query R
+SELECT sr_pareto_median(1.0, 2.0)
+----
+1.4142135623730951
+
+# Pareto (type-I) minimum of the support (the scale)
+query R
+SELECT sr_pareto_min(1.0, 2.0)
+----
+1.0
+
+# Pareto (type-I) mode, given scale x_m and shape alpha
+query R
+SELECT sr_pareto_mode(1.0, 2.0)
+----
+1.0
+
+# Pareto (type-I) probability density at x, given scale x_m and shape alpha
+query R
+SELECT sr_pareto_pdf(1.0, 1.0, 2.0)
+----
+2.0
+
+# Pareto quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_pareto_quantile(0.5, 1.0, 2.0)
+----
+1.4142135623730951
+
+# Pareto survival function P(X > x)
+query R
+SELECT sr_pareto_sf(2.0, 1.0, 2.0)
+----
+0.25
+
+# Pareto (type-I) skewness, given scale x_m and shape alpha
+query R
+SELECT sr_pareto_skewness(1.0, 4.0)
+----
+7.0710678118654755
+
+# Pareto (type-I) standard deviation, given scale x_m and shape alpha
+query R
+SELECT sr_pareto_std_dev(1.0, 3.0)
+----
+0.8660254037844386
+
+# Pareto (type-I) variance, given scale x_m and shape alpha
+query R
+SELECT sr_pareto_variance(1.0, 3.0)
+----
+0.75
+
+# Weibull differential entropy, given shape k and scale lambda
+query R
+SELECT sr_weibull_entropy(1.0, 1.0)
+----
+1.0
+
+# Weibull log-density at x
+query R
+SELECT sr_weibull_ln_pdf(1.0, 1.0, 1.0)
+----
+-1.0
+
+# Weibull maximum of the support (positive infinity)
+query R
+SELECT sr_weibull_max(1.0, 1.0)
+----
+inf
+
+# Weibull mean, given shape k and scale lambda
+query R
+SELECT sr_weibull_mean(1.0, 1.0)
+----
+1.0
+
+# Weibull median, given shape k and scale lambda
+query R
+SELECT sr_weibull_median(1.0, 1.0)
+----
+0.6931471805599453
+
+# Weibull minimum of the support (0)
+query R
+SELECT sr_weibull_min(1.0, 1.0)
+----
+0.0
+
+# Weibull mode, given shape k and scale lambda
+query R
+SELECT sr_weibull_mode(2.0, 1.0)
+----
+0.7071067811865476
+
+# Weibull quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_weibull_quantile(0.5, 1.0, 1.0)
+----
+0.6931471805599453
+
+# Weibull survival function P(X > x)
+query R
+SELECT sr_weibull_sf(1.0, 1.0, 1.0)
+----
+0.36787944117144233
+
+# Weibull skewness, given shape k and scale lambda
+query R
+SELECT sr_weibull_skewness(1.0, 1.0)
+----
+1.9999999999999476
+
+# Weibull standard deviation, given shape k and scale lambda
+query R
+SELECT sr_weibull_std_dev(1.0, 1.0)
+----
+1.0000000000000033
+
+# Weibull variance, given shape k and scale lambda
+query R
+SELECT sr_weibull_variance(1.0, 1.0)
+----
+1.0000000000000067

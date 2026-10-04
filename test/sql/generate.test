@@ -58,3 +58,14 @@ query R
 SELECT sr_polynomial(2.0, [1.0, 0.0, 3.0])
 ----
 13.0
+
+# ============================================================================
+# doc example 全覆盖：本组其余函数各一条用例。SQL 取自函数源码的 `example`
+# 属性（即 statrs 官方文档示例），期望值由已构建扩展实跑捕获。
+# ============================================================================
+
+# Kernel function with bandwidth scaling K(x / h) / h (same kind codes as sr_kernel_eval)
+query R
+SELECT sr_kernel_eval_with_bandwidth(1.0, 0.0, 0.5)
+----
+0.7978845608028654

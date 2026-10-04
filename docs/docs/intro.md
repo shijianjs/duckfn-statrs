@@ -2,27 +2,27 @@
 title: Introduction
 sidebar_position: 1
 slug: /intro
-description: duckfn_statrs brings 252 statistical functions to DuckDB SQL — summary aggregates, 27 distributions, special functions, sampling, and hypothesis tests.
+description: duckfn_statrs brings 511 statistical functions to DuckDB SQL — summary aggregates, 27 distributions, special functions, sampling, and hypothesis tests.
 ---
 
 # Introduction
 
 `duckfn_statrs` is a DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)
 that brings the full power of the Rust [statrs](https://crates.io/crates/statrs) statistical computing
-library into SQL. It registers **252 functions** under the `sr_` prefix:
+library into SQL. It registers **511 functions** under the `sr_` prefix:
 
 | Category | Kind | Count | Examples |
 | --- | --- | --- | --- |
-| Summary statistics | Aggregate | 26 | `sr_mean`, `sr_median`, `sr_variance`, `sr_covariance` |
-| Continuous distributions | Scalar | 98 | `sr_normal_pdf`, `sr_gamma_cdf`, `sr_beta_quantile` |
-| Discrete distributions | Scalar | 40 | `sr_poisson_pmf`, `sr_binomial_cdf`, `sr_geometric_quantile` |
-| Special functions | Scalar | 29 | `sr_gamma`, `sr_erf`, `sr_ln_choose` |
+| Summary statistics | Aggregate | 32 | `sr_mean`, `sr_median`, `sr_variance`, `sr_covariance` |
+| Continuous distributions | Scalar | 272 | `sr_normal_pdf`, `sr_gamma_cdf`, `sr_beta_quantile` |
+| Discrete distributions | Scalar | 110 | `sr_poisson_pmf`, `sr_binomial_cdf`, `sr_geometric_quantile` |
+| Special functions | Scalar | 32 | `sr_gamma`, `sr_erf`, `sr_ln_choose` |
 | Constants | Scalar | 7 | `sr_ln_pi`, `sr_sqrt_2pi`, `sr_euler_mascheroni` |
 | Random sampling | Scalar | 30 | `sr_sample_normal`, `sr_sample_beta` |
 | Density estimation | Scalar | 2 | `sr_kde_pdf`, `sr_knn_pdf` |
 | Signal generation | Scalar | 6 | `sr_gen_sinusoidal`, `sr_gen_square` |
-| Hypothesis tests | Scalar | 9 | `sr_ttest_onesample`, `sr_ks_twosample`, `sr_chisquare` |
-| Multivariate distributions | Scalar | 5 | `sr_multivariate_normal_pdf`, `sr_dirichlet_pdf` |
+| Hypothesis tests | Scalar | 10 | `sr_ttest_onesample`, `sr_ks_twosample`, `sr_chisquare` |
+| Multivariate distributions | Scalar | 10 | `sr_multivariate_normal_pdf`, `sr_dirichlet_pdf` |
 
 Every computation is delegated to statrs — the extension re-implements no statistical formula.
 Summary statistics are **aggregates** over a DOUBLE column, distribution / sampling / special
@@ -53,5 +53,5 @@ bad call, so it fails the query instead of being hidden as emptiness.
 ## Where to go next
 
 - [Install and load](./getting-started/quick-start.md) — get the extension running in DuckDB.
-- [Function reference](./guide/functions/overview.md) — browse all 252 functions by category.
+- [Function reference](./guide/functions/overview.md) — browse all 511 functions by category.
 - [Development guide](./getting-started/project-structure.md) — build from source, add functions, test, release.

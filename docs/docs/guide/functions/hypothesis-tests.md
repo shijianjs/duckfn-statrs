@@ -1,7 +1,7 @@
 ---
 title: Hypothesis tests
 sidebar_position: 7
-description: Nine statistical hypothesis tests — t-test, chi-square, ANOVA, KS, Mann-Whitney U, skewness, Anderson-Darling, Fisher's exact.
+description: Ten statistical hypothesis tests — t-test, chi-square, ANOVA, KS, Mann-Whitney U, skewness, Anderson-Darling, Fisher's exact.
 ---
 
 # Hypothesis tests
@@ -88,6 +88,17 @@ Two-sample Kolmogorov-Smirnov test. Returns `[D_statistic, p_value]`.
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ks_twosample([0.1, 0.2, 0.3], [0.4, 0.5, 0.6], 4.0, 1.0)
 -- [1.0, 0.09956184831478034]
+```
+
+### sr_ks_onesample(x, dist, params, method, nan)
+
+**Signature**: `sr_ks_onesample(x DOUBLE[], dist VARCHAR, params DOUBLE[], method DOUBLE, nan DOUBLE) -> DOUBLE[]`
+
+One-sample Kolmogorov-Smirnov test of a LIST(DOUBLE) sample against a named distribution (normal / lognormal / exponential / gumbel / weibull / uniform) with its parameter LIST: LIST [KS statistic, p-value]; method 1 less 2 greater 3 two-sided exact 4 two-sided asymptotic 5 two-sided approximate.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_ks_onesample([1.0, 2.0, 3.0, 4.0], 'normal', [2.5, 1.0], 4.0, 1.0)
+-- [0.19146246127401312, 0.9985479186818191]
 ```
 
 ## sr_mannwhitneyu(sample1, sample2, alternative, method)

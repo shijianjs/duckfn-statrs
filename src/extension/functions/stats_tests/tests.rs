@@ -51,7 +51,7 @@ fn sr_ttest_onesample(
 /// `sr_skewtest(x, alternative, nan_policy)`：偏度 Z 检验（statrs::skewtest）。
 #[duck_scalar_function(
     description = "Skewness z-test of a LIST(DOUBLE) sample: LIST [z statistic, p-value]; same alternative and NaN-policy codes as sr_ttest_onesample",
-    example = "SELECT sr_skewtest([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], 1.0, 1.0)"
+    example = "SELECT sr_skewtest([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0], 1.0, 1.0)"
 )]
 fn sr_skewtest(x: Vec<f64>, alt: f64, nan: f64) -> DuckOptionResult<Vec<f64>> {
     let alternative = alternative("sr_skewtest", alt)?;

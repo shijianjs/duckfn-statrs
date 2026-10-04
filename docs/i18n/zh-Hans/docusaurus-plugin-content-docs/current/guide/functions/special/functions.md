@@ -1,7 +1,7 @@
 ---
 title: 特殊函数
 sidebar_position: 1
-description: 误差函数、Gamma 与 Beta 族、阶乘、调和数、Logistic/logit、多项式求值与核函数。
+description: 误差函数、Gamma 与 Beta 族、阶乘与组合、调和数、Logistic/logit、多项式求值、核函数与欧几里得取模。
 ---
 
 # 特殊函数
@@ -251,6 +251,17 @@ SELECT exp(sr_ln_choose(10.0, 3.0))::DECIMAL(12,8)
 -- 120.00000000
 ```
 
+### sr_multinomial_coefficient(total, counts)
+
+**签名**：`sr_multinomial_coefficient(total DOUBLE, counts BIGINT[]) -> DOUBLE`
+
+多项系数 n! / (n1! n2! …)，n 为整数、计数为 LIST(BIGINT)；计数之和不等于 n 时返回 NULL。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multinomial_coefficient(5.0, [2, 2, 1])
+-- 30.0
+```
+
 ## 调和数
 
 ### sr_harmonic(n)
@@ -352,4 +363,28 @@ SELECT sr_kernel_eval(2.0, 0.0)
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_kernel_support(2.0)
 -- [-1.0, 1.0]
+```
+
+### sr_kernel_eval_with_bandwidth(kind, x, bandwidth)
+
+**签名**：`sr_kernel_eval_with_bandwidth(kind DOUBLE, x DOUBLE, bandwidth DOUBLE) -> DOUBLE`
+
+带带宽缩放的核函数 K(x / h) / h（kind 编码与 sr_kernel_eval 相同）。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_kernel_eval_with_bandwidth(1.0, 0.0, 0.5)
+-- 0.7978845608028654
+```
+
+## 欧几里得取模
+
+### sr_modulus(x, divisor)
+
+**签名**：`sr_modulus(x DOUBLE, divisor DOUBLE) -> DOUBLE`
+
+规范（欧几里得）取模 ((x % divisor) + divisor) % divisor，结果总落在 [0, divisor)；除数为 0 时返回 NULL。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_modulus(-1.0, 5.0)
+-- 4.0
 ```

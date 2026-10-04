@@ -73,3 +73,500 @@ query R
 SELECT sr_poisson_pmf(NULL, 3.0)
 ----
 NULL
+
+# ============================================================================
+# doc example 全覆盖：本组其余函数各一条用例。SQL 取自函数源码的 `example`
+# 属性（即 statrs 官方文档示例），期望值由已构建扩展实跑捕获。
+# ============================================================================
+
+# Bernoulli entropy
+query R
+SELECT sr_bernoulli_entropy(0.7)
+----
+0.6108643020548935
+
+# Bernoulli log probability mass at x
+query R
+SELECT sr_bernoulli_ln_pmf(1.0, 0.7)
+----
+-0.35667494393873245
+
+# Bernoulli maximum of the support (1)
+query R
+SELECT sr_bernoulli_max(0.7)
+----
+1.0
+
+# Bernoulli mean
+query R
+SELECT sr_bernoulli_mean(0.7)
+----
+0.7
+
+# Bernoulli median
+query R
+SELECT sr_bernoulli_median(0.7)
+----
+0.0
+
+# Bernoulli minimum of the support (0)
+query R
+SELECT sr_bernoulli_min(0.7)
+----
+0.0
+
+# Bernoulli mode
+query R
+SELECT sr_bernoulli_mode(0.7)
+----
+1.0
+
+# Bernoulli survival function P(X > x)
+query R
+SELECT sr_bernoulli_sf(0.0, 0.7)
+----
+0.6999999999999997
+
+# Bernoulli skewness
+query R
+SELECT sr_bernoulli_skewness(0.7)
+----
+-0.8728715609439692
+
+# Bernoulli standard deviation
+query R
+SELECT sr_bernoulli_std_dev(0.7)
+----
+0.45825756949558405
+
+# Bernoulli variance
+query R
+SELECT sr_bernoulli_variance(0.7)
+----
+0.21000000000000002
+
+# Binomial cumulative distribution function P(X <= x)
+query R
+SELECT sr_binomial_cdf(3.0, 0.5, 10.0)
+----
+0.17187500000000047
+
+# Binomial entropy
+query R
+SELECT sr_binomial_entropy(0.5, 10.0)
+----
+1.8759536052468009
+
+# Binomial log probability mass at x
+query R
+SELECT sr_binomial_ln_pmf(3.0, 0.5, 10.0)
+----
+-2.143980062817406
+
+# Binomial maximum of the support (n)
+query R
+SELECT sr_binomial_max(0.5, 10.0)
+----
+10.0
+
+# Binomial mean
+query R
+SELECT sr_binomial_mean(0.5, 10.0)
+----
+5.0
+
+# Binomial median
+query R
+SELECT sr_binomial_median(0.5, 10.0)
+----
+5.0
+
+# Binomial minimum of the support (0)
+query R
+SELECT sr_binomial_min(0.5, 10.0)
+----
+0.0
+
+# Binomial mode
+query R
+SELECT sr_binomial_mode(0.5, 10.0)
+----
+5.0
+
+# Binomial survival function P(X > x)
+query R
+SELECT sr_binomial_sf(3.0, 0.5, 10.0)
+----
+0.8281249999999996
+
+# Binomial skewness
+query R
+SELECT sr_binomial_skewness(0.5, 10.0)
+----
+0.0
+
+# Binomial standard deviation
+query R
+SELECT sr_binomial_std_dev(0.5, 10.0)
+----
+1.5811388300841898
+
+# Binomial variance
+query R
+SELECT sr_binomial_variance(0.5, 10.0)
+----
+2.5
+
+# Discrete uniform cumulative distribution function P(X <= x)
+query R
+SELECT sr_discrete_uniform_cdf(3.0, 1.0, 6.0)
+----
+0.5
+
+# Discrete uniform entropy
+query R
+SELECT sr_discrete_uniform_entropy(1.0, 6.0)
+----
+1.791759469228055
+
+# Discrete uniform log probability mass at x
+query R
+SELECT sr_discrete_uniform_ln_pmf(2.0, 1.0, 6.0)
+----
+-1.791759469228055
+
+# Discrete uniform maximum of the support (max)
+query R
+SELECT sr_discrete_uniform_max(1.0, 6.0)
+----
+6.0
+
+# Discrete uniform mean
+query R
+SELECT sr_discrete_uniform_mean(1.0, 6.0)
+----
+3.5
+
+# Discrete uniform median
+query R
+SELECT sr_discrete_uniform_median(1.0, 6.0)
+----
+3.5
+
+# Discrete uniform minimum of the support (min)
+query R
+SELECT sr_discrete_uniform_min(1.0, 6.0)
+----
+1.0
+
+# Discrete uniform mode
+query R
+SELECT sr_discrete_uniform_mode(1.0, 6.0)
+----
+3.0
+
+# Discrete uniform survival function P(X > x)
+query R
+SELECT sr_discrete_uniform_sf(3.0, 1.0, 6.0)
+----
+0.5
+
+# Discrete uniform skewness
+query R
+SELECT sr_discrete_uniform_skewness(1.0, 6.0)
+----
+0.0
+
+# Discrete uniform standard deviation
+query R
+SELECT sr_discrete_uniform_std_dev(1.0, 6.0)
+----
+1.707825127659933
+
+# Discrete uniform variance
+query R
+SELECT sr_discrete_uniform_variance(1.0, 6.0)
+----
+2.9166666666666665
+
+# Mean of the Geometric distribution, 1/p (named _dist to avoid clashing with the sr_geometric_mean aggregate over a column)
+query R
+SELECT sr_geometric_dist_mean(0.5)
+----
+2.0
+
+# Geometric entropy
+query R
+SELECT sr_geometric_entropy(0.5)
+----
+1.3862943611198906
+
+# Geometric log probability mass at x
+query R
+SELECT sr_geometric_ln_pmf(2.0, 0.5)
+----
+-1.3862943611198906
+
+# Geometric maximum of the support (u64::MAX, shown as 1.8e19)
+query R
+SELECT sr_geometric_max(0.5)
+----
+1.8446744073709552e+19
+
+# Geometric median
+query R
+SELECT sr_geometric_median(0.5)
+----
+1.0
+
+# Geometric minimum of the support (1)
+query R
+SELECT sr_geometric_min(0.5)
+----
+1.0
+
+# Geometric mode
+query R
+SELECT sr_geometric_mode(0.5)
+----
+1.0
+
+# Geometric probability mass P(X = x) for the number of trials until the first success (statrs' support starts at 1)
+query R
+SELECT sr_geometric_pmf(2.0, 0.5)
+----
+0.25
+
+# Geometric quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_geometric_quantile(0.5, 0.5)
+----
+1.0
+
+# Geometric skewness
+query R
+SELECT sr_geometric_skewness(0.5)
+----
+2.1213203435596424
+
+# Geometric standard deviation
+query R
+SELECT sr_geometric_std_dev(0.5)
+----
+1.4142135623730951
+
+# Geometric variance
+query R
+SELECT sr_geometric_variance(0.5)
+----
+2.0
+
+# Hypergeometric cumulative distribution function P(X <= x)
+query R
+SELECT sr_hypergeometric_cdf(2.0, 10.0, 5.0, 4.0)
+----
+0.7380952380952372
+
+# Hypergeometric entropy
+query R
+SELECT sr_hypergeometric_entropy(10.0, 5.0, 4.0)
+----
+NULL
+
+# Hypergeometric log probability mass at x
+query R
+SELECT sr_hypergeometric_ln_pmf(2.0, 10.0, 5.0, 4.0)
+----
+-0.7419373447293784
+
+# Hypergeometric maximum of the support
+query R
+SELECT sr_hypergeometric_max(10.0, 5.0, 4.0)
+----
+4.0
+
+# Hypergeometric mean
+query R
+SELECT sr_hypergeometric_mean(10.0, 5.0, 4.0)
+----
+2.0
+
+# Hypergeometric minimum of the support
+query R
+SELECT sr_hypergeometric_min(10.0, 5.0, 4.0)
+----
+0.0
+
+# Hypergeometric mode
+query R
+SELECT sr_hypergeometric_mode(10.0, 5.0, 4.0)
+----
+2.0
+
+# Hypergeometric quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_hypergeometric_quantile(0.5, 10.0, 5.0, 4.0)
+----
+2.0
+
+# Hypergeometric survival function P(X > x)
+query R
+SELECT sr_hypergeometric_sf(2.0, 10.0, 5.0, 4.0)
+----
+0.2619047619047616
+
+# Hypergeometric skewness
+query R
+SELECT sr_hypergeometric_skewness(10.0, 5.0, 4.0)
+----
+0.0
+
+# Hypergeometric standard deviation
+query R
+SELECT sr_hypergeometric_std_dev(10.0, 5.0, 4.0)
+----
+0.816496580927726
+
+# Hypergeometric variance
+query R
+SELECT sr_hypergeometric_variance(10.0, 5.0, 4.0)
+----
+0.6666666666666666
+
+# Negative-binomial cumulative distribution function P(X <= x)
+query R
+SELECT sr_negative_binomial_cdf(3.0, 2.0, 0.5)
+----
+0.8125000000000002
+
+# Negative-binomial entropy
+query R
+SELECT sr_negative_binomial_entropy(2.0, 0.5)
+----
+NULL
+
+# Negative-binomial log probability mass at x
+query R
+SELECT sr_negative_binomial_ln_pmf(3.0, 2.0, 0.5)
+----
+-2.079441541679829
+
+# Negative-binomial maximum of the support (u64::MAX, shown as 1.8e19)
+query R
+SELECT sr_negative_binomial_max(2.0, 0.5)
+----
+1.8446744073709552e+19
+
+# Negative-binomial mean
+query R
+SELECT sr_negative_binomial_mean(2.0, 0.5)
+----
+2.0
+
+# Negative-binomial minimum of the support (0)
+query R
+SELECT sr_negative_binomial_min(2.0, 0.5)
+----
+0.0
+
+# Negative-binomial mode (statrs returns a real-valued Option<f64>)
+query R
+SELECT sr_negative_binomial_mode(2.0, 0.5)
+----
+1.0
+
+# Negative-binomial quantile function: the x whose CDF equals p, for p in [0, 1]
+query R
+SELECT sr_negative_binomial_quantile(0.5, 2.0, 0.5)
+----
+1.0
+
+# Negative-binomial survival function P(X > x)
+query R
+SELECT sr_negative_binomial_sf(3.0, 2.0, 0.5)
+----
+0.18749999999999972
+
+# Negative-binomial skewness
+query R
+SELECT sr_negative_binomial_skewness(2.0, 0.5)
+----
+1.5
+
+# Negative-binomial standard deviation
+query R
+SELECT sr_negative_binomial_std_dev(2.0, 0.5)
+----
+2.0
+
+# Negative-binomial variance
+query R
+SELECT sr_negative_binomial_variance(2.0, 0.5)
+----
+4.0
+
+# Poisson cumulative distribution function P(X <= x)
+query R
+SELECT sr_poisson_cdf(2.0, 3.0)
+----
+0.4231900811268454
+
+# Poisson entropy
+query R
+SELECT sr_poisson_entropy(3.0)
+----
+1.9338825376210322
+
+# Poisson maximum of the support (u64::MAX, shown as 1.8e19)
+query R
+SELECT sr_poisson_max(3.0)
+----
+1.8446744073709552e+19
+
+# Poisson mean
+query R
+SELECT sr_poisson_mean(3.0)
+----
+3.0
+
+# Poisson median
+query R
+SELECT sr_poisson_median(3.0)
+----
+3.0
+
+# Poisson minimum of the support (0)
+query R
+SELECT sr_poisson_min(3.0)
+----
+0.0
+
+# Poisson mode
+query R
+SELECT sr_poisson_mode(3.0)
+----
+3.0
+
+# Poisson survival function P(X > x)
+query R
+SELECT sr_poisson_sf(2.0, 3.0)
+----
+0.5768099188731546
+
+# Poisson skewness
+query R
+SELECT sr_poisson_skewness(3.0)
+----
+0.5773502691896258
+
+# Poisson standard deviation
+query R
+SELECT sr_poisson_std_dev(3.0)
+----
+1.7320508075688772
+
+# Poisson variance
+query R
+SELECT sr_poisson_variance(3.0)
+----
+3.0
