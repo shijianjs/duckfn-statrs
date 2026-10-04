@@ -89,5 +89,5 @@ ORDER BY grp;
 
 ## 下一步
 
-- 按类别浏览完整的[函数参考](../guide/functions.md)。
+- 按类别浏览完整的[函数参考](../guide/functions/overview.md)。
 - 需要从源码构建或参与贡献？见[开发指南](./project-structure.md)。

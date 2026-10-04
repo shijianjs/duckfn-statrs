@@ -53,5 +53,5 @@ bad call, so it fails the query instead of being hidden as emptiness.
 ## Where to go next
 
 - [Install and load](./getting-started/quick-start.md) — get the extension running in DuckDB.
-- [Function reference](./guide/functions.md) — browse all 252 functions by category.
+- [Function reference](./guide/functions/overview.md) — browse all 252 functions by category.
 - [Development guide](./getting-started/project-structure.md) — build from source, add functions, test, release.

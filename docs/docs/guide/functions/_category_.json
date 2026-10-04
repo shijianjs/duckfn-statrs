@@ -1,0 +1,8 @@
+{
+  "label": "Function reference",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "All 252 sr_ functions with executable SQL examples, organized by category."
+  }
+}

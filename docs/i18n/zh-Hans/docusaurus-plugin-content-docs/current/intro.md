@@ -50,5 +50,5 @@ FROM (VALUES (-1.96::DOUBLE), (0.0), (1.96)) t(x);
 ## 接下来去哪
 
 - [安装与加载](./getting-started/quick-start.md) —— 把扩展跑起来。
-- [函数参考](./guide/functions.md) —— 按类别浏览全部 252 个函数。
+- [函数参考](./guide/functions/overview.md) —— 按类别浏览全部 252 个函数。
 - [开发指南](./getting-started/project-structure.md) —— 从源码构建、添加函数、测试与发版。

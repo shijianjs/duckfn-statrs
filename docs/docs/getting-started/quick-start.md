@@ -91,6 +91,6 @@ ORDER BY grp;
 
 ## What to do next
 
-- Browse the full [function reference](../guide/functions.md) organized by category.
+- Browse the full [function reference](../guide/functions/overview.md) organized by category.
 - Need to build from source or contribute? See the [development
 guide](./project-structure.md).

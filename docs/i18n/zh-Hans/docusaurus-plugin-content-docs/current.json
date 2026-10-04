@@ -11,12 +11,12 @@
     "message": "安装扩展，运行第一批统计查询。",
     "description": "The generated-index page description for category 'Getting started' in sidebar 'userGuide'"
   },
-  "sidebar.userGuide.category.Guide": {
-    "message": "指南",
-    "description": "The label for category 'Guide' in sidebar 'userGuide'"
+  "sidebar.userGuide.category.Function reference": {
+    "message": "函数参考",
+    "description": "The label for category 'Function reference' in sidebar 'userGuide'"
   },
-  "sidebar.userGuide.category.Guide.link.generated-index.description": {
-    "message": "按类别浏览全部 252 个函数。",
-    "description": "The generated-index page description for category 'Guide' in sidebar 'userGuide'"
+  "sidebar.userGuide.category.Function reference.link.generated-index.description": {
+    "message": "全部 252 个 sr_ 函数的可执行 SQL 示例，按类别组织。",
+    "description": "The generated-index page description for category 'Function reference' in sidebar 'userGuide'"
   }
 }

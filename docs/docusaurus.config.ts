@@ -257,7 +257,7 @@ const config: Config = {
             },
             {
               label: 'Function reference',
-              to: '/docs/guide/functions',
+              to: '/docs/guide/functions/overview',
             },
             {
               label: 'Development guide',
