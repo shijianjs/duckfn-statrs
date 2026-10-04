@@ -14,14 +14,14 @@ description: duckfn_statrs 为 DuckDB SQL 带来 252 个统计函数——描述
 | 类别 | 类型 | 数量 | 示例 |
 | --- | --- | --- | --- |
 | 描述统计量 | 聚合 | 26 | `sr_mean`、`sr_median`、`sr_variance`、`sr_covariance` |
-| 连续分布 | 标量 | 100 | `sr_normal_pdf`、`sr_gamma_cdf`、`sr_beta_quantile` |
+| 连续分布 | 标量 | 98 | `sr_normal_pdf`、`sr_gamma_cdf`、`sr_beta_quantile` |
 | 离散分布 | 标量 | 40 | `sr_poisson_pmf`、`sr_binomial_cdf`、`sr_geometric_quantile` |
-| 特殊函数 | 标量 | 28 | `sr_gamma`、`sr_erf`、`sr_ln_choose` |
-| 常量 | 标量 | 9 | `sr_ln_pi`、`sr_sqrt_2pi`、`sr_euler_mascheroni` |
-| 随机抽样 | 标量 | 31 | `sr_sample_normal`、`sr_sample_beta` |
+| 特殊函数 | 标量 | 29 | `sr_gamma`、`sr_erf`、`sr_ln_choose` |
+| 常量 | 标量 | 7 | `sr_ln_pi`、`sr_sqrt_2pi`、`sr_euler_mascheroni` |
+| 随机抽样 | 标量 | 30 | `sr_sample_normal`、`sr_sample_beta` |
 | 密度估计 | 标量 | 2 | `sr_kde_pdf`、`sr_knn_pdf` |
 | 信号生成 | 标量 | 6 | `sr_gen_sinusoidal`、`sr_gen_square` |
-| 假设检验 | 标量 | 8 | `sr_ttest_onesample`、`sr_ks_twosample`、`sr_chisquare` |
+| 假设检验 | 标量 | 9 | `sr_ttest_onesample`、`sr_ks_twosample`、`sr_chisquare` |
 | 多元分布 | 标量 | 5 | `sr_multivariate_normal_pdf`、`sr_dirichlet_pdf` |
 
 计算全部交给 statrs，本扩展不重新实现任何统计公式。描述统计量是**聚合函数**，分布 / 抽样 /

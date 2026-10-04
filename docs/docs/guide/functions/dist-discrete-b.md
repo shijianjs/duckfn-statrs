@@ -191,7 +191,7 @@ SELECT sr_discrete_uniform_ln_pmf(2.0, 1.0, 6.0)
 **Signature**: `sr_discrete_uniform_cdf(x DOUBLE, min DOUBLE, max DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_discrete_uniform_cdf(3.5, 1.0, 6.0)
+SELECT sr_discrete_uniform_cdf(3.0, 1.0, 6.0)
 ```
 
 ### sr_discrete_uniform_sf(x, min, max)

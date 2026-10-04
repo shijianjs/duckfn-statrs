@@ -171,7 +171,7 @@ SELECT sr_sample_dirac(3.0, 2)
 
 ## 错误
 
-`k` must be a positive whole number:
+`k` 必须是正的整数量：
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_sample_normal(0.0, 1.0, 0)

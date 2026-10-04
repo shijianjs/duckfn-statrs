@@ -1,7 +1,7 @@
 ---
 title: 常量
 sidebar_position: 13
-description: statrs::consts 里的 9 个数学常量，做成零参标量函数。
+description: statrs::consts 里的 7 个数学常量，做成零参标量函数。
 ---
 
 # 常量
@@ -83,26 +83,4 @@ SELECT sr_ln_2_sqrt_e_over_pi()
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_euler_mascheroni()
 -- 0.5772156649015329
-```
-
-### sr_frac_1_sqrt_pi()
-
-**签名**：`sr_frac_1_sqrt_pi() -> DOUBLE`
-
-常量 1/sqrt(PI)。
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_frac_1_sqrt_pi()
--- 0.5641895835477563
-```
-
-### sr_ln_2()
-
-**签名**：`sr_ln_2() -> DOUBLE`
-
-常量 ln(2)。
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_ln_2()
--- 0.6931471805599453
 ```

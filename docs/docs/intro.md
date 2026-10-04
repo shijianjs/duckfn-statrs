@@ -14,14 +14,14 @@ library into SQL. It registers **252 functions** under the `sr_` prefix:
 | Category | Kind | Count | Examples |
 | --- | --- | --- | --- |
 | Summary statistics | Aggregate | 26 | `sr_mean`, `sr_median`, `sr_variance`, `sr_covariance` |
-| Continuous distributions | Scalar | 100 | `sr_normal_pdf`, `sr_gamma_cdf`, `sr_beta_quantile` |
+| Continuous distributions | Scalar | 98 | `sr_normal_pdf`, `sr_gamma_cdf`, `sr_beta_quantile` |
 | Discrete distributions | Scalar | 40 | `sr_poisson_pmf`, `sr_binomial_cdf`, `sr_geometric_quantile` |
-| Special functions | Scalar | 28 | `sr_gamma`, `sr_erf`, `sr_ln_choose` |
-| Constants | Scalar | 9 | `sr_ln_pi`, `sr_sqrt_2pi`, `sr_euler_mascheroni` |
-| Random sampling | Scalar | 31 | `sr_sample_normal`, `sr_sample_beta` |
+| Special functions | Scalar | 29 | `sr_gamma`, `sr_erf`, `sr_ln_choose` |
+| Constants | Scalar | 7 | `sr_ln_pi`, `sr_sqrt_2pi`, `sr_euler_mascheroni` |
+| Random sampling | Scalar | 30 | `sr_sample_normal`, `sr_sample_beta` |
 | Density estimation | Scalar | 2 | `sr_kde_pdf`, `sr_knn_pdf` |
 | Signal generation | Scalar | 6 | `sr_gen_sinusoidal`, `sr_gen_square` |
-| Hypothesis tests | Scalar | 8 | `sr_ttest_onesample`, `sr_ks_twosample`, `sr_chisquare` |
+| Hypothesis tests | Scalar | 9 | `sr_ttest_onesample`, `sr_ks_twosample`, `sr_chisquare` |
 | Multivariate distributions | Scalar | 5 | `sr_multivariate_normal_pdf`, `sr_dirichlet_pdf` |
 
 Every computation is delegated to statrs — the extension re-implements no statistical formula.

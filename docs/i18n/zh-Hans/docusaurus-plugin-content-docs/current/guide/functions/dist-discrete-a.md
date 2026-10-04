@@ -9,16 +9,16 @@ description: Bernoulli、二项、负二项与几何分布——每种都提供 
 离散分布里吃整数的槽位（`x`、试验次数、成功次数）接受**整数值 DOUBLE** 字面量（如 `10.0`），不是 `10` 也不是 `3.5`——非整数会报查询错误，不会四舍五入。每种分布 5 个函数：
 
 ```
-sr_<name>_pmf(x, params...)     probability mass P(X = x)
-sr_<name>_ln_pmf(x, params...)  log probability mass
-sr_<name>_cdf(x, params...)     P(X <= x)
-sr_<name>_sf(x, params...)      P(X > x)
-sr_<name>_quantile(p, params...) inverse CDF
+sr_<name>_pmf(x, params...)     概率质量 P(X = x)
+sr_<name>_ln_pmf(x, params...)  对数概率质量
+sr_<name>_cdf(x, params...)     累积分布 P(X <= x)
+sr_<name>_sf(x, params...)      生存函数 P(X > x)
+sr_<name>_quantile(p, params...) 反 CDF
 ```
 
 ## Bernoulli
 
-参数：`p` — 成功概率，必须在 [0, 1]. 支撑：`{0, 1}`.
+参数：`p`——成功概率，必须在 [0, 1]。支撑：`{0, 1}`。
 
 ### sr_bernoulli_pmf(x, p)
 
@@ -158,10 +158,9 @@ SELECT sr_negative_binomial_sf(3.0, 2.0, 0.5)
 SELECT sr_negative_binomial_quantile(0.5, 2.0, 0.5)
 ```
 
-## Geometric
+## Geometric（几何）
 
-参数：`p` — 成功概率. Support starts at 1 (statrs' convention: number of
-trials until the first success).
+参数：`p`——成功概率。支撑从 1 起（statrs 惯例：首次成功所需的试验数）。
 
 ### sr_geometric_pmf(x, p)
 

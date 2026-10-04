@@ -18,7 +18,7 @@ description: 9 个统计假设检验——t 检验、卡方、ANOVA、KS、Mann-
 - `sample`：观测值列表
 - `popmean`：待检验的总体均值
 - `alternative`：1.0 = 双侧，2.0 = less，3.0 = greater
-- `nan_policy`：1.0 = propagate，2.0 = omit，3.0 = raise
+- `nan_policy`：1.0 = propagate，2.0 = omit，3.0 = raise（对应 statrs 的枚举变体）
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_ttest_onesample([1.0, 2.0, 3.0, 4.0, 5.0], 3.0, 1.0, 1.0)

@@ -52,7 +52,7 @@ SELECT sr_weibull_sf(1.0, 1.0, 1.0)
 SELECT sr_weibull_quantile(0.5, 1.0, 1.0)
 ```
 
-## Pareto (Type-I)
+## Pareto（I 型）
 
 参数：`scale` （x_m > 0）, `shape` （alpha > 0）。 支撑：`[x_m, infinity)]`。
 

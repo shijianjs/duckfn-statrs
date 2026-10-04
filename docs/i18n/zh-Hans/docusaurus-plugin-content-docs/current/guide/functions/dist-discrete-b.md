@@ -155,7 +155,7 @@ SELECT sr_categorical_quantile(0.5, [1.0, 2.0, 1.0])
 -- 1.0
 ```
 
-Non-integer `x` in the pmf:
+pmf 中 `x` 不是整数：
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_categorical_pmf(1.5, [1.0, 2.0, 1.0])
@@ -188,7 +188,7 @@ SELECT sr_discrete_uniform_ln_pmf(2.0, 1.0, 6.0)
 **签名**：`sr_discrete_uniform_cdf(x DOUBLE, min DOUBLE, max DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_discrete_uniform_cdf(3.5, 1.0, 6.0)
+SELECT sr_discrete_uniform_cdf(3.0, 1.0, 6.0)
 ```
 
 ### sr_discrete_uniform_sf(x, min, max)
@@ -208,7 +208,7 @@ SELECT sr_discrete_uniform_quantile(0.5, 1.0, 6.0)
 -- 3.0
 ```
 
-## NULL argument short-circuit
+## NULL 参数短路
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_poisson_pmf(NULL, 3.0)

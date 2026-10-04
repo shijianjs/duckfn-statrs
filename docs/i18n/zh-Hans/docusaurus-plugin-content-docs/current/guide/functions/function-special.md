@@ -275,7 +275,7 @@ SELECT sr_generalized_harmonic(10.0, 2.0)::DECIMAL(12,8)
 -- 1.54976773
 ```
 
-## Logistic / logit
+## Logistic / logit（sigmoid 与其反函数）
 
 ### sr_logistic(p)
 

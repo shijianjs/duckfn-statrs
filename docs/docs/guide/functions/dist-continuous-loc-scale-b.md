@@ -1,7 +1,7 @@
 ---
 title: "Continuous: location-scale (B)"
 sidebar_position: 5
-description: Laplace, Gumbel, Levy and Logistic distributions — pdf, ln_pdf, cdf, sf, quantile for each.
+description: Laplace, Gumbel and Levy distributions — pdf, ln_pdf, cdf, sf, quantile for each.
 ---
 
 # Continuous distributions: location-scale (B)
@@ -145,53 +145,4 @@ Solved numerically (bisection) by statrs; accuracy is lower than the closed-form
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_levy_quantile(0.5, 0.0, 1.0)
-```
-
-## Logistic
-
-Parameters: `location`, `scale` (must be > 0). Same functional shape as the sigmoid.
-
-### sr_logistic_dist_pdf(x, location, scale)
-
-The registered SQL name is `sr_logistic_pdf` — distinct from `sr_logistic(p)` (the sigmoid
-function on the special-functions page).
-
-**Signature**: `sr_logistic_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_logistic_pdf(0.0, 0.0, 1.0)
--- 0.25
-```
-
-### sr_logistic_ln_pdf(x, location, scale)
-
-**Signature**: `sr_logistic_ln_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_logistic_ln_pdf(0.0, 0.0, 1.0)
-```
-
-### sr_logistic_cdf(x, location, scale)
-
-**Signature**: `sr_logistic_cdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_logistic_cdf(1.0, 0.0, 1.0)
-```
-
-### sr_logistic_sf(x, location, scale)
-
-**Signature**: `sr_logistic_sf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_logistic_sf(1.0, 0.0, 1.0)
-```
-
-### sr_logistic_quantile(p, location, scale)
-
-**Signature**: `sr_logistic_quantile(p DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_logistic_quantile(0.5, 0.0, 1.0)
--- 0.0
 ```

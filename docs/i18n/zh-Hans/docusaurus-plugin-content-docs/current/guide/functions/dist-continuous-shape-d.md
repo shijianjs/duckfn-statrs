@@ -6,9 +6,9 @@ description: 均匀、Student-t、Fisher-Snedecor 与 Dirac 分布。
 
 # 连续分布：形状 (D)
 
-## Uniform (continuous)
+## 连续均匀
 
-参数：`min`, `max` (min < max). 支撑：`[min, max]`.
+参数：`min`、`max`（min < max）。支撑：`[min, max]`。
 
 ### sr_uniform_pdf(x, min, max)
 
@@ -93,15 +93,15 @@ SELECT sr_students_t_sf(1.0, 0.0, 1.0, 2.0)
 
 **签名**：`sr_students_t_quantile(p DOUBLE, location DOUBLE, scale DOUBLE, freedom DOUBLE) -> DOUBLE`
 
-Solved numerically (bisection) by statrs.
+statrs 用二分法数值求解。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_students_t_quantile(0.975, 0.0, 1.0, 10.0)
 ```
 
-## Fisher-Snedecor (F distribution)
+## Fisher-Snedecor（F 分布）
 
-参数：`df_num（> 0）、`df_denom`（> 0）。
+参数：`df_num`（> 0）、`df_denom`（> 0）。
 
 ### sr_fisher_snedecor_pdf(x, df_num, df_denom)
 
@@ -143,10 +143,9 @@ SELECT sr_fisher_snedecor_sf(1.0, 2.0, 3.0)
 SELECT sr_fisher_snedecor_quantile(0.95, 2.0, 3.0)
 ```
 
-## Dirac delta
+## Dirac 退化
 
-参数：`location` (v). A degenerate distribution concentrated at a point. Only `cdf`,
-`sf`, and `quantile` are exposed (there is no ordinary density).
+参数：`location`（v）。退化到一个点的分布。只暴露 `cdf`、`sf` 与 `quantile`（没有通常意义上的密度）。
 
 ### sr_dirac_cdf(x, location)
 
@@ -169,7 +168,7 @@ SELECT sr_dirac_sf(0.5, 1.0)
 
 **签名**：`sr_dirac_quantile(p DOUBLE, location DOUBLE) -> DOUBLE`
 
-Always returns `location` regardless of `p`.
+无论 `p` 取何值，结果都是 `location`。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_dirac_quantile(0.5, 1.0)

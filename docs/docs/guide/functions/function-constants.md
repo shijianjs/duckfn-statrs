@@ -1,7 +1,7 @@
 ---
 title: Constants
 sidebar_position: 13
-description: Nine mathematical constants from statrs::consts, exposed as zero-argument scalar functions.
+description: Seven mathematical constants from statrs::consts, exposed as zero-argument scalar functions.
 ---
 
 # Constants
@@ -83,26 +83,4 @@ The Euler-Mascheroni constant (gamma).
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_euler_mascheroni()
 -- 0.5772156649015329
-```
-
-### sr_frac_1_sqrt_pi()
-
-**Signature**: `sr_frac_1_sqrt_pi() -> DOUBLE`
-
-The constant 1/sqrt(PI).
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_frac_1_sqrt_pi()
--- 0.5641895835477563
-```
-
-### sr_ln_2()
-
-**Signature**: `sr_ln_2() -> DOUBLE`
-
-The constant ln(2).
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_ln_2()
--- 0.6931471805599453
 ```

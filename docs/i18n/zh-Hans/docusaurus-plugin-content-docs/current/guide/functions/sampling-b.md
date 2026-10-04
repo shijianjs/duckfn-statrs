@@ -119,7 +119,7 @@ FROM (SELECT unnest(sr_sample_multivariate_normal([0.0, 0.0], [1.0, 0.0, 0.0, 1.
 -- true
 ```
 
-## Empirical (aggregate)
+## Empirical（经验分布，聚合）
 
 ### sr_sample_empirical(v, k)
 

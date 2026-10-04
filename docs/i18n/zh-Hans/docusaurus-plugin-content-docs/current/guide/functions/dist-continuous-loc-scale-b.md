@@ -1,7 +1,7 @@
 ---
 title: "连续：位置-尺度 (B)"
 sidebar_position: 5
-description: Laplace、Gumbel、Levy、Logistic 分布——每种都有 pdf / ln_pdf / cdf / sf / quantile。
+description: Laplace、Gumbel、Levy 分布——每种都提供 pdf / ln_pdf / cdf / sf / quantile。
 ---
 
 # 连续分布：位置-尺度 (B)
@@ -145,52 +145,4 @@ statrs 用二分法数值求解，精度低于闭式解的分布。
 
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_levy_quantile(0.5, 0.0, 1.0)
-```
-
-## Logistic（分布）
-
-参数：`location`、`scale`（> 0）。
-
-### sr_logistic_pdf(x, location, scale)
-
-注册的 SQL 名是 `sr_logistic_pdf` —— 与特殊函数页的 `sr_logistic(p)`（sigmoid 函数）不同。
-
-**签名**：`sr_logistic_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_logistic_pdf(0.0, 0.0, 1.0)
--- 0.25
-```
-
-### sr_logistic_ln_pdf(x, location, scale)
-
-**签名**：`sr_logistic_ln_pdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_logistic_ln_pdf(0.0, 0.0, 1.0)
-```
-
-### sr_logistic_cdf(x, location, scale)
-
-**签名**：`sr_logistic_cdf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_logistic_cdf(1.0, 0.0, 1.0)
-```
-
-### sr_logistic_sf(x, location, scale)
-
-**签名**：`sr_logistic_sf(x DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_logistic_sf(1.0, 0.0, 1.0)
-```
-
-### sr_logistic_quantile(p, location, scale)
-
-**签名**：`sr_logistic_quantile(p DOUBLE, location DOUBLE, scale DOUBLE) -> DOUBLE`
-
-```sql {"type":"duckfn","show":"value"}
-SELECT sr_logistic_quantile(0.5, 0.0, 1.0)
--- 0.0
 ```
