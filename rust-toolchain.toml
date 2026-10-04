@@ -1,0 +1,19 @@
+# 固定构建用的 Rust 工具链（与 Cargo.toml 的 rust-version=1.89 对齐）。
+#
+# 官方 ci-tools 的 v1.5-variegata 把 wasm 构建的 Rust 钉在 1.86.0（早于 ci-tools PR #394），而
+# statrs 0.19 / nalgebra 0.35 / wide 都要求 rustc>=1.89 → 1.86 下 wasm 的 cargo build 直接失败。
+# dtolnay/rust-toolchain 只是把它的工具链设成 rustup **default**；本文件优先级高于 default，于是
+# cargo 会用下面钉的 1.89.0 编译（rustup 自动补装工具链与列出的 target）。这样「修 Rust」的动作留在
+# 我们仓库里，能随 override_ref 一起进 DuckDB 社区注册表的构建（注册表用 @v1.5-variegata、不继承
+# 我们的 ci_tools_version）。Rust 抬到 1.89 后 wasm 产物需要 call-indirect-overlong、而 emsdk 3.1.71
+# 的 binaryen v120 无法优化它 → 仍由本仓库 Makefile 的 -O0 覆盖兜住链接那步。
+#
+# 等 DuckDB 2.0 正式发布、注册表把它的 @ref 抬过 #394 之后，删掉本文件、退回在 workflow 里钉 ci_tools_version。
+#
+# Pins the Rust used to build (matches Cargo.toml rust-version). Overrides the v1.5-variegata ci-tools'
+# dtolnay step — that only sets a rustup *default*, which this file outranks — so the wasm build compiles
+# on 1.89.0, which statrs 0.19 / nalgebra 0.35 require. Keep it with the Makefile's -O0 override (old
+# binaryen can't optimize call-indirect-overlong). Remove once ci-tools ships past PR #394.
+[toolchain]
+channel = "1.89.0"
+targets = ["wasm32-unknown-emscripten"]
