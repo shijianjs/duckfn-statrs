@@ -11,17 +11,17 @@
     "message": "简介",
     "description": "The label of footer link with label=Introduction linking to /docs/intro"
   },
-  "link.item.label.Quick start": {
-    "message": "快速开始",
-    "description": "The label of footer link with label=Quick start linking to /docs/getting-started/quick-start"
+  "link.item.label.Install and load": {
+    "message": "安装与加载",
+    "description": "The label of footer link with label=Install and load linking to /docs/getting-started/quick-start"
   },
-  "link.item.label.Functions": {
-    "message": "函数",
-    "description": "The label of footer link with label=Functions linking to /docs/guide/functions"
+  "link.item.label.Function reference": {
+    "message": "函数参考",
+    "description": "The label of footer link with label=Function reference linking to /docs/guide/functions"
   },
-  "link.item.label.Build and release": {
-    "message": "构建与发版",
-    "description": "The label of footer link with label=Build and release linking to /docs/build-and-release"
+  "link.item.label.Development guide": {
+    "message": "开发指南",
+    "description": "The label of footer link with label=Development guide linking to /docs/getting-started/project-structure"
   },
   "link.item.label.GitHub": {
     "message": "GitHub",

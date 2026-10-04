@@ -1,67 +1,85 @@
 ---
-title: Quick start
+title: Install and load
 sidebar_position: 1
-description: Build the .duckdb_extension with cargo, load it into DuckDB and call the statrs-backed functions.
+description: How to install the duckfn_statrs extension into DuckDB and start calling statistical functions.
 ---
 
-# Quick start
-
-The whole page in three steps:
-
-```mermaid
-flowchart LR
-    build["just build"] --> load["LOAD the artifact<br/>with -unsigned"]
-    load --> call["Call the functions<br/>from SQL"]
-```
+# Install and load
 
 ## Prerequisites
 
-- **Rust** 1.89 or newer (`rust-version` in `Cargo.toml`; statrs pulls the floor up from the
-  template's 1.86).
-- **[just](https://github.com/casey/just)** — the tool the recipes call:
+- **DuckDB** version 1.3 or newer (the [CLI](https://duckdb.org/docs/stable/why_overview), the app, or
+  any language client).
 
-  ```shell
-  cargo install just
-  ```
+## Install from the community repository
 
-- **make** (inside Git Bash on Windows) and **Python 3** — the official DuckDB
-  `extension-ci-tools` build/test flow, which `just build` runs under the hood (`make configure` +
-  `make debug`). `just test` uses the same flow.
-- A **DuckDB** binary 1.3 or newer (`duckdb` on `PATH`, or point at it with
-  `just DUCKDB=/path/to/duckdb …`).
-
-## 1. Build
-
-```shell
-just build          # = make configure && make debug
-```
-
-The artifact is `build/debug/duckfn_statrs.duckdb_extension`. There is no C++ step and no local DuckDB
-build: the extension is compiled against DuckDB's headers and dispatches through its API table when it
-is loaded.
-
-## 2. Load and call it
-
-```shell
-just repl           # a DuckDB REPL with the extension already loaded
-```
+Once the extension is registered in DuckDB's [community
+extensions](https://duckdb.org/community_extensions/list_of_extensions), installing is two statements:
 
 ```sql
--- or by hand; -unsigned is required for a locally built extension
-duckdb -unsigned -c "LOAD './build/debug/duckfn_statrs.duckdb_extension';"
+INSTALL duckfn_statrs FROM community;
+LOAD duckfn_statrs;
 ```
 
-The functions, running right here — the site preloads the extension from the repository's latest
-release, so no local `LOAD` is needed here (a hand-built extension still needs `-unsigned`; see the
-traps below). Click **Run** on any block.
+No extra flags needed — the community build is signed and matches your DuckDB version.
+
+## Install from a GitHub Release
+
+If the community route is not yet available for your platform, download the pre-built binary from the
+[releases page](https://github.com/shijianjs/duckfn-statrs/releases):
+
+```sql
+-- Load directly from the URL (replace the platform suffix with yours)
+LOAD 'https://github.com/shijianjs/duckfn-statrs/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
+```
+
+:::note
+
+Released binaries are not signed by DuckDB's distribution key, so start the CLI with the `-unsigned`
+flag: `duckdb -unsigned`. The community route above does not have this limitation.
+
+:::
+
+## Verify the installation
+
+```sql
+SELECT function_name, function_type
+FROM duckdb_functions()
+WHERE function_name LIKE 'sr_%'
+ORDER BY function_name;
+-- 252 rows
+```
+
+## First queries
+
+Summary statistics are **aggregates** — pass a column, get one value per group:
 
 ```sql {"type":"duckfn","show":"table"}
--- The summary statistics are aggregates: a column in, one value out per group.
 SELECT g, sr_mean(x) AS mean, sr_std_dev(x) AS std_dev, sr_median(x) AS median
 FROM (VALUES (1, 1.0), (1, 2.0), (1, 3.0), (2, 10.0), (2, 20.0), (2, NULL)) t(g, x)
 GROUP BY g
 ORDER BY g;
 ```
+
+Distribution functions are **scalars** — evaluated row by row:
+
+```sql {"type":"duckfn","show":"table"}
+SELECT x, sr_normal_cdf(x, 0.0, 1.0) AS cdf, sr_normal_pdf(x, 0.0, 1.0) AS pdf
+FROM (VALUES (-1.96::DOUBLE), (0.0), (1.96)) t(x);
+```
+
+Errors on invalid parameters are clear and specific:
+
+```sql {"type":"duckfn","expect":"error"}
+SELECT sr_normal_pdf(0.0, 0.0, -1.0);    -- error: std_dev must be positive
+```
+
+## NULL behaviour
+
+- NULL input rows never enter an aggregate (standard SQL convention).
+- When statrs cannot define a result (empty group, insufficient samples, out-of-range parameter),
+  the return value is SQL NULL — never NAN.
+- A parameter that is *present but invalid* (e.g. `std_dev <= 0`) raises a query error.
 
 ```sql {"type":"duckfn","show":"table"}
 -- statrs cannot define the sample variance of one value: the result is NULL, not 0.
@@ -71,47 +89,8 @@ GROUP BY grp
 ORDER BY grp;
 ```
 
-```sql {"type":"duckfn","show":"table"}
--- Distribution functions are scalars, evaluated row by row.
-SELECT x, sr_normal_cdf(x, 0.0, 1.0) AS cdf
-FROM (VALUES (-1.96::DOUBLE), (0.0), (1.96)) t(x);
-```
+## What to do next
 
-The failure path is a runnable block too — it declares that it is supposed to fail:
-
-```sql {"type":"duckfn","expect":"error"}
-SELECT sr_normal_pdf(0.0, 0.0, -1.0);    -- error: std_dev must be positive
-```
-
-A single query from the command line, without a REPL:
-
-```shell
-just sql "SELECT sr_mean(x) FROM range(10) t(x)"
-```
-
-## 3. Run the tests
-
-```shell
-just test           # make configure + make debug + make test
-```
-
-The faster loop (no `make`, no Python venv of its own) is in [Testing](../guide/testing.md).
-
-## Traps
-
-:::warning[Three things that look like bugs and are not]
-
-- **`-unsigned` is mandatory** when you load a locally built extension. Without it DuckDB refuses
-  the file.
-- **The artifact file name must stay `<extension name>.duckdb_extension`.** DuckDB finds the
-  entry-point symbol through the file name, so a copy called `win.duckdb_extension` fails with
-  `did not contain function "duckfn_statrs_init_c_api"`.
-- **`make test` does not rebuild.** After changing Rust code run `just ci-build` (or `make debug`)
-  first, otherwise the tests run against the previous artifact.
-
-:::
-
-One more, on Windows: if `make debug` reports the artifact is in use, a DuckDB process is
-holding `build/debug/duckfn_statrs.duckdb_extension` (usually a `just repl` left open) — close that
-process and rebuild. A `.duckdb_extension` is not a renamed DLL: DuckDB's metadata lives at the end of
-the file, so copying a DLL over it produces `The metadata at the end of the file is invalid`.
+- Browse the full [function reference](../guide/functions.md) organized by category.
+- Need to build from source or contribute? See the [development
+guide](./project-structure.md).

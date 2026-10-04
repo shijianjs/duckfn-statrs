@@ -114,33 +114,22 @@ function mountNextSteps(node: HTMLElement, content: NextStepsContent): void {
 
 /**
  * Kept out of the JSX below on purpose: a template literal written inline would
- * carry the JSX indentation into the rendered code block. The sample is
- * `sr_normal_quantile` (src/extension/functions/scalar_normal.rs), trimmed to
- * the parts worth showing.
+ * carry the JSX indentation into the rendered code block.
  */
-const RUST_SAMPLE = `use duckfn::{DuckOptionResult, duck_error, duck_scalar_function};
+const SQL_SAMPLE = `-- Install once, then LOAD in every session:
+INSTALL duckfn_statrs FROM community;
+LOAD duckfn_statrs;
 
-/// A DuckDB scalar function: one attribute, one ordinary Rust function.
-#[duck_scalar_function(
-    description = "Normal (Gaussian) quantile function: the x whose CDF equals p",
-    example = "SELECT sr_normal_quantile(0.975, 0.0, 1.0)"
-)]
-fn sr_normal_quantile(p: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
-    if !(0.0..=1.0).contains(&p) {
-        return Err(duck_error("the probability must be within [0, 1]"));  // fails the query
-    }
-    let normal = normal("sr_normal_quantile", mean, std_dev)?;
-    Ok(Some(normal.inverse_cdf(p)))
-}`;
+-- Aggregates: one column in, one value out per group:
+SELECT g, sr_mean(x) AS mean, sr_std_dev(x) AS sd
+FROM my_table GROUP BY g;
 
-/** The SQL half of the showcase: the whole interface, with no glue in sight. */
-const SQL_SAMPLE = `-- a locally built extension loads with -unsigned
-LOAD './target/debug/duckfn_statrs.duckdb_extension';
+-- Scalars: distribution functions evaluated row by row:
+SELECT sr_normal_pdf(0.0, 0.0, 1.0);    -- 0.3989...
+SELECT sr_gamma_cdf(2.0, 3.0, 2.0);    -- 0.4564...
 
-SELECT sr_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x);   -- 2.0
-SELECT sr_normal_cdf(1.96, 0.0, 1.0);                       -- 0.9750021048529024
-SELECT sr_variance(x) FROM (VALUES (1.0)) t(x);             -- NULL (undefined in statrs)
-SELECT sr_normal_pdf(0.0, 0.0, -1.0);                       -- error: std_dev must be positive`;
+-- NULL semantics: statrs cannot define it → SQL NULL
+SELECT sr_variance(x) FROM (VALUES (1.0)) t(x);  -- NULL (single value)`;
 
 /**
  * The shields.io badges ask for `style=flat`, which is the rounded style; the
@@ -216,91 +205,91 @@ function featuresContent(): FeaturesContent {
     sectionTitle: translate({
       id: 'homepage.features.title',
       description: 'Home page section title above the feature cards',
-      message: 'What this extension gives you',
+      message: 'What you get',
     }),
     items: [
       {
-        icon: 'lucide:sparkles',
+        icon: 'lucide:chart-line',
         title: translate({
-          id: 'homepage.features.noGlue.title',
+          id: 'homepage.features.stats.title',
           description: 'Home page feature card title',
-          message: 'No C/C++ glue code',
+          message: 'Summary statistics as aggregates',
         }),
         details: translate({
-          id: 'homepage.features.noGlue.details',
+          id: 'homepage.features.stats.details',
           description: 'Home page feature card description',
           message:
-            "An attribute macro turns an ordinary Rust function into a DuckDB scalar, aggregate or table function. DuckDB's C types never appear in your code.",
+            'Mean, median, variance, covariance, quantiles, ranks and more — all native SQL aggregates that work with GROUP BY.',
         }),
       },
       {
-        icon: 'lucide:package',
+        icon: 'lucide:sigma',
         title: translate({
-          id: 'homepage.features.build.title',
+          id: 'homepage.features.dist.title',
           description: 'Home page feature card title',
-          message: 'No local DuckDB build',
+          message: '27 probability distributions',
         }),
         details: translate({
-          id: 'homepage.features.build.details',
+          id: 'homepage.features.dist.details',
           description: 'Home page feature card description',
           message:
-            'Headers only, dispatched through DuckDB\u2019s API table at load time, so one cargo command produces the .duckdb_extension \u2014 no CMake, no C++ toolchain.',
+            'pdf, cdf, survival function, quantile, and log-density for every distribution — continuous, discrete, and multivariate.',
         }),
       },
       {
-        icon: 'lucide:shield-check',
+        icon: 'lucide:dice-5',
+        title: translate({
+          id: 'homepage.features.sample.title',
+          description: 'Home page feature card title',
+          message: 'Random sampling & signal generation',
+        }),
+        details: translate({
+          id: 'homepage.features.sample.details',
+          description: 'Home page feature card description',
+          message:
+            'Draw k samples from any distribution into a LIST; generate sinusoidal, square, triangle, and sawtooth waveforms.',
+        }),
+      },
+      {
+        icon: 'lucide-flask-conical',
         title: translate({
           id: 'homepage.features.tests.title',
           description: 'Home page feature card title',
-          message: 'Tests on every pull request',
+          message: 'Hypothesis testing',
         }),
         details: translate({
           id: 'homepage.features.tests.details',
           description: 'Home page feature card description',
           message:
-            'SQLLogicTest files in test/sql with four already written, and a CI job that builds and runs them for every supported platform.',
+            't-test, chi-square, ANOVA, Mann-Whitney U, Kolmogorov-Smirnov, Anderson-Darling, Fisher’s exact — all in SQL.',
         }),
       },
       {
-        icon: 'lucide:hash',
+        icon: 'lucide:function-square',
         title: translate({
-          id: 'homepage.features.release.title',
+          id: 'homepage.features.func.title',
           description: 'Home page feature card title',
-          message: 'Tag a release, get binaries',
+          message: 'Special functions & constants',
         }),
         details: translate({
-          id: 'homepage.features.release.details',
+          id: 'homepage.features.func.details',
           description: 'Home page feature card description',
           message:
-            'Bumping, committing and tagging is all it takes: the pipeline builds every platform and attaches the .duckdb_extension files to a GitHub Release.',
+            'Gamma, Beta, erf, digamma, factorials, binomial coefficients, harmonic numbers, and mathematical constants.',
         }),
       },
       {
-        icon: 'lucide:braces',
+        icon: 'lucide:shield-check',
         title: translate({
-          id: 'homepage.features.types.title',
+          id: 'homepage.features.null.title',
           description: 'Home page feature card title',
-          message: 'Plain Rust types',
+          message: 'Predictable NULL semantics',
         }),
         details: translate({
-          id: 'homepage.features.types.details',
+          id: 'homepage.features.null.details',
           description: 'Home page feature card description',
           message:
-            "Option, Vec, IndexMap and derived structs and enums map to DuckDB's LIST, MAP, ARRAY and STRUCT \u2014 nesting included.",
-        }),
-      },
-      {
-        icon: 'lucide:life-buoy',
-        title: translate({
-          id: 'homepage.features.docs.title',
-          description: 'Home page feature card title',
-          message: 'This documentation site',
-        }),
-        details: translate({
-          id: 'homepage.features.docs.details',
-          description: 'Home page feature card description',
-          message:
-            'Docusaurus in docs/, bilingual (English and Simplified Chinese), with runnable SQL blocks powered by duckfn-docs-kit and a workflow that publishes it to GitHub Pages on every version tag. Delete it if you do not want it.',
+            'Undefined results become SQL NULL, invalid parameters raise clear errors, NULL inputs never produce a number — consistent across all 252 functions.',
         }),
       },
     ],
@@ -310,7 +299,7 @@ function featuresContent(): FeaturesContent {
 function nextStepsContent(
   hrefs: readonly [string, string, string, string],
 ): NextStepsContent {
-  const [quickStart, structure, functions, release] = hrefs;
+  const [quickStart, functions, structure, release] = hrefs;
   return {
     sectionTitle: translate({
       id: 'homepage.next.title',
@@ -323,25 +312,12 @@ function nextStepsContent(
         title: translate({
           id: 'homepage.next.quickStart.title',
           description: 'Home page link card title',
-          message: 'Quick start',
+          message: 'Install and load',
         }),
         details: translate({
           id: 'homepage.next.quickStart.details',
           description: 'Home page link card description',
-          message: 'Build the extension, load it and call the statistics from SQL.',
-        }),
-      },
-      {
-        href: structure,
-        title: translate({
-          id: 'homepage.next.structure.title',
-          description: 'Home page link card title',
-          message: 'Project structure',
-        }),
-        details: translate({
-          id: 'homepage.next.structure.details',
-          description: 'Home page link card description',
-          message: 'Where the entry point, the functions and the SQL types live.',
+          message: 'Get the extension running in DuckDB and try your first queries.',
         }),
       },
       {
@@ -349,13 +325,26 @@ function nextStepsContent(
         title: translate({
           id: 'homepage.next.functions.title',
           description: 'Home page link card title',
-          message: 'Writing functions',
+          message: 'Function reference',
         }),
         details: translate({
           id: 'homepage.next.functions.details',
           description: 'Home page link card description',
           message:
-            'The registered statrs wrappers and the shapes they use, and what to copy when you add your own.',
+            'Browse all 252 functions organized by category: statistics, distributions, special functions, sampling, and tests.',
+        }),
+      },
+      {
+        href: structure,
+        title: translate({
+          id: 'homepage.next.structure.title',
+          description: 'Home page link card title',
+          message: 'Development guide',
+        }),
+        details: translate({
+          id: 'homepage.next.structure.details',
+          description: 'Home page link card description',
+          message: 'Build from source, write new functions, test, and release.',
         }),
       },
       {
@@ -368,7 +357,7 @@ function nextStepsContent(
         details: translate({
           id: 'homepage.next.release.details',
           description: 'Home page link card description',
-          message: 'The two build paths, the release flow and the wasm target.',
+          message: 'The build paths, the release flow, and the wasm target.',
         }),
       },
     ],
@@ -382,37 +371,24 @@ function CodeShowcase(): ReactNode {
         <Heading as="h2" className={styles.sectionTitle}>
           <Translate
             id="homepage.showcase.title"
-            description="Home page section title above the Rust and SQL code blocks">
-            One attribute = one SQL function
+            description="Home page section title above the SQL code block">
+            Statistics in plain SQL
           </Translate>
         </Heading>
         <p className={styles.sectionLead}>
           <Translate
             id="homepage.showcase.lead"
-            description="Home page paragraph introducing the Rust and SQL code blocks">
-            The attribute generates the FFI wrapper, the column readers and
-            writers, and the registration code. Everything on the left is safe
-            Rust that you could have written for a plain library — it is this
-            extension's own code, not a sketch.
+            description="Home page paragraph introducing the SQL code block">
+            252 functions backed by the Rust statrs library, callable directly
+            from your DuckDB queries. Aggregates for summary statistics, scalars
+            for distributions and special functions.
           </Translate>
         </p>
         <div className={styles.codeGrid}>
-          <CodeBlock language="rust" title="src/extension/functions/scalar_normal.rs">
-            {RUST_SAMPLE}
-          </CodeBlock>
           <div className={styles.codeColumn}>
-            <CodeBlock language="sql" title="duckdb -unsigned">
+            <CodeBlock language="sql" title="DuckDB SQL">
               {SQL_SAMPLE}
             </CodeBlock>
-            {/* Balances the two columns, and explains the trailing comments. */}
-            <p className={styles.codeCaption}>
-              <Translate
-                id="homepage.showcase.caption"
-                description="Home page note under the SQL code block explaining the trailing comments">
-                The comments are what each call returns. Loading needs -unsigned,
-                because the extension talks to DuckDB's C API.
-              </Translate>
-            </p>
           </div>
         </div>
         <p className={styles.showcaseLinkRow}>
@@ -420,11 +396,8 @@ function CodeShowcase(): ReactNode {
             <Translate
               id="homepage.showcase.link"
               description="Home page link to the functions guide">
-              The registered functions, one by one
+              Browse all functions
             </Translate>
-            {/* The official Iconify web component (registered by
-                registerDfkElements()); a string `icon` attribute is all it
-                needs. createElement keeps it out of the JSX namespace. */}
             {createElement('iconify-icon', {
               icon: 'lucide:arrow-right',
               className: styles.showcaseLinkArrow,
@@ -448,15 +421,15 @@ export default function Home(): ReactNode {
   const introUrl = useBaseUrl('/docs/intro');
   const nextHrefs = [
     useBaseUrl('/docs/getting-started/quick-start'),
-    useBaseUrl('/docs/getting-started/project-structure'),
     useBaseUrl('/docs/guide/functions'),
+    useBaseUrl('/docs/getting-started/project-structure'),
     useBaseUrl('/docs/build-and-release'),
   ] as const;
 
   return (
     <Layout
       title={siteConfig.title}
-      description="Documentation for this DuckDB extension: building it, the functions it registers, and how it is released.">
+      description="Documentation for duckfn_statrs: 252 statistical functions for DuckDB SQL, from the Rust statrs crate.">
       {/* Layout renders no <main> of its own: this is the page's only one. */}
       <main>
         {dfk(

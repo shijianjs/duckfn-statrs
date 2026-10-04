@@ -1,64 +1,83 @@
 ---
-title: 快速开始
+title: 安装与加载
 sidebar_position: 1
-description: 用 cargo 构建出 .duckdb_extension、加载进 DuckDB，然后调用这些 statrs 包装函数。
+description: 如何将 duckfn_statrs 扩展安装到 DuckDB 并开始调用统计函数。
 ---
 
-# 快速开始
-
-整页就是三步：
-
-```mermaid
-flowchart LR
-    build["just build"] --> load["用 -unsigned<br/>LOAD 产物"]
-    load --> call["在 SQL 里<br/>调用函数"]
-```
+# 安装与加载
 
 ## 前置条件
 
-- **Rust** 1.89 或更新（`Cargo.toml` 里的 `rust-version`；statrs 把模板的 1.86 下限抬了上去）。
-- **[just](https://github.com/casey/just)** —— recipe 会调用它：
+- **DuckDB** 1.3 或更新版本（[CLI](https://duckdb.org/docs/stable/why_overview)、App 或任何语言客户端）。
 
-  ```shell
-  cargo install just
-  ```
+## 从社区仓库安装
 
-- **make**（Windows 上要在 Git Bash 里跑）与 **Python 3** —— 官方 DuckDB
-  `extension-ci-tools` 的构建 / 测试流程，`just build` 底层就是它（`make configure` + `make debug`），
-  `just test` 走的也是同一套。
-- 一个 **DuckDB** 1.3 或更新的可执行文件（`duckdb` 在 `PATH` 里，或者用
-  `just DUCKDB=/path/to/duckdb …` 指定）。
-
-## 1. 构建
-
-```shell
-just build          # = make configure && make debug
-```
-
-产物是 `build/debug/duckfn_statrs.duckdb_extension`。没有 C++ 这一步，也不需要本地编译 DuckDB：扩展
-只用到 DuckDB 的头文件，加载时通过它的 API 表分发。
-
-## 2. 加载并调用
-
-```shell
-just repl           # 已经 LOAD 好扩展的 DuckDB REPL
-```
+扩展注册进 DuckDB [社区扩展](https://duckdb.org/community_extensions/list_of_extensions) 之后，
+安装只需两条语句：
 
 ```sql
--- 或者手动来；本地构建的产物必须加 -unsigned
-duckdb -unsigned -c "LOAD './build/debug/duckfn_statrs.duckdb_extension';"
+INSTALL duckfn_statrs FROM community;
+LOAD duckfn_statrs;
 ```
 
-下面这些函数就地就能跑 —— 站点从仓库的最新 Release 预加载了这个扩展，这里不用写 `LOAD`
-（本地自己构建的产物仍然要加 `-unsigned`，见下面的几个坑）。点任意块上的 **执行** 即可。
+不需要额外参数——社区构建的产物已签名，并与你的 DuckDB 版本严格匹配。
+
+## 从 GitHub Release 安装
+
+如果社区路线尚不可用，从 [Releases 页面](https://github.com/shijianjs/duckfn-statrs/releases)
+下载对应平台的产物：
+
+```sql
+-- 直接从 URL 加载（把平台后缀换成你自己的）
+LOAD 'https://github.com/shijianjs/duckfn-statrs/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
+```
+
+:::note
+
+Release 产物没有 DuckDB 分发密钥的签名，启动 CLI 时需要加 `-unsigned` 参数：`duckdb -unsigned`。
+上面的社区路线没有这个限制。
+
+:::
+
+## 验证安装
+
+```sql
+SELECT function_name, function_type
+FROM duckdb_functions()
+WHERE function_name LIKE 'sr_%'
+ORDER BY function_name;
+-- 252 行
+```
+
+## 第一批查询
+
+描述统计量是**聚合函数**——传入一列，每个分组一个值：
 
 ```sql {"type":"duckfn","show":"table"}
--- 统计量是聚合函数：一列进，每个分组一个值出。
 SELECT g, sr_mean(x) AS mean, sr_std_dev(x) AS std_dev, sr_median(x) AS median
 FROM (VALUES (1, 1.0), (1, 2.0), (1, 3.0), (2, 10.0), (2, 20.0), (2, NULL)) t(g, x)
 GROUP BY g
 ORDER BY g;
 ```
+
+分布函数是**标量**——逐行求值：
+
+```sql {"type":"duckfn","show":"table"}
+SELECT x, sr_normal_cdf(x, 0.0, 1.0) AS cdf, sr_normal_pdf(x, 0.0, 1.0) AS pdf
+FROM (VALUES (-1.96::DOUBLE), (0.0), (1.96)) t(x);
+```
+
+参数非法时报错清晰明确：
+
+```sql {"type":"duckfn","expect":"error"}
+SELECT sr_normal_pdf(0.0, 0.0, -1.0);    -- 报错：std_dev 必须为正
+```
+
+## NULL 行为
+
+- NULL 输入行不进聚合（标准 SQL 惯例）。
+- statrs 算不出结果时（空组、样本不足、参数越界），返回 SQL NULL——绝不是 NAN。
+- 参数**存在但非法**（如 `std_dev <= 0`）报查询错误。
 
 ```sql {"type":"duckfn","show":"table"}
 -- statrs 算不出单值的样本方差：结果是 NULL 而不是 0。
@@ -68,45 +87,7 @@ GROUP BY grp
 ORDER BY grp;
 ```
 
-```sql {"type":"duckfn","show":"table"}
--- 分布函数是标量，逐行求值。
-SELECT x, sr_normal_cdf(x, 0.0, 1.0) AS cdf
-FROM (VALUES (-1.96::DOUBLE), (0.0), (1.96)) t(x);
-```
+## 下一步
 
-失败路径同样是个可运行块 —— 它自己声明了「应该失败」：
-
-```sql {"type":"duckfn","expect":"error"}
-SELECT sr_normal_pdf(0.0, 0.0, -1.0);    -- 报错：std_dev 必须为正
-```
-
-不进 REPL、只跑一条语句：
-
-```shell
-just sql "SELECT sr_mean(x) FROM range(10) t(x)"
-```
-
-## 3. 跑测试
-
-```shell
-just test           # make configure + make debug + make test
-```
-
-更快的迭代方式（不需要 `make`、也不用手动建 Python venv）见[测试](../guide/testing.md)。
-
-## 几个坑
-
-:::warning[三个看着像 bug、其实不是的]
-
-- **本地构建的产物加载时必须加 `-unsigned`**，不加 DuckDB 会直接拒绝这个文件。
-- **产物文件名必须保持 `<扩展名>.duckdb_extension`。** DuckDB 是按文件名去找入口点符号的，复制成
-  `win.duckdb_extension` 会报 `did not contain function "duckfn_statrs_init_c_api"`。
-- **`make test` 不会自动重新构建。** 改完 Rust 先跑 `just ci-build`（或 `make debug`），否则测试跑的
-  还是上一次的产物。
-
-:::
-
-Windows 上还有一条：如果 `make debug` 报产物被占用，说明有 DuckDB 进程正拿着
-`build/debug/duckfn_statrs.duckdb_extension`（多半是没关的 `just repl`）—— 关掉那个进程重新构建即可。
-`.duckdb_extension` 不是改了名的 DLL：DuckDB 的元数据在文件尾，直接 `Copy-Item` 一个 DLL 过去会报
-`The metadata at the end of the file is invalid`。
+- 按类别浏览完整的[函数参考](../guide/functions.md)。
+- 需要从源码构建或参与贡献？见[开发指南](./project-structure.md)。

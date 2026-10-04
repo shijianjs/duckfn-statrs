@@ -232,9 +232,10 @@ NULL 不调函数。真需要自定义状态形状时才手写回退：一份泛
   要把 `REPO_URL` 改成自己的仓库（`just rename` 只改扩展名，不动这个 URL）。不需要这套能力时，把
   `docusaurus.config.ts` 里的 `remarkRunnableSql` 与 `dfkExtensions` 两行去掉即可。
 
-站点分成两个侧边栏、对应顶栏两项（见 `docs/sidebars.ts`）：**用户指南**（`intro` + `getting-started/` +
-`guide/`，讲怎么写这个扩展）与**开发指南**（`build-and-release`、`community-extension`，讲怎么构建、测试
-与发布它）。新增页面按这个归属放，两侧的文档树要各自翻译一份。
+站点分成两个侧边栏、对应顶栏两项（见 `docs/sidebars.ts`）：**用户指南**（`intro` + `getting-started/quick-start` +
+`guide/functions`，面向插件使用者：安装加载与函数参考）与**开发指南**（`getting-started/project-structure`、
+`guide/writing-functions`、`guide/testing`、`build-and-release`、`community-extension`，面向本项目开发者）。
+新增页面按这个归属放，两侧的文档树要各自翻译一份。
 
 ### 社区扩展注册
 

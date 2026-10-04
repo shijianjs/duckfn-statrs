@@ -1,176 +1,214 @@
 ---
-title: Writing functions
+title: Function reference
 sidebar_position: 1
-description: The registered statrs wrappers and the shapes they use, the rules duckfn applies to arguments and return values, and what to copy when you add your own.
+description: All 252 sr_ functions organized by category — aggregates for summary statistics, scalars for distributions, special functions, sampling, and more.
 ---
 
-# Writing functions
+# Function reference
 
-A registered function is "an ordinary Rust function plus one attribute macro". The macro writes the FFI
-wrapper, reads the argument columns, writes the result column, and submits the registration; the body
-holds nothing but your logic.
+All functions registered by `duckfn_statrs` share the `sr_` prefix. Search them at runtime:
 
-The path from a plain function to a callable SQL function:
-
-```mermaid
-flowchart LR
-    fn["Plain Rust function"] --> macro["duck attribute macro"]
-    macro --> wrapper["FFI wrapper and<br/>registration item"]
-    wrapper --> cdylib["Extension binary<br/>cdylib"]
-    cdylib --> load["LOAD in DuckDB"]
+```sql
+SELECT function_name, function_type, description
+FROM duckdb_functions()
+WHERE function_name LIKE 'sr_%'
+ORDER BY function_name;
 ```
 
-## What this extension registers
+## Summary statistics (aggregates)
 
-| Family | Kind | Shape | Notes |
-| --- | --- | --- | --- |
-| Statistics (`statistics/`) | aggregate | one/two DOUBLE columns -> DOUBLE | means, order statistics (median / quantile / percentile / ranks), variance families, covariance; `auto_collect`, NULL rows skipped, undefined statistics -> NULL. |
-| Continuous distributions (`distribution/`) | scalar | DOUBLE in -> DOUBLE out | 20 distributions × `sr_<dist>_pdf / ln_pdf / cdf / sf / quantile`; invalid parameters fail the query. |
-| Discrete distributions (`distribution/`) | scalar | DOUBLE in -> DOUBLE out | 7 distributions × `pmf / ln_pmf / cdf / sf / quantile`; integer slots take whole-number DOUBLE literals (validated, never rounded). |
-| Special functions (`function.rs`) | scalar | DOUBLE in -> DOUBLE out | erf / gamma / beta families, factorials and binomial coefficients, harmonic numbers, logistic and logit. |
-| Constants (`consts.rs`) | scalar | () -> DOUBLE | statrs::consts as zero-argument functions. |
+Accept one or two DOUBLE columns, return a single value per group. NULL rows are skipped automatically.
 
-The code lives in `src/extension/functions/`, its tree mirroring statrs' modules
-(`consts.rs`, `function.rs`, `statistics/`, `distribution/`); the correspondence table and the list of
-deliberate exclusions sit in the `mod.rs` headers. Statistics are aggregates on purpose —
-`SELECT sr_mean(x) FROM t GROUP BY g` is the shape database users already write; a LIST + scalar form
-would force a `list(x)` in front of every call.
+| Function | Description | Example |
+| --- | --- | --- |
+| `sr_mean(x)` | Arithmetic mean | `SELECT sr_mean(x) FROM t` |
+| `sr_geometric_mean(x)` | Geometric mean (NULL if any value < 0) | |
+| `sr_harmonic_mean(x)` | Harmonic mean (NULL if any value < 0) | |
+| `sr_quadratic_mean(x)` | Root mean square | |
+| `sr_median(x)` | Median (averages two middle values for even-length) | |
+| `sr_quantile(x, tau)` | Tau quantile, tau in [0, 1] | `SELECT sr_quantile(x, 0.75) FROM t` |
+| `sr_percentile(x, p)` | p-th percentile, p in 0..100 (integer) | |
+| `sr_order_statistic(x, k)` | k-th smallest (1-based) | |
+| `sr_lower_quartile(x)` | First quartile (Q1) | |
+| `sr_upper_quartile(x)` | Third quartile (Q3) | |
+| `sr_interquartile_range(x)` | IQR (Q3 - Q1) | |
+| `sr_variance(x)` | Sample variance (Bessel-corrected) | |
+| `sr_std_dev(x)` | Sample standard deviation | |
+| `sr_population_variance(x)` | Population variance (divide by N) | |
+| `sr_population_std_dev(x)` | Population standard deviation | |
+| `sr_min(x)` / `sr_max(x)` | Minimum / maximum | |
+| `sr_abs_min(x)` / `sr_abs_max(x)` | Smallest / largest absolute value | |
+| `sr_covariance(x, y)` | Sample covariance of two paired columns | |
+| `sr_population_covariance(x, y)` | Population covariance | |
+| `sr_ranks(x, method)` | Ranks as LIST(DOUBLE); method 1=avg 2=min 3=max 4=first | |
+| `sr_empirical_cdf(x, v)` | Empirical CDF at constant v | |
+| `sr_empirical_sf(x, v)` | Empirical survival at constant v | |
+| `sr_empirical_quantile(x, p)` | Empirical quantile at constant p | |
 
-## Scalars: three return shapes
+```sql {"type":"duckfn","show":"table"}
+SELECT g,
+       sr_mean(x) AS mean,
+       sr_median(x) AS median,
+       sr_std_dev(x) AS std,
+       sr_skewtest(list(x), 1.0, 1.0)[1] AS skew_z
+FROM (VALUES (1, 2.5), (1, 3.1), (1, 1.8), (2, 7.2), (2, 8.1), (2, 6.9)) t(g, x)
+GROUP BY g ORDER BY g;
+```
 
-The macro generates different code per return type:
+## Continuous distributions (scalars)
 
-| Signature | Meaning |
+20 distributions, each with 5 functions: `pdf`, `ln_pdf`, `cdf`, `sf`, `quantile`.
+
+Pattern: `sr_<name>_<function>(x, ...params)`
+
+| Distribution | Parameters | Example |
+| --- | --- | --- |
+| normal | mean, std_dev | `SELECT sr_normal_pdf(0.0, 0.0, 1.0)` |
+| log_normal | location, scale | |
+| beta | shape_a, shape_b | |
+| gamma | shape, rate | |
+| inverse_gamma | shape, scale | |
+| chi_squared | freedom | |
+| chi | freedom | |
+| exponential | rate | |
+| uniform | min, max | |
+| students_t | location, scale, freedom | |
+| fisher_snedecor | df_num, df_den | |
+| cauchy | location, scale | |
+| laplace | location, scale | |
+| logistic | location, scale | |
+| weibull | shape, scale | |
+| frechet | location, scale | |
+| gumbel | location, scale | |
+| pareto | scale, shape | |
+| levy | mu, c | |
+| erlang | shape (integer), rate | |
+
+```sql {"type":"duckfn","show":"table"}
+SELECT sr_gamma_pdf(2.0, 3.0, 2.0) AS pdf,
+       sr_gamma_cdf(2.0, 3.0, 2.0) AS cdf,
+       sr_gamma_quantile(0.95, 3.0, 2.0) AS q95;
+```
+
+## Discrete distributions (scalars)
+
+8 distributions, each with: `pmf`, `ln_pmf`, `cdf`, `sf`, `quantile`.
+
+| Distribution | Parameters | Example |
+| --- | --- | --- |
+| bernoulli | p | `SELECT sr_bernoulli_pmf(1.0, 0.7)` |
+| binomial | p, n | |
+| negative_binomial | r, p | |
+| poisson | lambda | |
+| geometric | p | |
+| hypergeometric | population, successes, draws | |
+| categorical | probs (LIST) | |
+| discrete_uniform | min, max | |
+
+Integer-valued slots accept whole-number DOUBLE literals (e.g. `10.0` not `10`); non-integer values
+produce an error.
+
+## Multivariate distributions (scalars)
+
+| Function | Description |
 | --- | --- |
-| `-> T` | A plain value, never NULL. |
-| `-> DuckOptionResult<T>` | Nullable and fallible: `Ok(None)` becomes SQL `NULL`, `Err` fails the whole query. |
-| `-> Option<T>` | Nullable but unable to fail. |
+| `sr_multivariate_normal_pdf(x, mean, covariance)` | Density, row-major flattened covariance LIST |
+| `sr_multivariate_students_t_pdf(x, location, scale, freedom)` | Density |
+| `sr_dirichlet_pdf(x, alpha)` | Density on the simplex |
+| `sr_dirichlet_entropy(alpha)` | Differential entropy |
+| `sr_multinomial_pmf(probs, trials, counts)` | Probability mass, counts as LIST(BIGINT) |
 
-```rust
-use duckfn::{DuckOptionResult, duck_error, duck_scalar_function};
+## Special functions (scalars)
 
-#[duck_scalar_function(
-    description = "Normal (Gaussian) quantile function: the x whose CDF equals p, for p in [0, 1]",
-    comment = "A probability outside [0, 1] is a query error rather than a clamped endpoint",
-    example = "SELECT sr_normal_quantile(0.975, 0.0, 1.0)"
-)]
-fn sr_normal_quantile(p: f64, mean: f64, std_dev: f64) -> DuckOptionResult<f64> {
-    if !(0.0..=1.0).contains(&p) {
-        return Err(duck_error(format!(
-            "sr_normal_quantile: the probability must be within [0, 1], got {p}"
-        )));
-    }
-    let normal = normal("sr_normal_quantile", mean, std_dev)?;
-    Ok(Some(normal.inverse_cdf(p)))
-}
+| Family | Functions |
+| --- | --- |
+| Error function | `sr_erf`, `sr_erfc`, `sr_erf_inv`, `sr_erfc_inv` |
+| Gamma family | `sr_gamma`, `sr_ln_gamma`, `sr_digamma`, `sr_inv_digamma`, `sr_gamma_lower_incomplete`, `sr_gamma_upper_incomplete`, `sr_gamma_lower_regularized`, `sr_gamma_upper_regularized` |
+| Beta family | `sr_beta`, `sr_ln_beta`, `sr_beta_incomplete`, `sr_beta_regularized`, `sr_inv_beta_regularized` |
+| Factorial / combinatorial | `sr_factorial`, `sr_ln_factorial`, `sr_choose`, `sr_ln_choose` |
+| Harmonic numbers | `sr_harmonic`, `sr_generalized_harmonic` |
+| Logistic / logit | `sr_logistic`, `sr_logit` |
+| Exponential integral | `sr_exponential_integral` |
+| Polynomial | `sr_polynomial(x, coefficients)` |
+| Kernel functions | `sr_kernel_eval(x, kind)`, `sr_kernel_support(kind)` |
+
+```sql {"type":"duckfn","show":"table"}
+SELECT sr_erf(1.0) AS erf_val,
+       sr_gamma(5.0) AS gamma_5,
+       sr_ln_choose(100.0, 50.0) AS ln_binom;
 ```
 
-### What happens to a NULL argument
+## Constants (zero-argument scalars)
 
-Argument nullability is decided by the parameter type, and it applies to aggregates too:
+| Function | Value |
+| --- | --- |
+| `sr_ln_pi()` | ln(PI) |
+| `sr_sqrt_2pi()` | sqrt(2*PI) |
+| `sr_ln_sqrt_2pi()` | ln(sqrt(2*PI)) |
+| `sr_ln_sqrt_2pie()` | ln(sqrt(2*PI*e)) |
+| `sr_2_sqrt_e_over_pi()` | 2*sqrt(e/PI) |
+| `sr_ln_2_sqrt_e_over_pi()` | ln(2*sqrt(e/PI)) |
+| `sr_euler_mascheroni()` | Euler-Mascheroni constant |
+| `sr_frac_1_sqrt_pi()` | 1/sqrt(PI) |
+| `sr_ln_2()` | ln(2) |
 
-- **`p: f64`** — a NULL input row is short-circuited to SQL `NULL` by duckfn's argument reader; the
-  body never runs for that row. In an aggregate the row simply does not enter the state. This is what
-  you want most of the time.
-- **`p: Option<f64>`** — NULL reaches the body as `None` and its meaning is yours to decide (return
-  NULL, substitute a default, count NULLs, …).
+## Random sampling (scalars)
 
-### Errors and panics
+Draw k random samples from any distribution into a LIST(DOUBLE).
 
-Return `Err(duck_error("…"))` for a value the function cannot handle; that fails the query with your
-message. A `panic!` in the body is caught and reported as a DuckDB error rather than unwinding across
-the FFI boundary. Error messages are user-facing: write them in English, and prefix them with the
-function name so a report makes sense on its own. In this extension the line between error and NULL is
-deliberate: *statrs cannot define it* → NULL (via `nan_to_null`), *the call is wrong* (std_dev ≤ 0, a
-probability out of range) → error.
+Pattern: `sr_sample_<distribution>(...params, k)` where k is a BIGINT.
 
-## Aggregates: collect with `auto_collect`
-
-The underlying machinery (from the duckfn aggregate guide): an aggregate is "per-row inputs plus
-a `&mut` state" (the state may sit anywhere), the state needs `Default + Clone + Debug` and an
-implementation of `DuckAggregateState`:
-
-- `combine` / `simple_combine` merges two states. This is what threads and group merging go through,
-  so it has to be associative.
-- `result` / `simple_result` turns a state into the group's value. `simple_result` can only produce a
-  never-NULL value; override `result` and return `Ok(None)` when a group has to come back as SQL NULL.
-- `Output` decides the SQL return type: `i64`, `f64`, `String`, `Vec<…>` (that is, `list<…>`) and so on.
-
-This extension never writes any of that by hand. "Collect the columns, compute once at finalize" is
-the shape of every statistic here, and that is exactly what
-`#[duck_aggregate_function(auto_collect = true)]` (duckfn 0.0.18+) generates: the annotated function
-*is* the finalize handler — a `Vec<T>` parameter is a column collected across rows, a `DuckFirst<T>`
-parameter is a per-query constant resolved once, and the return value follows the scalar rules
-(`-> T`, `-> Option<T>`, `-> DuckOptionResult<T>`). The macro builds the state, the merging
-`simple_combine` and the NULL-valued `result` underneath:
-
-```rust
-#[duck_aggregate_function(
-    auto_collect = true,
-    description = "Tau quantile of a DOUBLE column, tau as the second (constant) argument, NULL when empty or tau is not in [0, 1]",
-    example = "SELECT sr_quantile(x, 0.5) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)"
-)]
-fn sr_quantile(values: Vec<f64>, tau: DuckFirst<f64>) -> DuckOptionResult<f64> {
-    let mut data = Data::new(values);
-    super::nan_to_null(data.quantile(tau))   // statrs' NAN -> SQL NULL
-}
+```sql {"type":"duckfn","show":"table"}
+SELECT len(sr_sample_normal(0.0, 1.0, 100)) AS n,
+       sr_mean(x) AS sample_mean
+FROM (SELECT unnest(sr_sample_normal(5.0, 2.0, 1000)) AS x);
 ```
 
-The NULL rules come from the same machinery: a NULL in any non-`Option` column drops the whole row
-from the collection — which is what keeps `sr_covariance`'s two `Vec<f64>` parameters paired without
-any length check — and an empty group with a non-nullable `DuckFirst<T>` has no value to resolve, so
-`auto_collect` reports NULL for that group instead of calling the function. Parallel `combine`,
-structured outputs and `overloads_name` all keep working; when a genuinely custom state shape is
-needed, the hand-written form above is still the fallback (see the aggregate chapter of the duckfn
-guide).
+All 27 distributions have a sampler. `sr_sample_empirical(x, k)` (aggregate) samples from a column.
+`sr_sample_binomial_algorithm(p, n, algorithm, k)` selects the algorithm explicitly.
 
-## Adding your own
+## Density estimation (scalars)
 
-1. **Pick the attribute.** Scalar, aggregate, table function, `COPY`, cast, SQL macro or replacement
-   scan: each has one, and each accepts only its own arguments. The reference is
-   [the duckfn user guide](https://shijianjs.github.io/duckfn/) — the chapter for that kind.
-2. **Copy the closest neighbour** from `src/extension/functions/` and change the logic, rather than
-   inventing a signature from scratch. A new statrs wrapper over a column is usually just a new
-   `auto_collect = true` aggregate taking the column as `Vec<f64>` (columns to pair: a second
-   `Vec<f64>`) and delegating to statrs once.
-3. **Attach it to the module tree**: add `mod my_function;` to `src/extension/functions/mod.rs`. The
-   crate roots stay untouched.
-4. **Write the documentation metadata** on the attribute — `description`, `comment`, `example` /
-   `examples`:
+| Function | Description |
+| --- | --- |
+| `sr_kde_pdf(x, sample, bandwidth)` | Gaussian kernel density estimate; NULL bandwidth uses auto-selection |
+| `sr_knn_pdf(x, sample, bandwidth)` | k-nearest-neighbour density estimate |
 
-   ```rust
-   #[duck_scalar_function(
-       description = "One line for the function table of the community-extension page",
-       comment = "The detail that does not fit the one-liner",
-       example = "SELECT sr_normal_pdf(0.0, 0.0, 1.0)"
-   )]
-   ```
+## Signal generation (scalars)
 
-   DuckDB's C extension API has no way to set a description or an example, so this text is the only
-   source for the `Added Functions` table on the community-extension page. `just docs_csv` exports it
-   to `target/function_descriptions.csv` (see [Community extensions](../community-extension.md)).
-   Write it in English — it is pasted onto that page as it is.
-5. **Cover it with a test** (see [Testing](./testing.md)) and run `just lint`. Take the expected values
-   from statrs' actual output, not from a hand computation.
+| Function | Description |
+| --- | --- |
+| `sr_gen_sinusoidal(k, sample_rate, freq, amp, mean, phase, delay)` | First k points of a sinusoid |
+| `sr_gen_square(k, high, low, amplitude, offset, delay)` | Square wave |
+| `sr_gen_triangle(k, raise, fall, amplitude, offset, delay)` | Triangle wave |
+| `sr_gen_sawtooth(k, period, amplitude, offset, delay)` | Sawtooth wave |
+| `sr_gen_periodic(k, sample_rate, freq, amplitude, phase, delay)` | Periodic signal |
+| `sr_gen_log_spaced(n, start_exp, stop_exp)` | Log-spaced sequence as LIST |
 
-### Names
+## Hypothesis tests (scalars)
 
-Every SQL name carries the short prefix `sr_`, and the part after it should read like what the function
-does. A prefixed name is also what users type, so resist `duckfn_statrs_sr_mean`.
+| Function | Description |
+| --- | --- |
+| `sr_ttest_onesample(sample, popmean, alternative, nan_policy)` | One-sample t-test → LIST [t, p-value] |
+| `sr_mannwhitneyu(sample1, sample2, alternative, method)` | Mann-Whitney U → LIST [U, p-value] |
+| `sr_ks_twosample(sample1, sample2, alternative, method)` | Two-sample KS → LIST [D, p-value] |
+| `sr_chisquare(observed, expected, ddof)` | Chi-square GoF → LIST [stat, p-value] |
+| `sr_f_oneway(groups, nan_policy)` | One-way ANOVA → LIST [F, p-value] |
+| `sr_skewtest(sample, alternative, nan_policy)` | Skewness z-test → LIST [z, p-value] |
+| `sr_anderson_darling(sample, distribution, params)` | Anderson-Darling GoF → LIST [A², critical] |
+| `sr_fishers_exact(table, alternative)` | Fisher's exact test → p-value |
+| `sr_fishers_exact_with_odds_ratio(table, alternative)` | → LIST [odds_ratio, p-value] |
 
-The attribute registers the **Rust function name** by default, which is why the functions are called
-`sr_mean` and `sr_normal_pdf`. When one name needs several signatures (different argument types or
-counts), `overloads_name = "…"` merges them into one function set instead of registering each
-separately.
+Samples are passed as `LIST(DOUBLE)` literals or built with `list(x)` from a column. The `alternative`
+and `nan_policy` codes are DOUBLE literals (e.g. 1.0 = two-sided, 2.0 = less, 3.0 = greater).
 
-The macro also generates a `SQL_NAME` constant per signature. Once a name appears in several places —
-error prefixes, log lines, hints — read that constant rather than repeating the literal; the price is
-that such a function has to be `pub(super)`, because the generated module inherits the function's
-visibility.
+## Finding a function
 
-### Options arguments
+Use `duckdb_functions()` to search programmatically:
 
-A configuration argument (`DuckLazy<T>`) is parsed once and read inside the function, so per-row
-parsing does not show up in profiles. This extension does not use one; the pattern (a named STRUCT type,
-created at load time) is documented in the duckfn guide and used throughout
-[duckfn_quantstats](https://github.com/shijianjs/duckfn-quantstats).
+```sql
+SELECT function_name, function_type, description
+FROM duckdb_functions()
+WHERE function_name LIKE 'sr_normal%'
+ORDER BY function_name;
+```

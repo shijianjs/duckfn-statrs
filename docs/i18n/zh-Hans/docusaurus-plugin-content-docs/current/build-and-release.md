@@ -87,10 +87,11 @@ flowchart LR
 
 PR 只构建 + 测试，不发布：发布那一步由「当前 ref 是版本 tag」这个条件把着。
 
-### 安装一份发布产物
+### 加载构建产物
 
 ```sql
-LOAD 'https://github.com/<owner>/<repo>/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
+-- make debug / just build 之后：
+LOAD './build/debug/duckfn_statrs.duckdb_extension';
 ```
 
 本地构建的产物要 `duckdb -unsigned`；从 Release 下载的产物同样要加这个参数，因为它没有 DuckDB 分发密钥

@@ -569,71 +569,67 @@
     "description": "Home page button linking to the repository"
   },
   "homepage.features.title": {
-    "message": "这个扩展给了你什么",
+    "message": "你得到了什么",
     "description": "Home page section title above the feature cards"
   },
-  "homepage.features.noGlue.title": {
-    "message": "无需 C/C++ 胶水代码",
+  "homepage.features.stats.title": {
+    "message": "统计量聚合函数",
     "description": "Home page feature card title"
   },
-  "homepage.features.noGlue.details": {
-    "message": "一个属性宏就把普通 Rust 函数变成 DuckDB 的标量 / 聚合 / 表函数，DuckDB 的 C 类型不会出现在你的代码里。",
+  "homepage.features.stats.details": {
+    "message": "均值、中位数、方差、协方差、分位数、秩……全部是原生 SQL 聚合，配合 GROUP BY 使用。",
     "description": "Home page feature card description"
   },
-  "homepage.features.build.title": {
-    "message": "无需本地编译 DuckDB",
+  "homepage.features.dist.title": {
+    "message": "27 种概率分布",
     "description": "Home page feature card title"
   },
-  "homepage.features.build.details": {
-    "message": "只用头文件、加载时通过 DuckDB 的 API 表分发，所以一条 cargo 命令就能出 .duckdb_extension —— 不需要 CMake，也不需要 C++ 工具链。",
+  "homepage.features.dist.details": {
+    "message": "每种分布都有 pdf、cdf、生存函数、分位数、对数密度——连续、离散、多元全覆盖。",
+    "description": "Home page feature card description"
+  },
+  "homepage.features.sample.title": {
+    "message": "随机抽样与信号生成",
+    "description": "Home page feature card title"
+  },
+  "homepage.features.sample.details": {
+    "message": "从任意分布抽 k 个样本输出 LIST；生成正弦、方波、三角、锯齿波形。",
     "description": "Home page feature card description"
   },
   "homepage.features.tests.title": {
-    "message": "每个 PR 都跑测试",
+    "message": "假设检验",
     "description": "Home page feature card title"
   },
   "homepage.features.tests.details": {
-    "message": "test/sql 下已经有四份 SQLLogicTest 用例，CI 会为每个支持的平台构建并运行它们。",
+    "message": "t 检验、卡方、ANOVA、Mann-Whitney U、Kolmogorov-Smirnov、Anderson-Darling、Fisher 精确——全部在 SQL 里完成。",
     "description": "Home page feature card description"
   },
-  "homepage.features.release.title": {
-    "message": "打个 tag 就有各平台产物",
+  "homepage.features.func.title": {
+    "message": "特殊函数与常量",
     "description": "Home page feature card title"
   },
-  "homepage.features.release.details": {
-    "message": "提版本号、提交、打 tag 就够了：流水线会为所有平台构建，并把 .duckdb_extension 挂到 GitHub Release 上。",
+  "homepage.features.func.details": {
+    "message": "Gamma、Beta、erf、digamma、阶乘、二项系数、调和数与数学常数。",
     "description": "Home page feature card description"
   },
-  "homepage.features.types.title": {
-    "message": "普通 Rust 类型",
+  "homepage.features.null.title": {
+    "message": "可预测的 NULL 语义",
     "description": "Home page feature card title"
   },
-  "homepage.features.types.details": {
-    "message": "Option、Vec、IndexMap 以及派生的结构体与枚举，对应 DuckDB 的 LIST、MAP、ARRAY 与 STRUCT —— 嵌套也支持。",
-    "description": "Home page feature card description"
-  },
-  "homepage.features.docs.title": {
-    "message": "这份文档站",
-    "description": "Home page feature card title"
-  },
-  "homepage.features.docs.details": {
-    "message": "docs/ 下的 Docusaurus 站点，中英双语，并有工作流在每次版本 tag 时发布到 GitHub Pages。不需要就删掉。",
+  "homepage.features.null.details": {
+    "message": "算不出的结果是 SQL NULL，非法参数报清晰错误，NULL 输入永不产生数字——252 个函数保持一致。",
     "description": "Home page feature card description"
   },
   "homepage.showcase.title": {
-    "message": "一个属性 = 一个 SQL 函数",
-    "description": "Home page section title above the Rust and SQL code blocks"
+    "message": "纯 SQL 统计",
+    "description": "Home page section title above the SQL code block"
   },
   "homepage.showcase.lead": {
-    "message": "属性宏会生成 FFI 包装层、列的读写与注册代码。左边这段是安全的 Rust，和写普通库没什么区别 —— 它就是本扩展自己的代码，不是示意图。",
-    "description": "Home page paragraph introducing the Rust and SQL code blocks"
-  },
-  "homepage.showcase.caption": {
-    "message": "注释就是每次调用的返回值。本地构建的产物要加 -unsigned 才能加载，因为扩展调用的是 DuckDB 的 C API。",
-    "description": "Home page note under the SQL code block explaining the trailing comments"
+    "message": "252 个函数背后是 Rust statrs 库，直接在 DuckDB 查询里调用。统计量用聚合，分布与特殊函数用标量逐行求值。",
+    "description": "Home page paragraph introducing the SQL code block"
   },
   "homepage.showcase.link": {
-    "message": "已注册的函数逐个拆解",
+    "message": "浏览全部函数",
     "description": "Home page link to the functions guide"
   },
   "homepage.next.title": {
@@ -641,27 +637,27 @@
     "description": "Home page section title above the link cards"
   },
   "homepage.next.quickStart.title": {
-    "message": "快速开始",
+    "message": "安装与加载",
     "description": "Home page link card title"
   },
   "homepage.next.quickStart.details": {
-    "message": "构建、加载，在 SQL 里直接调用统计量。",
-    "description": "Home page link card description"
-  },
-  "homepage.next.structure.title": {
-    "message": "目录结构",
-    "description": "Home page link card title"
-  },
-  "homepage.next.structure.details": {
-    "message": "入口点、函数与 SQL 类型各自放在哪。",
+    "message": "把扩展跑起来，试试第一批查询。",
     "description": "Home page link card description"
   },
   "homepage.next.functions.title": {
-    "message": "编写函数",
+    "message": "函数参考",
     "description": "Home page link card title"
   },
   "homepage.next.functions.details": {
-    "message": "已注册的 statrs 包装函数与各自用的形状，以及新增函数时该抄哪一段。",
+    "message": "按类别浏览全部 252 个函数：统计量、分布、特殊函数、抽样、检验。",
+    "description": "Home page link card description"
+  },
+  "homepage.next.structure.title": {
+    "message": "开发指南",
+    "description": "Home page link card title"
+  },
+  "homepage.next.structure.details": {
+    "message": "从源码构建、写新函数、测试与发版。",
     "description": "Home page link card description"
   },
   "homepage.next.release.title": {
@@ -669,7 +665,7 @@
     "description": "Home page link card title"
   },
   "homepage.next.release.details": {
-    "message": "两条构建路径、发版流程与 wasm 目标。",
+    "message": "构建路径、发版流程与 wasm 目标。",
     "description": "Home page link card description"
   }
 }

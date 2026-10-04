@@ -91,10 +91,11 @@ flowchart LR
 
 Pull requests run the build and the tests only; publishing is gated on the ref being a version tag.
 
-### Installing a release
+### Loading a built extension
 
 ```sql
-LOAD 'https://github.com/<owner>/<repo>/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
+-- After make debug / just build:
+LOAD './build/debug/duckfn_statrs.duckdb_extension';
 ```
 
 A locally built extension needs `duckdb -unsigned`; a released one that a user downloads also has to be

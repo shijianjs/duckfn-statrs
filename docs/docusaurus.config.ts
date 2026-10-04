@@ -204,10 +204,9 @@ const config: Config = {
         src: 'img/logo.svg',
       },
       items: [
-        // 顶栏两项 = 两个侧边栏（见 sidebars.ts）：怎么写这个扩展 / 怎么构建、测试与发布它。
+        // 顶栏两项 = 两个侧边栏（见 sidebars.ts）：插件使用者的文档 / 项目开发者文档。
         //
-        // Two navbar entries, one per sidebar (see sidebars.ts): writing the extension, and
-        // building/testing/releasing it.
+        // Two navbar entries, one per sidebar (see sidebars.ts): user-facing docs, and developer docs.
         {
           type: 'docSidebar',
           sidebarId: 'userGuide',
@@ -253,16 +252,16 @@ const config: Config = {
               to: '/docs/intro',
             },
             {
-              label: 'Quick start',
+              label: 'Install and load',
               to: '/docs/getting-started/quick-start',
             },
             {
-              label: 'Functions',
+              label: 'Function reference',
               to: '/docs/guide/functions',
             },
             {
-              label: 'Build and release',
-              to: '/docs/build-and-release',
+              label: 'Development guide',
+              to: '/docs/getting-started/project-structure',
             },
           ],
         },
