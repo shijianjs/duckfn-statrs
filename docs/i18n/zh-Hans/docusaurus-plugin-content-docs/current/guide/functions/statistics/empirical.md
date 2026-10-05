@@ -12,7 +12,7 @@ description: 经验 CDF、生存函数、分位数与各阶矩——按 DOUBLE �
 
 ## sr_empirical_cdf(v, x)
 
-**签名**：`sr_empirical_cdf(v DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_cdf(v DOUBLE[], x DOUBLE) -> DOUBLE`
 
 所收集列 `v` 的经验累积分布在常量 `x` 处的取值。等价于「`v <= x` 的行占比」。
 
@@ -26,7 +26,7 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
 
 ## sr_empirical_sf(v, x)
 
-**签名**：`sr_empirical_sf(v DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_sf(v DOUBLE[], x DOUBLE) -> DOUBLE`
 
 在常量 `x` 处的经验生存函数。等价于 `1 - cdf(x)`。
 
@@ -38,7 +38,7 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
 
 ## sr_empirical_quantile(v, p)
 
-**签名**：`sr_empirical_quantile(v DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_quantile(v DOUBLE[], p DOUBLE) -> DOUBLE`
 
 在常量概率 `p`（范围 [0, 1]）处的经验分位数。
 
@@ -50,7 +50,7 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
 
 ### sr_empirical_entropy(values)
 
-**签名**：`sr_empirical_entropy(values DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_entropy(values DOUBLE[]) -> DOUBLE`
 
 DOUBLE 列的经验熵；statrs 未实现经验分布的熵，恒为 NULL。
 
@@ -61,7 +61,7 @@ SELECT sr_empirical_entropy(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_max(values)
 
-**签名**：`sr_empirical_max(values DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_max(values DOUBLE[]) -> DOUBLE`
 
 DOUBLE 列的经验最大值。
 
@@ -72,7 +72,7 @@ SELECT sr_empirical_max(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_mean(values)
 
-**签名**：`sr_empirical_mean(values DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_mean(values DOUBLE[]) -> DOUBLE`
 
 DOUBLE 列的经验均值。
 
@@ -83,7 +83,7 @@ SELECT sr_empirical_mean(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_min(values)
 
-**签名**：`sr_empirical_min(values DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_min(values DOUBLE[]) -> DOUBLE`
 
 DOUBLE 列的经验最小值。
 
@@ -94,7 +94,7 @@ SELECT sr_empirical_min(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_skewness(values)
 
-**签名**：`sr_empirical_skewness(values DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_skewness(values DOUBLE[]) -> DOUBLE`
 
 DOUBLE 列的经验偏度；statrs 未实现经验分布的偏度，恒为 NULL。
 
@@ -105,7 +105,7 @@ SELECT sr_empirical_skewness(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_std_dev(values)
 
-**签名**：`sr_empirical_std_dev(values DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_std_dev(values DOUBLE[]) -> DOUBLE`
 
 DOUBLE 列的经验标准差。
 
@@ -116,7 +116,7 @@ SELECT sr_empirical_std_dev(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_variance(values)
 
-**签名**：`sr_empirical_variance(values DOUBLE) -> DOUBLE`
+**签名**：`sr_empirical_variance(values DOUBLE[]) -> DOUBLE`
 
 DOUBLE 列的经验方差。
 

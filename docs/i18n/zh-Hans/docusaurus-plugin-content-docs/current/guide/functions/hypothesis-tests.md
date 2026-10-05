@@ -11,7 +11,7 @@ description: 10 个统计假设检验——t 检验、卡方、ANOVA、KS、Mann
 
 ## sr_ttest_onesample(sample, popmean, alternative, nan_policy)
 
-**签名**：`sr_ttest_onesample(sample LIST(DOUBLE), popmean DOUBLE, alternative DOUBLE, nan_policy DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_ttest_onesample(sample DOUBLE[], popmean DOUBLE, alternative DOUBLE, nan_policy DOUBLE) -> LIST(DOUBLE)`
 
 单样本 t 检验，与 `popmean` 比较。返回 `[t 统计量, p 值]`。
 
@@ -27,20 +27,20 @@ SELECT sr_ttest_onesample([1.0, 2.0, 3.0, 4.0, 5.0], 3.0, 1.0, 1.0)
 
 ## sr_chisquare(observed, expected, ddof)
 
-**签名**：`sr_chisquare(observed LIST(DOUBLE), expected LIST(DOUBLE), ddof DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_chisquare(observed UBIGINT[], expected DOUBLE[], ddof UBIGINT) -> LIST(DOUBLE)`
 
 卡方拟合优度检验。`expected` 传 NULL 表示均匀期望；`ddof` 传 NULL 默认为 0。
 
 返回 `[卡方统计量, p 值]`。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chisquare([16.0, 18.0, 16.0, 14.0, 12.0, 12.0], NULL, NULL)
+SELECT sr_chisquare([16::UBIGINT, 18::UBIGINT, 16::UBIGINT, 14::UBIGINT, 12::UBIGINT, 12::UBIGINT], NULL, NULL)
 -- [2.0, 0.8491450360846101]
 ```
 
 ## sr_f_oneway(groups, nan_policy)
 
-**签名**：`sr_f_oneway(groups LIST(LIST(DOUBLE)), nan_policy DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_f_oneway(groups DOUBLE[][], nan_policy DOUBLE) -> LIST(DOUBLE)`
 
 单因素 ANOVA，多组样本。返回 `[F 统计量, p 值]`。
 
@@ -51,31 +51,31 @@ SELECT sr_f_oneway([[1.0, 3.0, 5.0], [2.0, 4.0, 8.0]], 1.0)
 
 ## sr_fishers_exact(table, alternative)
 
-**签名**：`sr_fishers_exact(table LIST(DOUBLE), alternative DOUBLE) -> DOUBLE`
+**签名**：`sr_fishers_exact(table UBIGINT[], alternative DOUBLE) -> DOUBLE`
 
-2x2 列联表（4 个整数值 DOUBLE，行主序）的 Fisher 精确检验 p 值。返回单个 DOUBLE，不是 LIST。
+2x2 列联表（4 个 UBIGINT，行主序）的 Fisher 精确检验 p 值。返回单个 DOUBLE，不是 LIST。
 
 - `alternative`：1.0 = 双侧，2.0 = less，3.0 = greater
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_fishers_exact([1.0, 2.0, 3.0, 4.0], 1.0)
+SELECT sr_fishers_exact([1::UBIGINT, 2::UBIGINT, 3::UBIGINT, 4::UBIGINT], 1.0)
 -- 1.0
 ```
 
 ## sr_fishers_exact_with_odds_ratio(table, alternative)
 
-**签名**：`sr_fishers_exact_with_odds_ratio(table LIST(DOUBLE), alternative DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_fishers_exact_with_odds_ratio(table UBIGINT[], alternative DOUBLE) -> LIST(DOUBLE)`
 
 与 `sr_fishers_exact` 同，返回 `[odds_ratio, p 值]`。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_fishers_exact_with_odds_ratio([1.0, 2.0, 3.0, 4.0], 2.0)
+SELECT sr_fishers_exact_with_odds_ratio([1::UBIGINT, 2::UBIGINT, 3::UBIGINT, 4::UBIGINT], 2.0)
 -- [0.6666666666666666, 0.6666666666666666]
 ```
 
 ## sr_ks_twosample(sample1, sample2, alternative, method)
 
-**签名**：`sr_ks_twosample(sample1 LIST(DOUBLE), sample2 LIST(DOUBLE), alternative DOUBLE, method DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_ks_twosample(sample1 DOUBLE[], sample2 DOUBLE[], alternative DOUBLE, method DOUBLE) -> LIST(DOUBLE)`
 
 两样本 Kolmogorov-Smirnov 检验。返回 `[D 统计量, p 值]`。
 
@@ -100,7 +100,7 @@ SELECT sr_ks_onesample([1.0, 2.0, 3.0, 4.0], 'normal', [2.5, 1.0], 4.0, 1.0)
 
 ## sr_mannwhitneyu(sample1, sample2, alternative, method)
 
-**签名**：`sr_mannwhitneyu(sample1 LIST(DOUBLE), sample2 LIST(DOUBLE), alternative DOUBLE, method DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_mannwhitneyu(sample1 DOUBLE[], sample2 DOUBLE[], alternative DOUBLE, method DOUBLE) -> LIST(DOUBLE)`
 
 Mann-Whitney U 检验。返回 `[U 统计量, p 值]`。
 
@@ -114,7 +114,7 @@ SELECT sr_mannwhitneyu([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], 2.0, 2.0)
 
 ## sr_skewtest(sample, alternative, nan_policy)
 
-**签名**：`sr_skewtest(sample LIST(DOUBLE), alternative DOUBLE, nan_policy DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_skewtest(sample DOUBLE[], alternative DOUBLE, nan_policy DOUBLE) -> LIST(DOUBLE)`
 
 偏度 z 检验。返回 `[z 统计量, p 值]`。
 
@@ -128,7 +128,7 @@ SELECT sr_skewtest([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0], 1.0, 1.0)
 
 ## sr_anderson_darling(sample, distribution, params)
 
-**签名**：`sr_anderson_darling(sample LIST(DOUBLE), distribution VARCHAR, params LIST(DOUBLE)) -> LIST(DOUBLE)`
+**签名**：`sr_anderson_darling(sample DOUBLE[], distribution VARCHAR, params DOUBLE[]) -> LIST(DOUBLE)`
 
 对指定分布的 Anderson-Darling 拟合优度检验。返回 `[A², 5% 临界值]`。
 

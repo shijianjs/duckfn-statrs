@@ -7,8 +7,8 @@ description: Bernoulli, binomial, negative binomial and geometric — pmf, ln_pm
 # Bernoulli and binomial trials
 
 These four distributions all model independent success/failure trials. Integer-valued slots
-(`x`, trial counts, success counts) take **whole-number DOUBLE** literals like `10.0`, not `10`
-or `3.5` — a non-integer is a query error, never a silent round.
+(`x`, trial counts, success counts) take **UBIGINT** — write `10`, not `10.0`; a
+non-integer literal has no matching signature, so the query fails to bind.
 
 ## Bernoulli
 
@@ -16,36 +16,36 @@ Parameters: `p` — success probability, must be in [0, 1]. Support: `{0, 1}`.
 
 ### sr_bernoulli_pmf(x, p)
 
-**Signature**: `sr_bernoulli_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_bernoulli_pmf(x UBIGINT, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_bernoulli_pmf(1.0, 0.7)
+SELECT sr_bernoulli_pmf(1, 0.7)
 -- 0.7
 ```
 
 ### sr_bernoulli_ln_pmf(x, p)
 
-**Signature**: `sr_bernoulli_ln_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_bernoulli_ln_pmf(x UBIGINT, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_bernoulli_ln_pmf(1.0, 0.7)
+SELECT sr_bernoulli_ln_pmf(1, 0.7)
 ```
 
 ### sr_bernoulli_cdf(x, p)
 
-**Signature**: `sr_bernoulli_cdf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_bernoulli_cdf(x UBIGINT, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_bernoulli_cdf(0.0, 0.7)
+SELECT sr_bernoulli_cdf(0, 0.7)
 -- 0.30000000000000004
 ```
 
 ### sr_bernoulli_sf(x, p)
 
-**Signature**: `sr_bernoulli_sf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_bernoulli_sf(x UBIGINT, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_bernoulli_sf(0.0, 0.7)
+SELECT sr_bernoulli_sf(0, 0.7)
 -- 0.7
 ```
 
@@ -159,148 +159,148 @@ SELECT sr_bernoulli_variance(0.7)
 
 ## Binomial
 
-Parameters: `p` (success probability), `n` (number of trials, whole-number DOUBLE).
+Parameters: `p` (success probability), `n` (number of trials, UBIGINT).
 
 ### sr_binomial_pmf(x, p, n)
 
-**Signature**: `sr_binomial_pmf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_pmf(x UBIGINT, p DOUBLE, n UBIGINT) -> DOUBLE`
 
 Probability mass `P(X = x)`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_pmf(3.0, 0.5, 10.0)::DECIMAL(12,8)
+SELECT sr_binomial_pmf(3, 0.5, 10)::DECIMAL(12,8)
 -- 0.11718750
 ```
 
 ### sr_binomial_ln_pmf(x, p, n)
 
-**Signature**: `sr_binomial_ln_pmf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_ln_pmf(x UBIGINT, p DOUBLE, n UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_ln_pmf(3.0, 0.5, 10.0)
+SELECT sr_binomial_ln_pmf(3, 0.5, 10)
 ```
 
 ### sr_binomial_cdf(x, p, n)
 
-**Signature**: `sr_binomial_cdf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_cdf(x UBIGINT, p DOUBLE, n UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_cdf(3.0, 0.5, 10.0)
+SELECT sr_binomial_cdf(3, 0.5, 10)
 ```
 
 ### sr_binomial_sf(x, p, n)
 
-**Signature**: `sr_binomial_sf(x DOUBLE, p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_sf(x UBIGINT, p DOUBLE, n UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_sf(3.0, 0.5, 10.0)
+SELECT sr_binomial_sf(3, 0.5, 10)
 ```
 
 ### sr_binomial_quantile(p, prob, n)
 
-**Signature**: `sr_binomial_quantile(p DOUBLE, prob DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_quantile(p DOUBLE, prob DOUBLE, n UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_quantile(0.5, 0.5, 10.0)
+SELECT sr_binomial_quantile(0.5, 0.5, 10)
 -- 5.0
 ```
 
 ### sr_binomial_entropy(p, n)
 
-**Signature**: `sr_binomial_entropy(p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_entropy(p DOUBLE, n UBIGINT) -> DOUBLE`
 
 Binomial entropy.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_entropy(0.5, 10.0)
+SELECT sr_binomial_entropy(0.5, 10)
 -- 1.8759536052468009
 ```
 
 ### sr_binomial_max(p, n)
 
-**Signature**: `sr_binomial_max(p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_max(p DOUBLE, n UBIGINT) -> DOUBLE`
 
 Binomial maximum of the support (n).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_max(0.5, 10.0)
+SELECT sr_binomial_max(0.5, 10)
 -- 10.0
 ```
 
 ### sr_binomial_mean(p, n)
 
-**Signature**: `sr_binomial_mean(p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_mean(p DOUBLE, n UBIGINT) -> DOUBLE`
 
 Binomial mean.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_mean(0.5, 10.0)
+SELECT sr_binomial_mean(0.5, 10)
 -- 5.0
 ```
 
 ### sr_binomial_median(p, n)
 
-**Signature**: `sr_binomial_median(p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_median(p DOUBLE, n UBIGINT) -> DOUBLE`
 
 Binomial median.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_median(0.5, 10.0)
+SELECT sr_binomial_median(0.5, 10)
 -- 5.0
 ```
 
 ### sr_binomial_min(p, n)
 
-**Signature**: `sr_binomial_min(p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_min(p DOUBLE, n UBIGINT) -> DOUBLE`
 
 Binomial minimum of the support (0).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_min(0.5, 10.0)
+SELECT sr_binomial_min(0.5, 10)
 -- 0.0
 ```
 
 ### sr_binomial_mode(p, n)
 
-**Signature**: `sr_binomial_mode(p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_mode(p DOUBLE, n UBIGINT) -> DOUBLE`
 
 Binomial mode.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_mode(0.5, 10.0)
+SELECT sr_binomial_mode(0.5, 10)
 -- 5.0
 ```
 
 ### sr_binomial_skewness(p, n)
 
-**Signature**: `sr_binomial_skewness(p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_skewness(p DOUBLE, n UBIGINT) -> DOUBLE`
 
 Binomial skewness.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_skewness(0.5, 10.0)
+SELECT sr_binomial_skewness(0.5, 10)
 -- 0.0
 ```
 
 ### sr_binomial_std_dev(p, n)
 
-**Signature**: `sr_binomial_std_dev(p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_std_dev(p DOUBLE, n UBIGINT) -> DOUBLE`
 
 Binomial standard deviation.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_std_dev(0.5, 10.0)
+SELECT sr_binomial_std_dev(0.5, 10)
 -- 1.5811388300841898
 ```
 
 ### sr_binomial_variance(p, n)
 
-**Signature**: `sr_binomial_variance(p DOUBLE, n DOUBLE) -> DOUBLE`
+**Signature**: `sr_binomial_variance(p DOUBLE, n UBIGINT) -> DOUBLE`
 
 Binomial variance.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_variance(0.5, 10.0)
+SELECT sr_binomial_variance(0.5, 10)
 -- 2.5
 ```
 
@@ -311,35 +311,35 @@ Support: number of failures before the r-th success.
 
 ### sr_negative_binomial_pmf(x, r, p)
 
-**Signature**: `sr_negative_binomial_pmf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_negative_binomial_pmf(x UBIGINT, r DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_negative_binomial_pmf(3.0, 2.0, 0.5)::DECIMAL(12,8)
+SELECT sr_negative_binomial_pmf(3, 2.0, 0.5)::DECIMAL(12,8)
 -- 0.12500000
 ```
 
 ### sr_negative_binomial_ln_pmf(x, r, p)
 
-**Signature**: `sr_negative_binomial_ln_pmf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_negative_binomial_ln_pmf(x UBIGINT, r DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_negative_binomial_ln_pmf(3.0, 2.0, 0.5)
+SELECT sr_negative_binomial_ln_pmf(3, 2.0, 0.5)
 ```
 
 ### sr_negative_binomial_cdf(x, r, p)
 
-**Signature**: `sr_negative_binomial_cdf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_negative_binomial_cdf(x UBIGINT, r DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_negative_binomial_cdf(3.0, 2.0, 0.5)
+SELECT sr_negative_binomial_cdf(3, 2.0, 0.5)
 ```
 
 ### sr_negative_binomial_sf(x, r, p)
 
-**Signature**: `sr_negative_binomial_sf(x DOUBLE, r DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_negative_binomial_sf(x UBIGINT, r DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_negative_binomial_sf(3.0, 2.0, 0.5)
+SELECT sr_negative_binomial_sf(3, 2.0, 0.5)
 ```
 
 ### sr_negative_binomial_quantile(p, r, prob)
@@ -445,36 +445,36 @@ trials until the first success).
 
 ### sr_geometric_pmf(x, p)
 
-**Signature**: `sr_geometric_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_geometric_pmf(x UBIGINT, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_geometric_pmf(2.0, 0.5)
+SELECT sr_geometric_pmf(2, 0.5)
 -- 0.25
 ```
 
 ### sr_geometric_ln_pmf(x, p)
 
-**Signature**: `sr_geometric_ln_pmf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_geometric_ln_pmf(x UBIGINT, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_geometric_ln_pmf(2.0, 0.5)
+SELECT sr_geometric_ln_pmf(2, 0.5)
 ```
 
 ### sr_geometric_cdf(x, p)
 
-**Signature**: `sr_geometric_cdf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_geometric_cdf(x UBIGINT, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_geometric_cdf(1.0, 0.5)
+SELECT sr_geometric_cdf(1, 0.5)
 -- 0.5
 ```
 
 ### sr_geometric_sf(x, p)
 
-**Signature**: `sr_geometric_sf(x DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_geometric_sf(x UBIGINT, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_geometric_sf(1.0, 0.5)::DECIMAL(12,8)
+SELECT sr_geometric_sf(1, 0.5)::DECIMAL(12,8)
 -- 0.50000000
 ```
 
@@ -588,12 +588,12 @@ SELECT sr_geometric_variance(0.5)
 ## Errors and NULL
 
 ```sql {"type":"duckfn","expect":"error"}
-SELECT sr_binomial_pmf(2.5, 0.5, 10.0)
+SELECT sr_binomial_pmf(2.5, 0.5, 10)
 -- error: expected a non-negative whole number, got 2.5
 ```
 
 ```sql {"type":"duckfn","show":"value"}
 -- NULL input is short-circuited to NULL:
-SELECT sr_binomial_pmf(NULL, 0.5, 10.0)
+SELECT sr_binomial_pmf(NULL, 0.5, 10)
 -- NULL
 ```

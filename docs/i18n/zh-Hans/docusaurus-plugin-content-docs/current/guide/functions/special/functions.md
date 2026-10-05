@@ -209,56 +209,56 @@ SELECT sr_inv_beta_regularized(2.0, 3.0, 0.5)::DECIMAL(12,8)
 
 ### sr_factorial(n)
 
-**签名**：`sr_factorial(n DOUBLE) -> DOUBLE`
+**签名**：`sr_factorial(n UBIGINT) -> DOUBLE`
 
-阶乘 `n!`。`n` 必须是整数值 DOUBLE。
+阶乘 `n!`。`n` 是 UBIGINT。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_factorial(10.0)
+SELECT sr_factorial(10)
 -- 3628800.0
 ```
 
 ### sr_ln_factorial(n)
 
-**签名**：`sr_ln_factorial(n DOUBLE) -> DOUBLE`
+**签名**：`sr_ln_factorial(n UBIGINT) -> DOUBLE`
 
 `n!` 的自然对数。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_ln_factorial(10.0)::DECIMAL(12,8)
+SELECT sr_ln_factorial(10)::DECIMAL(12,8)
 -- 15.10441257
 ```
 
 ### sr_choose(n, k)
 
-**签名**：`sr_choose(n DOUBLE, k DOUBLE) -> DOUBLE`
+**签名**：`sr_choose(n UBIGINT, k UBIGINT) -> DOUBLE`
 
-二项系数 `C(n, k)`。两个参数都必须是整数值 DOUBLE。
+二项系数 `C(n, k)`。两个参数都必须是 UBIGINT。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_choose(10.0, 3.0)
+SELECT sr_choose(10, 3)
 -- 120.0
 ```
 
 ### sr_ln_choose(n, k)
 
-**签名**：`sr_ln_choose(n DOUBLE, k DOUBLE) -> DOUBLE`
+**签名**：`sr_ln_choose(n UBIGINT, k UBIGINT) -> DOUBLE`
 
 二项系数的自然对数。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT exp(sr_ln_choose(10.0, 3.0))::DECIMAL(12,8)
+SELECT exp(sr_ln_choose(10, 3))::DECIMAL(12,8)
 -- 120.00000000
 ```
 
 ### sr_multinomial_coefficient(total, counts)
 
-**签名**：`sr_multinomial_coefficient(total DOUBLE, counts BIGINT[]) -> DOUBLE`
+**签名**：`sr_multinomial_coefficient(total UBIGINT, counts UBIGINT[]) -> DOUBLE`
 
 多项系数 n! / (n1! n2! …)，n 为整数、计数为 LIST(BIGINT)；计数之和不等于 n 时返回 NULL。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_multinomial_coefficient(5.0, [2, 2, 1])
+SELECT sr_multinomial_coefficient(5, [2::UBIGINT, 2::UBIGINT, 1::UBIGINT])
 -- 30.0
 ```
 
@@ -266,23 +266,23 @@ SELECT sr_multinomial_coefficient(5.0, [2, 2, 1])
 
 ### sr_harmonic(n)
 
-**签名**：`sr_harmonic(n DOUBLE) -> DOUBLE`
+**签名**：`sr_harmonic(n UBIGINT) -> DOUBLE`
 
 调和数 `H(n) = sum_{k=1..n} 1/k`。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_harmonic(10.0)::DECIMAL(12,8)
+SELECT sr_harmonic(10)::DECIMAL(12,8)
 -- 2.92896825
 ```
 
 ### sr_generalized_harmonic(n, m)
 
-**签名**：`sr_generalized_harmonic(n DOUBLE, m DOUBLE) -> DOUBLE`
+**签名**：`sr_generalized_harmonic(n UBIGINT, m DOUBLE) -> DOUBLE`
 
 广义调和数 `sum_{k=1..n} 1/k^m`。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_generalized_harmonic(10.0, 2.0)::DECIMAL(12,8)
+SELECT sr_generalized_harmonic(10, 2.0)::DECIMAL(12,8)
 -- 1.54976773
 ```
 
@@ -317,14 +317,14 @@ SELECT sr_logit(1.2)
 
 ## 指数积分
 
-### sr_exponential_integral(n, x)
+### sr_exponential_integral(x, n)
 
-**签名**：`sr_exponential_integral(n DOUBLE, x DOUBLE) -> DOUBLE`
+**签名**：`sr_exponential_integral(x DOUBLE, n UBIGINT) -> DOUBLE`
 
 指数积分 `E_n(x)`，要求 `n >= 0` 且 `x >= 0`。statrs 算不出的地方给 NULL。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_exponential_integral(1.0, 0.0)
+SELECT sr_exponential_integral(0.0, 1)
 -- inf
 ```
 
@@ -332,7 +332,7 @@ SELECT sr_exponential_integral(1.0, 0.0)
 
 ### sr_polynomial(x, coefficients)
 
-**签名**：`sr_polynomial(x DOUBLE, coefficients LIST(DOUBLE)) -> DOUBLE`
+**签名**：`sr_polynomial(x DOUBLE, coefficients DOUBLE[]) -> DOUBLE`
 
 求 `sum coeff[i] * x^i`，`coefficients` 按幂次升序。
 

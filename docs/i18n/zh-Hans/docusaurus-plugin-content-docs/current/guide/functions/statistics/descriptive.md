@@ -13,7 +13,7 @@ NULL 行自动跳过。
 
 ### sr_mean(x)
 
-**签名**：`sr_mean(x DOUBLE) -> DOUBLE`
+**签名**：`sr_mean(x DOUBLE[]) -> DOUBLE`
 
 算术平均。所有行都是 NULL 时返回 NULL。
 
@@ -24,7 +24,7 @@ SELECT sr_mean(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_geometric_mean(x)
 
-**签名**：`sr_geometric_mean(x DOUBLE) -> DOUBLE`
+**签名**：`sr_geometric_mean(x DOUBLE[]) -> DOUBLE`
 
 几何平均。任一值为负时返回 NULL。
 
@@ -35,7 +35,7 @@ SELECT sr_geometric_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)
 
 ### sr_harmonic_mean(x)
 
-**签名**：`sr_harmonic_mean(x DOUBLE) -> DOUBLE`
+**签名**：`sr_harmonic_mean(x DOUBLE[]) -> DOUBLE`
 
 调和平均。任一值为负时返回 NULL。
 
@@ -46,7 +46,7 @@ SELECT sr_harmonic_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)
 
 ### sr_quadratic_mean(x)
 
-**签名**：`sr_quadratic_mean(x DOUBLE) -> DOUBLE`
+**签名**：`sr_quadratic_mean(x DOUBLE[]) -> DOUBLE`
 
 均方根（二次均值）。
 
@@ -59,7 +59,7 @@ SELECT sr_quadratic_mean(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_median(x)
 
-**签名**：`sr_median(x DOUBLE) -> DOUBLE`
+**签名**：`sr_median(x DOUBLE[]) -> DOUBLE`
 
 中位数。偶数个值时取中间两个的平均。
 
@@ -70,7 +70,7 @@ SELECT sr_median(x) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)
 
 ### sr_quantile(x, tau)
 
-**签名**：`sr_quantile(x DOUBLE, tau DOUBLE) -> DOUBLE`
+**签名**：`sr_quantile(x DOUBLE[], tau DOUBLE) -> DOUBLE`
 
 tau 分位数。`tau` 必须在 [0, 1]，否则返回 NULL。
 
@@ -81,29 +81,29 @@ SELECT sr_quantile(x, 0.5) FROM (VALUES (-1.0), (5.0), (0.0), (-3.0), (10.0), (-
 
 ### sr_order_statistic(x, k)
 
-**签名**：`sr_order_statistic(x DOUBLE, k DOUBLE) -> DOUBLE`
+**签名**：`sr_order_statistic(x DOUBLE[], k UBIGINT) -> DOUBLE`
 
-第 k 小的值（1 起）。k 超出数据范围时返回 NULL。
+第 k 小的值（1 起）。k 超出数据范围时返回 NULL。聚合的常量参数需要显式 `::UBIGINT` 转换。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_order_statistic(x, 2.0) FROM (VALUES (3.0), (1.0), (2.0)) t(x)
+SELECT sr_order_statistic(x, 2::UBIGINT) FROM (VALUES (3.0), (1.0), (2.0)) t(x)
 -- 2.0
 ```
 
 ### sr_percentile(x, p)
 
-**签名**：`sr_percentile(x DOUBLE, p DOUBLE) -> DOUBLE`
+**签名**：`sr_percentile(x DOUBLE[], p UBIGINT) -> DOUBLE`
 
-第 p 百分位。`p` 必须是 0–100 的整数值 DOUBLE。
+第 p 百分位。`p` 必须是 0–100 的 UBIGINT；聚合的常量参数需要显式 `::UBIGINT` 转换。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_percentile(x, 50.0) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)
+SELECT sr_percentile(x, 50::UBIGINT) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)
 -- 2.5
 ```
 
 ### sr_lower_quartile(x)
 
-**签名**：`sr_lower_quartile(x DOUBLE) -> DOUBLE`
+**签名**：`sr_lower_quartile(x DOUBLE[]) -> DOUBLE`
 
 下四分位 Q1。
 
@@ -114,7 +114,7 @@ SELECT sr_lower_quartile(x) FROM (VALUES (2.0), (1.0), (3.0), (4.0)) t(x)
 
 ### sr_upper_quartile(x)
 
-**签名**：`sr_upper_quartile(x DOUBLE) -> DOUBLE`
+**签名**：`sr_upper_quartile(x DOUBLE[]) -> DOUBLE`
 
 上四分位 Q3。
 
@@ -125,7 +125,7 @@ SELECT sr_upper_quartile(x) FROM (VALUES (2.0), (1.0), (3.0), (4.0)) t(x)
 
 ### sr_interquartile_range(x)
 
-**签名**：`sr_interquartile_range(x DOUBLE) -> DOUBLE`
+**签名**：`sr_interquartile_range(x DOUBLE[]) -> DOUBLE`
 
 四分位距 IQR = 上四分位 - 下四分位。
 
@@ -136,7 +136,7 @@ SELECT sr_interquartile_range(x) FROM (VALUES (2.0), (1.0), (3.0), (4.0)) t(x)
 
 ### sr_ranks(x, method)
 
-**签名**：`sr_ranks(x DOUBLE, method DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_ranks(x DOUBLE[], method DOUBLE) -> LIST(DOUBLE)`
 
 每行的秩。method：1=average 2=min 3=max 4=first。
 
@@ -149,7 +149,7 @@ SELECT sr_ranks(x, 1.0) FROM (VALUES (1.0), (3.0), (2.0), (2.0)) t(x)
 
 ### sr_variance(x)
 
-**签名**：`sr_variance(x DOUBLE) -> DOUBLE`
+**签名**：`sr_variance(x DOUBLE[]) -> DOUBLE`
 
 样本方差（Bessel 校正）。少于两行非 NULL 时返回 NULL。
 
@@ -160,7 +160,7 @@ SELECT sr_variance(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_std_dev(x)
 
-**签名**：`sr_std_dev(x DOUBLE) -> DOUBLE`
+**签名**：`sr_std_dev(x DOUBLE[]) -> DOUBLE`
 
 样本标准差。少于两行非 NULL 时返回 NULL。
 
@@ -171,7 +171,7 @@ SELECT sr_std_dev(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_population_variance(x)
 
-**签名**：`sr_population_variance(x DOUBLE) -> DOUBLE`
+**签名**：`sr_population_variance(x DOUBLE[]) -> DOUBLE`
 
 总体方差（除以 N，而非 N-1）。
 
@@ -182,7 +182,7 @@ SELECT sr_population_variance(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_population_std_dev(x)
 
-**签名**：`sr_population_std_dev(x DOUBLE) -> DOUBLE`
+**签名**：`sr_population_std_dev(x DOUBLE[]) -> DOUBLE`
 
 总体标准差。
 
@@ -193,7 +193,7 @@ SELECT sr_population_std_dev(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_skewness(x)
 
-**签名**：`sr_skewness(x DOUBLE) -> DOUBLE`
+**签名**：`sr_skewness(x DOUBLE[]) -> DOUBLE`
 
 样本偏度（statrs 的 `OnlineMoments<3>`：三阶中心矩除以总体二阶矩的 3/2 次幂）。
 非 NULL 行少于两个时为 NULL；常数列（零方差）按 statrs 的约定给 0。
@@ -208,7 +208,7 @@ FROM (VALUES (2.0), (4.0), (4.0), (4.0), (5.0), (5.0), (7.0), (9.0)) t(x)
 
 ### sr_min(x)
 
-**签名**：`sr_min(x DOUBLE) -> DOUBLE`
+**签名**：`sr_min(x DOUBLE[]) -> DOUBLE`
 
 最小值。
 
@@ -219,7 +219,7 @@ SELECT sr_min(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_max(x)
 
-**签名**：`sr_max(x DOUBLE) -> DOUBLE`
+**签名**：`sr_max(x DOUBLE[]) -> DOUBLE`
 
 最大值。
 
@@ -230,7 +230,7 @@ SELECT sr_max(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_abs_min(x)
 
-**签名**：`sr_abs_min(x DOUBLE) -> DOUBLE`
+**签名**：`sr_abs_min(x DOUBLE[]) -> DOUBLE`
 
 绝对值最小。
 
@@ -241,7 +241,7 @@ SELECT sr_abs_min(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_abs_max(x)
 
-**签名**：`sr_abs_max(x DOUBLE) -> DOUBLE`
+**签名**：`sr_abs_max(x DOUBLE[]) -> DOUBLE`
 
 绝对值最大。
 
@@ -254,7 +254,7 @@ SELECT sr_abs_max(x) FROM (VALUES (0.0), (3.0), (-8.0)) t(x)
 
 ### sr_covariance(x, y)
 
-**签名**：`sr_covariance(x DOUBLE, y DOUBLE) -> DOUBLE`
+**签名**：`sr_covariance(x DOUBLE[], y DOUBLE[]) -> DOUBLE`
 
 两列的样本协方差（Bessel 校正）。任一列为 NULL 的行整对跳过。少于两对完整非 NULL 时返回 NULL。
 
@@ -265,7 +265,7 @@ SELECT sr_covariance(x, y) FROM (VALUES (0.0, -5.0), (3.0, 4.0), (-2.0, 10.0)) t
 
 ### sr_population_covariance(x, y)
 
-**签名**：`sr_population_covariance(x DOUBLE, y DOUBLE) -> DOUBLE`
+**签名**：`sr_population_covariance(x DOUBLE[], y DOUBLE[]) -> DOUBLE`
 
 总体协方差（除以 N）。没有完整非 NULL 行时返回 NULL。
 

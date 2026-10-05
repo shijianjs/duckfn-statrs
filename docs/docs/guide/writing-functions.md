@@ -26,7 +26,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | Statistics (`statistics/`) | aggregate | one/two DOUBLE columns -> DOUBLE | means, order statistics (median / quantile / percentile / ranks), variance families, covariance; `auto_collect`, NULL rows skipped, undefined statistics -> NULL. |
 | Continuous distributions (`distribution/`) | scalar | DOUBLE in -> DOUBLE out | 20 distributions × `sr_<dist>_pdf / ln_pdf / cdf / sf / quantile`; invalid parameters fail the query. |
-| Discrete distributions (`distribution/`) | scalar | DOUBLE in -> DOUBLE out | 7 distributions × `pmf / ln_pmf / cdf / sf / quantile`; integer slots take whole-number DOUBLE literals (validated, never rounded). |
+| Discrete distributions (`distribution/`) | scalar | DOUBLE in -> DOUBLE out | 7 distributions × `pmf / ln_pmf / cdf / sf / quantile`; integer slots take UBIGINT/BIGINT arguments. |
 | Special functions (`function.rs`) | scalar | DOUBLE in -> DOUBLE out | erf / gamma / beta families, factorials and binomial coefficients, harmonic numbers, logistic and logit. |
 | Constants (`consts.rs`) | scalar | () -> DOUBLE | statrs::consts as zero-argument functions. |
 

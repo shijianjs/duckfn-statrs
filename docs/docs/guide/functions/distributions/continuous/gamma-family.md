@@ -423,261 +423,261 @@ Parameter: `freedom` (degrees of freedom, > 0). This is the sqrt of a chi-square
 
 ### sr_chi_pdf(x, freedom)
 
-**Signature**: `sr_chi_pdf(x DOUBLE, freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_pdf(x DOUBLE, freedom UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_pdf(1.0, 2.0)
+SELECT sr_chi_pdf(1.0, 2)
 ```
 
 ### sr_chi_ln_pdf(x, freedom)
 
-**Signature**: `sr_chi_ln_pdf(x DOUBLE, freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_ln_pdf(x DOUBLE, freedom UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_ln_pdf(1.0, 2.0)
+SELECT sr_chi_ln_pdf(1.0, 2)
 ```
 
 ### sr_chi_cdf(x, freedom)
 
-**Signature**: `sr_chi_cdf(x DOUBLE, freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_cdf(x DOUBLE, freedom UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_cdf(1.0, 2.0)
+SELECT sr_chi_cdf(1.0, 2)
 ```
 
 ### sr_chi_sf(x, freedom)
 
-**Signature**: `sr_chi_sf(x DOUBLE, freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_sf(x DOUBLE, freedom UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_sf(1.0, 2.0)
+SELECT sr_chi_sf(1.0, 2)
 ```
 
 ### sr_chi_quantile(p, freedom)
 
-**Signature**: `sr_chi_quantile(p DOUBLE, freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_quantile(p DOUBLE, freedom UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_quantile(0.5, 2.0)
+SELECT sr_chi_quantile(0.5, 2)
 ```
 
 ### sr_chi_entropy(freedom)
 
-**Signature**: `sr_chi_entropy(freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_entropy(freedom UBIGINT) -> DOUBLE`
 
-Chi distribution differential entropy, given whole-number freedom.
+Chi distribution differential entropy, given UBIGINT freedom.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_entropy(2.0)
+SELECT sr_chi_entropy(2)
 -- 0.9420342421707942
 ```
 
 ### sr_chi_max(freedom)
 
-**Signature**: `sr_chi_max(freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_max(freedom UBIGINT) -> DOUBLE`
 
 Chi distribution maximum of the support (positive infinity).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_max(2.0)
+SELECT sr_chi_max(2)
 -- inf
 ```
 
 ### sr_chi_mean(freedom)
 
-**Signature**: `sr_chi_mean(freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_mean(freedom UBIGINT) -> DOUBLE`
 
-Chi distribution mean, given whole-number freedom.
+Chi distribution mean, given UBIGINT freedom.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_mean(2.0)
+SELECT sr_chi_mean(2)
 -- 1.2533141373155032
 ```
 
 ### sr_chi_min(freedom)
 
-**Signature**: `sr_chi_min(freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_min(freedom UBIGINT) -> DOUBLE`
 
 Chi distribution minimum of the support (0).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_min(2.0)
+SELECT sr_chi_min(2)
 -- 0.0
 ```
 
 ### sr_chi_mode(freedom)
 
-**Signature**: `sr_chi_mode(freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_mode(freedom UBIGINT) -> DOUBLE`
 
-Chi distribution mode, given whole-number freedom.
+Chi distribution mode, given UBIGINT freedom.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_mode(2.0)
+SELECT sr_chi_mode(2)
 -- 1.0
 ```
 
 ### sr_chi_skewness(freedom)
 
-**Signature**: `sr_chi_skewness(freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_skewness(freedom UBIGINT) -> DOUBLE`
 
-Chi distribution skewness, given whole-number freedom.
+Chi distribution skewness, given UBIGINT freedom.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_skewness(2.0)
+SELECT sr_chi_skewness(2)
 -- 0.6311106578190224
 ```
 
 ### sr_chi_std_dev(freedom)
 
-**Signature**: `sr_chi_std_dev(freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_std_dev(freedom UBIGINT) -> DOUBLE`
 
-Chi distribution standard deviation, given whole-number freedom.
+Chi distribution standard deviation, given UBIGINT freedom.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_std_dev(2.0)
+SELECT sr_chi_std_dev(2)
 -- 0.6551363775620278
 ```
 
 ### sr_chi_variance(freedom)
 
-**Signature**: `sr_chi_variance(freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_chi_variance(freedom UBIGINT) -> DOUBLE`
 
-Chi distribution variance, given whole-number freedom.
+Chi distribution variance, given UBIGINT freedom.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_variance(2.0)
+SELECT sr_chi_variance(2)
 -- 0.4292036732050959
 ```
 
 ## Erlang
 
-Parameters: `shape` (whole-number DOUBLE > 0), `rate` (> 0).
+Parameters: `shape` (UBIGINT > 0), `rate` (> 0).
 
 ### sr_erlang_pdf(x, shape, rate)
 
-**Signature**: `sr_erlang_pdf(x DOUBLE, shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_pdf(x DOUBLE, shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_pdf(1.0, 2.0, 2.0)
+SELECT sr_erlang_pdf(1.0, 2, 2.0)
 ```
 
 ### sr_erlang_ln_pdf(x, shape, rate)
 
-**Signature**: `sr_erlang_ln_pdf(x DOUBLE, shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_ln_pdf(x DOUBLE, shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_ln_pdf(1.0, 2.0, 2.0)
+SELECT sr_erlang_ln_pdf(1.0, 2, 2.0)
 ```
 
 ### sr_erlang_cdf(x, shape, rate)
 
-**Signature**: `sr_erlang_cdf(x DOUBLE, shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_cdf(x DOUBLE, shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_cdf(1.0, 2.0, 2.0)
+SELECT sr_erlang_cdf(1.0, 2, 2.0)
 ```
 
 ### sr_erlang_sf(x, shape, rate)
 
-**Signature**: `sr_erlang_sf(x DOUBLE, shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_sf(x DOUBLE, shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_sf(1.0, 2.0, 2.0)
+SELECT sr_erlang_sf(1.0, 2, 2.0)
 ```
 
 ### sr_erlang_quantile(p, shape, rate)
 
-**Signature**: `sr_erlang_quantile(p DOUBLE, shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_quantile(p DOUBLE, shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_quantile(0.5, 2.0, 2.0)
+SELECT sr_erlang_quantile(0.5, 2, 2.0)
 ```
 
 ### sr_erlang_entropy(shape, rate)
 
-**Signature**: `sr_erlang_entropy(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_entropy(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
-Erlang differential entropy (whole-number shape, rate).
+Erlang differential entropy (UBIGINT shape, DOUBLE rate).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_entropy(2.0, 1.0)
+SELECT sr_erlang_entropy(2, 1.0)
 -- 1.5772156649015352
 ```
 
 ### sr_erlang_max(shape, rate)
 
-**Signature**: `sr_erlang_max(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_max(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 Erlang maximum of the support (positive infinity).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_max(2.0, 1.0)
+SELECT sr_erlang_max(2, 1.0)
 -- inf
 ```
 
 ### sr_erlang_mean(shape, rate)
 
-**Signature**: `sr_erlang_mean(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_mean(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
-Erlang mean (whole-number shape, rate).
+Erlang mean (UBIGINT shape, DOUBLE rate).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_mean(2.0, 1.0)
+SELECT sr_erlang_mean(2, 1.0)
 -- 2.0
 ```
 
 ### sr_erlang_min(shape, rate)
 
-**Signature**: `sr_erlang_min(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_min(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 Erlang minimum of the support (0).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_min(2.0, 1.0)
+SELECT sr_erlang_min(2, 1.0)
 -- 0.0
 ```
 
 ### sr_erlang_mode(shape, rate)
 
-**Signature**: `sr_erlang_mode(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_mode(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
-Erlang mode (whole-number shape, rate).
+Erlang mode (UBIGINT shape, DOUBLE rate).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_mode(2.0, 1.0)
+SELECT sr_erlang_mode(2, 1.0)
 -- 1.0
 ```
 
 ### sr_erlang_skewness(shape, rate)
 
-**Signature**: `sr_erlang_skewness(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_skewness(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
-Erlang skewness (whole-number shape, rate).
+Erlang skewness (UBIGINT shape, DOUBLE rate).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_skewness(2.0, 1.0)
+SELECT sr_erlang_skewness(2, 1.0)
 -- 1.414213562373095
 ```
 
 ### sr_erlang_std_dev(shape, rate)
 
-**Signature**: `sr_erlang_std_dev(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_std_dev(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
-Erlang standard deviation (whole-number shape, rate).
+Erlang standard deviation (UBIGINT shape, DOUBLE rate).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_std_dev(2.0, 1.0)
+SELECT sr_erlang_std_dev(2, 1.0)
 -- 1.4142135623730951
 ```
 
 ### sr_erlang_variance(shape, rate)
 
-**Signature**: `sr_erlang_variance(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**Signature**: `sr_erlang_variance(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
-Erlang variance (whole-number shape, rate).
+Erlang variance (UBIGINT shape, DOUBLE rate).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_variance(2.0, 1.0)
+SELECT sr_erlang_variance(2, 1.0)
 -- 2.0
 ```
 

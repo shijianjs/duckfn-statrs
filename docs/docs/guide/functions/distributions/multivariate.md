@@ -11,7 +11,7 @@ flattened form. A 2x2 identity matrix is written `[1.0, 0.0, 0.0, 1.0]`.
 
 ## sr_multivariate_normal_pdf(x, mean, covariance)
 
-**Signature**: `sr_multivariate_normal_pdf(x LIST(DOUBLE), mean LIST(DOUBLE), covariance LIST(DOUBLE)) -> DOUBLE`
+**Signature**: `sr_multivariate_normal_pdf(x DOUBLE[], mean DOUBLE[], covariance DOUBLE[]) -> DOUBLE`
 
 Probability density of `x` under a multivariate normal distribution with the given mean vector
 and covariance matrix.
@@ -28,7 +28,7 @@ The value is `1 / (2π)` — the density of a standard bivariate normal at the o
 
 ### sr_multivariate_normal_ln_pdf(x, mean, cov)
 
-**Signature**: `sr_multivariate_normal_ln_pdf(x LIST(DOUBLE), mean LIST(DOUBLE), covariance LIST(DOUBLE)) -> DOUBLE`
+**Signature**: `sr_multivariate_normal_ln_pdf(x DOUBLE[], mean DOUBLE[], covariance DOUBLE[]) -> DOUBLE`
 
 Log probability density of `x` — equivalent to `ln(sr_multivariate_normal_pdf(...))` but computed
 without the intermediate exponential, so it stays finite far into the tails where the density
@@ -132,7 +132,7 @@ SELECT list_transform(sr_multivariate_normal_precision([0.0, 0.0], [2.0, 0.0, 0.
 
 ## sr_multivariate_students_t_pdf(x, location, scale, freedom)
 
-**Signature**: `sr_multivariate_students_t_pdf(x LIST(DOUBLE), location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_multivariate_students_t_pdf(x DOUBLE[], location DOUBLE[], scale DOUBLE[], freedom DOUBLE) -> DOUBLE`
 
 Density under a multivariate Student's t distribution. At `location = 0`, `scale = I` and
 symmetric `x = 0`, the density matches the multivariate normal at the origin.
@@ -144,7 +144,7 @@ SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.
 
 ### sr_multivariate_students_t_ln_pdf(x, location, scale, freedom)
 
-**Signature**: `sr_multivariate_students_t_ln_pdf(x LIST(DOUBLE), location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE) -> DOUBLE`
+**Signature**: `sr_multivariate_students_t_ln_pdf(x DOUBLE[], location DOUBLE[], scale DOUBLE[], freedom DOUBLE) -> DOUBLE`
 
 Log probability density under a multivariate Student's t distribution. As `freedom` grows the
 values converge to the multivariate normal's `ln_pdf`.
@@ -234,7 +234,7 @@ SELECT sr_multivariate_students_t_mode([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
 
 ## sr_dirichlet_pdf(x, alpha)
 
-**Signature**: `sr_dirichlet_pdf(x LIST(DOUBLE), alpha LIST(DOUBLE)) -> DOUBLE`
+**Signature**: `sr_dirichlet_pdf(x DOUBLE[], alpha DOUBLE[]) -> DOUBLE`
 
 Density of `x` on the simplex under a Dirichlet distribution with concentration vector `alpha`.
 `x` and `alpha` must have the same length.
@@ -249,7 +249,7 @@ on `{(x1, x2) : x1 + x2 = 1, xi >= 0}`.
 
 ### sr_dirichlet_ln_pdf(x, alpha)
 
-**Signature**: `sr_dirichlet_ln_pdf(x LIST(DOUBLE), alpha LIST(DOUBLE)) -> DOUBLE`
+**Signature**: `sr_dirichlet_ln_pdf(x DOUBLE[], alpha DOUBLE[]) -> DOUBLE`
 
 Log density of `x` on the simplex. Every component of `x` must lie in `(0, 1)` and the components
 must sum to 1 (within `1e-4`) — violations are statrs assertion failures, which surface as query
@@ -262,7 +262,7 @@ SELECT sr_dirichlet_ln_pdf([0.1, 0.2, 0.3, 0.4], [0.1, 0.3, 0.5, 0.8])
 
 ### sr_dirichlet_mean(alpha)
 
-**Signature**: `sr_dirichlet_mean(alpha LIST(DOUBLE)) -> DOUBLE[]`
+**Signature**: `sr_dirichlet_mean(alpha DOUBLE[]) -> DOUBLE[]`
 
 Mean vector of the Dirichlet distribution: `alpha_i / alpha_0` where `alpha_0` is the sum of the
 concentration parameters.
@@ -274,7 +274,7 @@ SELECT sr_dirichlet_mean([1.0, 2.0, 3.0, 4.0])
 
 ### sr_dirichlet_variance(alpha)
 
-**Signature**: `sr_dirichlet_variance(alpha LIST(DOUBLE)) -> DOUBLE[]`
+**Signature**: `sr_dirichlet_variance(alpha DOUBLE[]) -> DOUBLE[]`
 
 Covariance matrix of the Dirichlet distribution as a row-major flattened LIST of length
 `len(alpha)²`.
@@ -286,7 +286,7 @@ SELECT sr_dirichlet_variance([1.0, 2.0])
 
 ## sr_dirichlet_entropy(alpha)
 
-**Signature**: `sr_dirichlet_entropy(alpha LIST(DOUBLE)) -> DOUBLE`
+**Signature**: `sr_dirichlet_entropy(alpha DOUBLE[]) -> DOUBLE`
 
 Differential entropy of `Dir(alpha)`.
 
@@ -297,59 +297,59 @@ SELECT sr_dirichlet_entropy([1.0, 1.0])::DECIMAL(12,8)
 
 ## sr_multinomial_pmf(probs, trials, counts)
 
-**Signature**: `sr_multinomial_pmf(probs LIST(DOUBLE), trials DOUBLE, counts LIST(BIGINT)) -> DOUBLE`
+**Signature**: `sr_multinomial_pmf(probs DOUBLE[], trials UBIGINT, counts UBIGINT[]) -> DOUBLE`
 
 Probability mass of a count vector under a multinomial distribution.
 
 - `probs`: category probabilities (must sum to 1 in effect; statrs normalises internally)
-- `trials`: total number of trials, a whole-number DOUBLE
+- `trials`: total number of trials, a UBIGINT
 - `counts`: observations per category, `LIST(BIGINT)`
 
 The counts must sum to `trials`. A non-integer `trials` is a query error.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_multinomial_pmf([0.5, 0.5], 4.0, [2, 2])::DECIMAL(12,8)
+SELECT sr_multinomial_pmf([0.5, 0.5], 4, [2::UBIGINT, 2::UBIGINT])::DECIMAL(12,8)
 -- 0.37500000
 ```
 
 ```sql {"type":"duckfn","expect":"error"}
-SELECT sr_multinomial_pmf([0.5, 0.5], 4.5, [2, 2])
+SELECT sr_multinomial_pmf([0.5, 0.5], 4.5, [2::UBIGINT, 2::UBIGINT])
 -- error: expected a non-negative whole number, got 4.5
 ```
 
 ### sr_multinomial_ln_pmf(probs, trials, counts)
 
-**Signature**: `sr_multinomial_ln_pmf(probs LIST(DOUBLE), trials DOUBLE, counts LIST(BIGINT)) -> DOUBLE`
+**Signature**: `sr_multinomial_ln_pmf(probs DOUBLE[], trials UBIGINT, counts UBIGINT[]) -> DOUBLE`
 
 Log probability mass of a count vector. Unlike `pmf`, a count vector that does not sum to
 `trials` is not an error but a legitimate `-inf` (the log of probability 0). For large `trials`
 the log form stays finite where the mass itself would underflow.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_multinomial_ln_pmf([0.5, 0.5], 2000.0, [1000, 1000])
+SELECT sr_multinomial_ln_pmf([0.5, 0.5], 2000, [1000::UBIGINT, 1000::UBIGINT])
 -- -4.026367582410558
 ```
 
 ### sr_multinomial_mean(probs, trials)
 
-**Signature**: `sr_multinomial_mean(probs LIST(DOUBLE), trials DOUBLE) -> DOUBLE[]`
+**Signature**: `sr_multinomial_mean(probs DOUBLE[], trials UBIGINT) -> DOUBLE[]`
 
 Mean vector of the multinomial distribution: `n · p_i` per category.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_multinomial_mean([0.3, 0.7], 5.0)
+SELECT sr_multinomial_mean([0.3, 0.7], 5)
 -- [1.5, 3.5]
 ```
 
 ### sr_multinomial_variance(probs, trials)
 
-**Signature**: `sr_multinomial_variance(probs LIST(DOUBLE), trials DOUBLE) -> DOUBLE[]`
+**Signature**: `sr_multinomial_variance(probs DOUBLE[], trials UBIGINT) -> DOUBLE[]`
 
 Covariance matrix of the multinomial distribution as a row-major flattened LIST of length
 `len(probs)²`: diagonal `n · p_i · (1 − p_i)`, off-diagonal `−n · p_i · p_j`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_multinomial_variance([0.1, 0.3, 0.6], 10.0)
+SELECT sr_multinomial_variance([0.1, 0.3, 0.6], 10)
 -- [0.9, -0.3, -0.6, -0.3, 2.1, -1.8, -0.6, -1.8, 2.4]
 ```
 

@@ -53,18 +53,18 @@ SELECT len(sr_sample_chi_squared(2.0, 10))
 
 ## sr_sample_chi(freedom, k)
 
-**签名**：`sr_sample_chi(freedom DOUBLE, k BIGINT) -> LIST(DOUBLE)`
+**签名**：`sr_sample_chi(freedom UBIGINT, k BIGINT) -> LIST(DOUBLE)`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT len(sr_sample_chi(2.0, 10))
+SELECT len(sr_sample_chi(2, 10))
 ```
 
 ## sr_sample_erlang(shape, rate, k)
 
-**签名**：`sr_sample_erlang(shape DOUBLE, rate DOUBLE, k BIGINT) -> LIST(DOUBLE)`
+**签名**：`sr_sample_erlang(shape UBIGINT, rate DOUBLE, k BIGINT) -> LIST(DOUBLE)`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT len(sr_sample_erlang(2.0, 2.0, 10))
+SELECT len(sr_sample_erlang(2, 2.0, 10))
 ```
 
 ## sr_sample_exp(rate, k)

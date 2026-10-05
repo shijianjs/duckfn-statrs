@@ -422,261 +422,261 @@ SELECT sr_chi_squared_variance(2.0)
 
 ### sr_chi_pdf(x, freedom)
 
-**签名**：`sr_chi_pdf(x DOUBLE, freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_pdf(x DOUBLE, freedom UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_pdf(1.0, 2.0)
+SELECT sr_chi_pdf(1.0, 2)
 ```
 
 ### sr_chi_ln_pdf(x, freedom)
 
-**签名**：`sr_chi_ln_pdf(x DOUBLE, freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_ln_pdf(x DOUBLE, freedom UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_ln_pdf(1.0, 2.0)
+SELECT sr_chi_ln_pdf(1.0, 2)
 ```
 
 ### sr_chi_cdf(x, freedom)
 
-**签名**：`sr_chi_cdf(x DOUBLE, freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_cdf(x DOUBLE, freedom UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_cdf(1.0, 2.0)
+SELECT sr_chi_cdf(1.0, 2)
 ```
 
 ### sr_chi_sf(x, freedom)
 
-**签名**：`sr_chi_sf(x DOUBLE, freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_sf(x DOUBLE, freedom UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_sf(1.0, 2.0)
+SELECT sr_chi_sf(1.0, 2)
 ```
 
 ### sr_chi_quantile(p, freedom)
 
-**签名**：`sr_chi_quantile(p DOUBLE, freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_quantile(p DOUBLE, freedom UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_quantile(0.5, 2.0)
+SELECT sr_chi_quantile(0.5, 2)
 ```
 
 ### sr_chi_entropy(freedom)
 
-**签名**：`sr_chi_entropy(freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_entropy(freedom UBIGINT) -> DOUBLE`
 
 Chi（卡方根）的熵。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_entropy(2.0)
+SELECT sr_chi_entropy(2)
 -- 0.9420342421707942
 ```
 
 ### sr_chi_max(freedom)
 
-**签名**：`sr_chi_max(freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_max(freedom UBIGINT) -> DOUBLE`
 
 Chi（卡方根）的最大值。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_max(2.0)
+SELECT sr_chi_max(2)
 -- inf
 ```
 
 ### sr_chi_mean(freedom)
 
-**签名**：`sr_chi_mean(freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_mean(freedom UBIGINT) -> DOUBLE`
 
 Chi（卡方根）的均值。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_mean(2.0)
+SELECT sr_chi_mean(2)
 -- 1.2533141373155032
 ```
 
 ### sr_chi_min(freedom)
 
-**签名**：`sr_chi_min(freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_min(freedom UBIGINT) -> DOUBLE`
 
 Chi（卡方根）的最小值。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_min(2.0)
+SELECT sr_chi_min(2)
 -- 0.0
 ```
 
 ### sr_chi_mode(freedom)
 
-**签名**：`sr_chi_mode(freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_mode(freedom UBIGINT) -> DOUBLE`
 
 Chi（卡方根）的众数。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_mode(2.0)
+SELECT sr_chi_mode(2)
 -- 1.0
 ```
 
 ### sr_chi_skewness(freedom)
 
-**签名**：`sr_chi_skewness(freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_skewness(freedom UBIGINT) -> DOUBLE`
 
 Chi（卡方根）的偏度。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_skewness(2.0)
+SELECT sr_chi_skewness(2)
 -- 0.6311106578190224
 ```
 
 ### sr_chi_std_dev(freedom)
 
-**签名**：`sr_chi_std_dev(freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_std_dev(freedom UBIGINT) -> DOUBLE`
 
 Chi（卡方根）的标准差。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_std_dev(2.0)
+SELECT sr_chi_std_dev(2)
 -- 0.6551363775620278
 ```
 
 ### sr_chi_variance(freedom)
 
-**签名**：`sr_chi_variance(freedom DOUBLE) -> DOUBLE`
+**签名**：`sr_chi_variance(freedom UBIGINT) -> DOUBLE`
 
 Chi（卡方根）的方差。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_chi_variance(2.0)
+SELECT sr_chi_variance(2)
 -- 0.4292036732050959
 ```
 
 ## Erlang
 
-参数：`shape`（整数值 DOUBLE > 0）、`rate`（> 0）。
+参数：`shape`（UBIGINT > 0）、`rate`（> 0）。
 
 ### sr_erlang_pdf(x, shape, rate)
 
-**签名**：`sr_erlang_pdf(x DOUBLE, shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_pdf(x DOUBLE, shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_pdf(1.0, 2.0, 2.0)
+SELECT sr_erlang_pdf(1.0, 2, 2.0)
 ```
 
 ### sr_erlang_ln_pdf(x, shape, rate)
 
-**签名**：`sr_erlang_ln_pdf(x DOUBLE, shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_ln_pdf(x DOUBLE, shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_ln_pdf(1.0, 2.0, 2.0)
+SELECT sr_erlang_ln_pdf(1.0, 2, 2.0)
 ```
 
 ### sr_erlang_cdf(x, shape, rate)
 
-**签名**：`sr_erlang_cdf(x DOUBLE, shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_cdf(x DOUBLE, shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_cdf(1.0, 2.0, 2.0)
+SELECT sr_erlang_cdf(1.0, 2, 2.0)
 ```
 
 ### sr_erlang_sf(x, shape, rate)
 
-**签名**：`sr_erlang_sf(x DOUBLE, shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_sf(x DOUBLE, shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_sf(1.0, 2.0, 2.0)
+SELECT sr_erlang_sf(1.0, 2, 2.0)
 ```
 
 ### sr_erlang_quantile(p, shape, rate)
 
-**签名**：`sr_erlang_quantile(p DOUBLE, shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_quantile(p DOUBLE, shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_quantile(0.5, 2.0, 2.0)
+SELECT sr_erlang_quantile(0.5, 2, 2.0)
 ```
 
 ### sr_erlang_entropy(shape, rate)
 
-**签名**：`sr_erlang_entropy(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_entropy(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 Erlang 的熵。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_entropy(2.0, 1.0)
+SELECT sr_erlang_entropy(2, 1.0)
 -- 1.5772156649015352
 ```
 
 ### sr_erlang_max(shape, rate)
 
-**签名**：`sr_erlang_max(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_max(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 Erlang 的最大值。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_max(2.0, 1.0)
+SELECT sr_erlang_max(2, 1.0)
 -- inf
 ```
 
 ### sr_erlang_mean(shape, rate)
 
-**签名**：`sr_erlang_mean(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_mean(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 Erlang 的均值。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_mean(2.0, 1.0)
+SELECT sr_erlang_mean(2, 1.0)
 -- 2.0
 ```
 
 ### sr_erlang_min(shape, rate)
 
-**签名**：`sr_erlang_min(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_min(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 Erlang 的最小值。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_min(2.0, 1.0)
+SELECT sr_erlang_min(2, 1.0)
 -- 0.0
 ```
 
 ### sr_erlang_mode(shape, rate)
 
-**签名**：`sr_erlang_mode(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_mode(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 Erlang 的众数。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_mode(2.0, 1.0)
+SELECT sr_erlang_mode(2, 1.0)
 -- 1.0
 ```
 
 ### sr_erlang_skewness(shape, rate)
 
-**签名**：`sr_erlang_skewness(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_skewness(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 Erlang 的偏度。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_skewness(2.0, 1.0)
+SELECT sr_erlang_skewness(2, 1.0)
 -- 1.414213562373095
 ```
 
 ### sr_erlang_std_dev(shape, rate)
 
-**签名**：`sr_erlang_std_dev(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_std_dev(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 Erlang 的标准差。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_std_dev(2.0, 1.0)
+SELECT sr_erlang_std_dev(2, 1.0)
 -- 1.4142135623730951
 ```
 
 ### sr_erlang_variance(shape, rate)
 
-**签名**：`sr_erlang_variance(shape DOUBLE, rate DOUBLE) -> DOUBLE`
+**签名**：`sr_erlang_variance(shape UBIGINT, rate DOUBLE) -> DOUBLE`
 
 Erlang 的方差。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erlang_variance(2.0, 1.0)
+SELECT sr_erlang_variance(2, 1.0)
 -- 2.0
 ```
 

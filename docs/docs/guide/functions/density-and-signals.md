@@ -10,7 +10,7 @@ description: KDE and k-NN density estimation; sinusoidal, square, triangle, sawt
 
 ### sr_kde_pdf(x, sample, bandwidth)
 
-**Signature**: `sr_kde_pdf(x DOUBLE, sample LIST(DOUBLE), bandwidth DOUBLE) -> DOUBLE`
+**Signature**: `sr_kde_pdf(x DOUBLE, sample DOUBLE[], bandwidth DOUBLE) -> DOUBLE`
 
 Kernel density estimate at `x` using a Gaussian kernel over a k-d tree built from `sample`.
 Pass `NULL` for `bandwidth` to select statrs' automatic bandwidth.
@@ -30,7 +30,7 @@ SELECT sr_kde_pdf(0.5, [0.0, 0.2, 0.7, 1.0], NULL)
 
 ### sr_knn_pdf(x, sample, bandwidth)
 
-**Signature**: `sr_knn_pdf(x DOUBLE, sample LIST(DOUBLE), bandwidth DOUBLE) -> DOUBLE`
+**Signature**: `sr_knn_pdf(x DOUBLE, sample DOUBLE[], bandwidth DOUBLE) -> DOUBLE`
 
 k-nearest-neighbour density estimate at `x`. Pass `NULL` for `bandwidth` to select the
 automatic k.
@@ -100,12 +100,12 @@ SELECT sr_gen_periodic(10, 8.0, 1.0, 1.0, 0.0, 0)
 
 ### sr_gen_log_spaced(n, start_exp, stop_exp)
 
-**Signature**: `sr_gen_log_spaced(n DOUBLE, start_exp DOUBLE, stop_exp DOUBLE) -> LIST(DOUBLE)`
+**Signature**: `sr_gen_log_spaced(n UBIGINT, start_exp DOUBLE, stop_exp DOUBLE) -> LIST(DOUBLE)`
 
-`n` points log-spaced between `10^start_exp` and `10^stop_exp`. `n` is a whole-number DOUBLE.
+`n` points log-spaced between `10^start_exp` and `10^stop_exp`. `n` is a UBIGINT.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_gen_log_spaced(3.0, 0.0, 2.0)
+SELECT sr_gen_log_spaced(3, 0.0, 2.0)
 -- [1.0, 10.0, 100.0]
 ```
 

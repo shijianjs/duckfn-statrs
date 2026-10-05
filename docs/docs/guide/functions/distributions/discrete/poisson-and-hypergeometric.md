@@ -6,7 +6,7 @@ description: Poisson and hypergeometric distributions — pmf, ln_pmf, cdf, sf, 
 
 # Poisson and hypergeometric
 
-Integer-valued slots are whole-number DOUBLE literals; non-integers are query errors.
+Integer-valued slots are UBIGINT/BIGINT arguments; a non-integer literal has no matching signature.
 
 ## Poisson
 
@@ -14,36 +14,36 @@ Parameter: `lambda` (rate, > 0).
 
 ### sr_poisson_pmf(x, lambda)
 
-**Signature**: `sr_poisson_pmf(x DOUBLE, lambda DOUBLE) -> DOUBLE`
+**Signature**: `sr_poisson_pmf(x UBIGINT, lambda DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_poisson_pmf(2.0, 3.0)::DECIMAL(12,8)
+SELECT sr_poisson_pmf(2, 3.0)::DECIMAL(12,8)
 -- 0.22404181
 ```
 
 ### sr_poisson_ln_pmf(x, lambda)
 
-**Signature**: `sr_poisson_ln_pmf(x DOUBLE, lambda DOUBLE) -> DOUBLE`
+**Signature**: `sr_poisson_ln_pmf(x UBIGINT, lambda DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT exp(sr_poisson_ln_pmf(2.0, 3.0))::DECIMAL(12,8)
+SELECT exp(sr_poisson_ln_pmf(2, 3.0))::DECIMAL(12,8)
 -- 0.22404181
 ```
 
 ### sr_poisson_cdf(x, lambda)
 
-**Signature**: `sr_poisson_cdf(x DOUBLE, lambda DOUBLE) -> DOUBLE`
+**Signature**: `sr_poisson_cdf(x UBIGINT, lambda DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_poisson_cdf(2.0, 3.0)
+SELECT sr_poisson_cdf(2, 3.0)
 ```
 
 ### sr_poisson_sf(x, lambda)
 
-**Signature**: `sr_poisson_sf(x DOUBLE, lambda DOUBLE) -> DOUBLE`
+**Signature**: `sr_poisson_sf(x UBIGINT, lambda DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_poisson_sf(2.0, 3.0)
+SELECT sr_poisson_sf(2, 3.0)
 ```
 
 ### sr_poisson_quantile(p, lambda)
@@ -162,136 +162,136 @@ SELECT sr_poisson_variance(3.0)
 
 ## Hypergeometric
 
-Parameters: `population` (N, whole-number DOUBLE), `successes` (K, whole-number DOUBLE),
-`draws` (n, whole-number DOUBLE). Represents drawing n items without replacement from a
+Parameters: `population` (N, UBIGINT), `successes` (K, UBIGINT),
+`draws` (n, UBIGINT). Represents drawing n items without replacement from a
 population of size N with K successes.
 
 ### sr_hypergeometric_pmf(x, population, successes, draws)
 
-**Signature**: `sr_hypergeometric_pmf(x DOUBLE, population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_pmf(x UBIGINT, population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_pmf(2.0, 10.0, 5.0, 4.0)::DECIMAL(12,8)
+SELECT sr_hypergeometric_pmf(2, 10, 5, 4)::DECIMAL(12,8)
 -- 0.47619048
 ```
 
 ### sr_hypergeometric_ln_pmf(x, population, successes, draws)
 
-**Signature**: `sr_hypergeometric_ln_pmf(x DOUBLE, population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_ln_pmf(x UBIGINT, population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_ln_pmf(2.0, 10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_ln_pmf(2, 10, 5, 4)
 ```
 
 ### sr_hypergeometric_cdf(x, population, successes, draws)
 
-**Signature**: `sr_hypergeometric_cdf(x DOUBLE, population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_cdf(x UBIGINT, population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_cdf(2.0, 10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_cdf(2, 10, 5, 4)
 ```
 
 ### sr_hypergeometric_sf(x, population, successes, draws)
 
-**Signature**: `sr_hypergeometric_sf(x DOUBLE, population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_sf(x UBIGINT, population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_sf(2.0, 10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_sf(2, 10, 5, 4)
 ```
 
 ### sr_hypergeometric_quantile(p, population, successes, draws)
 
-**Signature**: `sr_hypergeometric_quantile(p DOUBLE, population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_quantile(p DOUBLE, population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_quantile(0.5, 10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_quantile(0.5, 10, 5, 4)
 ```
 
 ### sr_hypergeometric_entropy(population, successes, draws)
 
-**Signature**: `sr_hypergeometric_entropy(population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_entropy(population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 Hypergeometric entropy.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_entropy(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_entropy(10, 5, 4)
 -- NULL
 ```
 
 ### sr_hypergeometric_max(population, successes, draws)
 
-**Signature**: `sr_hypergeometric_max(population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_max(population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 Hypergeometric maximum of the support.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_max(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_max(10, 5, 4)
 -- 4.0
 ```
 
 ### sr_hypergeometric_mean(population, successes, draws)
 
-**Signature**: `sr_hypergeometric_mean(population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_mean(population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 Hypergeometric mean.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_mean(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_mean(10, 5, 4)
 -- 2.0
 ```
 
 ### sr_hypergeometric_min(population, successes, draws)
 
-**Signature**: `sr_hypergeometric_min(population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_min(population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 Hypergeometric minimum of the support.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_min(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_min(10, 5, 4)
 -- 0.0
 ```
 
 ### sr_hypergeometric_mode(population, successes, draws)
 
-**Signature**: `sr_hypergeometric_mode(population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_mode(population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 Hypergeometric mode.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_mode(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_mode(10, 5, 4)
 -- 2.0
 ```
 
 ### sr_hypergeometric_skewness(population, successes, draws)
 
-**Signature**: `sr_hypergeometric_skewness(population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_skewness(population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 Hypergeometric skewness.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_skewness(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_skewness(10, 5, 4)
 -- 0.0
 ```
 
 ### sr_hypergeometric_std_dev(population, successes, draws)
 
-**Signature**: `sr_hypergeometric_std_dev(population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_std_dev(population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 Hypergeometric standard deviation.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_std_dev(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_std_dev(10, 5, 4)
 -- 0.816496580927726
 ```
 
 ### sr_hypergeometric_variance(population, successes, draws)
 
-**Signature**: `sr_hypergeometric_variance(population DOUBLE, successes DOUBLE, draws DOUBLE) -> DOUBLE`
+**Signature**: `sr_hypergeometric_variance(population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 Hypergeometric variance.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_variance(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_variance(10, 5, 4)
 -- 0.6666666666666666
 ```
 

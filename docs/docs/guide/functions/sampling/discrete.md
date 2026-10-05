@@ -23,21 +23,21 @@ FROM (SELECT unnest(sr_sample_bernoulli(0.5, 200)) AS s)
 
 ### sr_sample_binomial(p, n, k)
 
-**Signature**: `sr_sample_binomial(p DOUBLE, n DOUBLE, k BIGINT) -> LIST(DOUBLE)`
+**Signature**: `sr_sample_binomial(p DOUBLE, n UBIGINT, k BIGINT) -> LIST(DOUBLE)`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT len(sr_sample_binomial(0.5, 10.0, 12))
+SELECT len(sr_sample_binomial(0.5, 10, 12))
 -- 12
 ```
 
 ### sr_sample_binomial_algorithm(p, n, algorithm, k)
 
-**Signature**: `sr_sample_binomial_algorithm(p DOUBLE, n DOUBLE, algorithm DOUBLE, k BIGINT) -> LIST(DOUBLE)`
+**Signature**: `sr_sample_binomial_algorithm(p DOUBLE, n UBIGINT, algorithm DOUBLE, k BIGINT) -> LIST(DOUBLE)`
 
 Explicit algorithm selection: `algorithm` is 1.0 = automatic, 2.0 = inversion, 3.0 = rejection.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT len(sr_sample_binomial_algorithm(0.5, 10.0, 2.0, 4))
+SELECT len(sr_sample_binomial_algorithm(0.5, 10, 2.0, 4))
 -- 4
 ```
 
@@ -75,17 +75,17 @@ SELECT len(sr_sample_geometric(0.5, 10))
 
 ### sr_sample_hypergeometric(population, successes, draws, k)
 
-**Signature**: `sr_sample_hypergeometric(population DOUBLE, successes DOUBLE, draws DOUBLE, k BIGINT) -> LIST(DOUBLE)`
+**Signature**: `sr_sample_hypergeometric(population UBIGINT, successes UBIGINT, draws UBIGINT, k BIGINT) -> LIST(DOUBLE)`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT len(sr_sample_hypergeometric(10.0, 5.0, 4.0, 8))
+SELECT len(sr_sample_hypergeometric(10, 5, 4, 8))
 ```
 
 ## Categorical
 
 ### sr_sample_categorical(probabilities, k)
 
-**Signature**: `sr_sample_categorical(probabilities LIST(DOUBLE), k BIGINT) -> LIST(DOUBLE)`
+**Signature**: `sr_sample_categorical(probabilities DOUBLE[], k BIGINT) -> LIST(DOUBLE)`
 
 Each sample is a category index in `0 .. len(probabilities) - 1`.
 
@@ -99,17 +99,17 @@ FROM (SELECT unnest(sr_sample_categorical([1.0, 2.0, 1.0], 100)) AS s)
 
 ### sr_sample_discrete_uniform(min, max, k)
 
-**Signature**: `sr_sample_discrete_uniform(min DOUBLE, max DOUBLE, k BIGINT) -> LIST(DOUBLE)`
+**Signature**: `sr_sample_discrete_uniform(min BIGINT, max BIGINT, k BIGINT) -> LIST(DOUBLE)`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT len(sr_sample_discrete_uniform(1.0, 6.0, 10))
+SELECT len(sr_sample_discrete_uniform(1, 6, 10))
 ```
 
 ## Multivariate normal
 
 ### sr_sample_multivariate_normal(mean, covariance, k)
 
-**Signature**: `sr_sample_multivariate_normal(mean LIST(DOUBLE), covariance LIST(DOUBLE), k BIGINT) -> LIST(LIST(DOUBLE))`
+**Signature**: `sr_sample_multivariate_normal(mean DOUBLE[], covariance DOUBLE[], k BIGINT) -> LIST(LIST(DOUBLE))`
 
 Returns a list of `k` point vectors, each of the same length as `mean`.
 
@@ -123,7 +123,7 @@ FROM (SELECT unnest(sr_sample_multivariate_normal([0.0, 0.0], [1.0, 0.0, 0.0, 1.
 
 ### sr_sample_multivariate_students_t(location, scale, freedom, k)
 
-**Signature**: `sr_sample_multivariate_students_t(location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE, k BIGINT) -> LIST(LIST(DOUBLE))`
+**Signature**: `sr_sample_multivariate_students_t(location DOUBLE[], scale DOUBLE[], freedom DOUBLE, k BIGINT) -> LIST(LIST(DOUBLE))`
 
 Returns a list of `k` point vectors, each of the same length as `location`. `scale` is the
 row-major flattened scale matrix (`len(location)²` entries); a mismatch is a query error.
@@ -137,7 +137,7 @@ SELECT len(sr_sample_multivariate_students_t([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3
 
 ### sr_sample_dirichlet(alpha, k)
 
-**Signature**: `sr_sample_dirichlet(alpha LIST(DOUBLE), k BIGINT) -> LIST(LIST(DOUBLE))`
+**Signature**: `sr_sample_dirichlet(alpha DOUBLE[], k BIGINT) -> LIST(LIST(DOUBLE))`
 
 Returns `k` points on the simplex: each draw is a vector of the same length as `alpha` whose
 components sum to 1.
@@ -152,13 +152,13 @@ FROM (SELECT list_sum(x) AS s FROM (SELECT unnest(sr_sample_dirichlet([1.0, 2.0]
 
 ### sr_sample_multinomial(probs, trials, k)
 
-**Signature**: `sr_sample_multinomial(probs LIST(DOUBLE), trials DOUBLE, k BIGINT) -> LIST(LIST(BIGINT))`
+**Signature**: `sr_sample_multinomial(probs DOUBLE[], trials UBIGINT, k BIGINT) -> LIST(LIST(BIGINT))`
 
 Returns `k` count vectors of the same length as `probs`; the components of every count vector
 sum to `trials` exactly.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT count(*) FROM (SELECT unnest(sr_sample_multinomial([0.3, 0.7], 10.0, 8)) AS x)
+SELECT count(*) FROM (SELECT unnest(sr_sample_multinomial([0.3, 0.7], 10, 8)) AS x)
 WHERE list_sum(x) <> 10
 -- 0
 ```
@@ -167,7 +167,7 @@ WHERE list_sum(x) <> 10
 
 ### sr_sample_empirical(v, k)
 
-**Signature**: `sr_sample_empirical(v DOUBLE, k DOUBLE) -> LIST(DOUBLE)`
+**Signature**: `sr_sample_empirical(v DOUBLE[], k DOUBLE) -> LIST(DOUBLE)`
 
 The only **aggregate** sampler: it collects the whole column `v` and resamples `k` points from
 its empirical distribution.
@@ -183,6 +183,6 @@ FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 Unknown `algorithm` code:
 
 ```sql {"type":"duckfn","expect":"error"}
-SELECT sr_sample_binomial_algorithm(0.5, 10.0, 9.0, 4)
+SELECT sr_sample_binomial_algorithm(0.5, 10, 9.0, 4)
 -- error: the algorithm must be 1 (automatic), 2 (inversion) or 3 (rejection), got 9
 ```

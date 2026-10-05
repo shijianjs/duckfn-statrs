@@ -13,7 +13,7 @@ their own.
 
 ## sr_empirical_cdf(v, x)
 
-**Signature**: `sr_empirical_cdf(v DOUBLE, x DOUBLE) -> DOUBLE`
+**Signature**: `sr_empirical_cdf(v DOUBLE[], x DOUBLE) -> DOUBLE`
 
 Empirical cumulative distribution function of the collected column `v`, evaluated at the constant
 `x`. Equivalent to the fraction of rows with `v <= x`.
@@ -28,7 +28,7 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
 
 ## sr_empirical_sf(v, x)
 
-**Signature**: `sr_empirical_sf(v DOUBLE, x DOUBLE) -> DOUBLE`
+**Signature**: `sr_empirical_sf(v DOUBLE[], x DOUBLE) -> DOUBLE`
 
 Empirical survival function of `v` evaluated at `x`. Equivalent to `1 - cdf(x)`.
 
@@ -40,7 +40,7 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
 
 ## sr_empirical_quantile(v, p)
 
-**Signature**: `sr_empirical_quantile(v DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_empirical_quantile(v DOUBLE[], p DOUBLE) -> DOUBLE`
 
 Empirical quantile function of `v` at the constant probability `p` in [0, 1].
 
@@ -52,7 +52,7 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
 
 ### sr_empirical_entropy(values)
 
-**Signature**: `sr_empirical_entropy(values DOUBLE) -> DOUBLE`
+**Signature**: `sr_empirical_entropy(values DOUBLE[]) -> DOUBLE`
 
 Empirical entropy of a DOUBLE column; always NULL, since statrs implements no entropy for the empirical distribution.
 
@@ -63,7 +63,7 @@ SELECT sr_empirical_entropy(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_max(values)
 
-**Signature**: `sr_empirical_max(values DOUBLE) -> DOUBLE`
+**Signature**: `sr_empirical_max(values DOUBLE[]) -> DOUBLE`
 
 Empirical maximum of a DOUBLE column.
 
@@ -74,7 +74,7 @@ SELECT sr_empirical_max(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_mean(values)
 
-**Signature**: `sr_empirical_mean(values DOUBLE) -> DOUBLE`
+**Signature**: `sr_empirical_mean(values DOUBLE[]) -> DOUBLE`
 
 Empirical mean of a DOUBLE column.
 
@@ -85,7 +85,7 @@ SELECT sr_empirical_mean(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_min(values)
 
-**Signature**: `sr_empirical_min(values DOUBLE) -> DOUBLE`
+**Signature**: `sr_empirical_min(values DOUBLE[]) -> DOUBLE`
 
 Empirical minimum of a DOUBLE column.
 
@@ -96,7 +96,7 @@ SELECT sr_empirical_min(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_skewness(values)
 
-**Signature**: `sr_empirical_skewness(values DOUBLE) -> DOUBLE`
+**Signature**: `sr_empirical_skewness(values DOUBLE[]) -> DOUBLE`
 
 Empirical skewness of a DOUBLE column; always NULL, since statrs implements no skewness for the empirical distribution.
 
@@ -107,7 +107,7 @@ SELECT sr_empirical_skewness(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_std_dev(values)
 
-**Signature**: `sr_empirical_std_dev(values DOUBLE) -> DOUBLE`
+**Signature**: `sr_empirical_std_dev(values DOUBLE[]) -> DOUBLE`
 
 Empirical standard deviation of a DOUBLE column.
 
@@ -118,7 +118,7 @@ SELECT sr_empirical_std_dev(v) FROM (VALUES (1.0), (2.0), (3.0)) t(v)
 
 ### sr_empirical_variance(values)
 
-**Signature**: `sr_empirical_variance(values DOUBLE) -> DOUBLE`
+**Signature**: `sr_empirical_variance(values DOUBLE[]) -> DOUBLE`
 
 Empirical variance of a DOUBLE column.
 

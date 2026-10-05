@@ -13,7 +13,7 @@ one value per group. NULL rows are skipped automatically.
 
 ### sr_mean(x)
 
-**Signature**: `sr_mean(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_mean(x DOUBLE[]) -> DOUBLE`
 
 Arithmetic mean, NULL when no row is non-NULL.
 
@@ -24,7 +24,7 @@ SELECT sr_mean(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_geometric_mean(x)
 
-**Signature**: `sr_geometric_mean(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_geometric_mean(x DOUBLE[]) -> DOUBLE`
 
 Geometric mean. NULL when any value is negative.
 
@@ -35,7 +35,7 @@ SELECT sr_geometric_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)
 
 ### sr_harmonic_mean(x)
 
-**Signature**: `sr_harmonic_mean(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_harmonic_mean(x DOUBLE[]) -> DOUBLE`
 
 Harmonic mean. NULL when any value is negative.
 
@@ -46,7 +46,7 @@ SELECT sr_harmonic_mean(x) FROM (VALUES (1.0), (2.0), (3.0)) t(x)
 
 ### sr_quadratic_mean(x)
 
-**Signature**: `sr_quadratic_mean(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_quadratic_mean(x DOUBLE[]) -> DOUBLE`
 
 Quadratic mean (root mean square).
 
@@ -59,7 +59,7 @@ SELECT sr_quadratic_mean(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_median(x)
 
-**Signature**: `sr_median(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_median(x DOUBLE[]) -> DOUBLE`
 
 Median. Even-length inputs average the two middle values.
 
@@ -70,7 +70,7 @@ SELECT sr_median(x) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)
 
 ### sr_quantile(x, tau)
 
-**Signature**: `sr_quantile(x DOUBLE, tau DOUBLE) -> DOUBLE`
+**Signature**: `sr_quantile(x DOUBLE[], tau DOUBLE) -> DOUBLE`
 
 Tau quantile. `tau` must be in [0, 1]; otherwise NULL.
 
@@ -81,29 +81,29 @@ SELECT sr_quantile(x, 0.5) FROM (VALUES (-1.0), (5.0), (0.0), (-3.0), (10.0), (-
 
 ### sr_order_statistic(x, k)
 
-**Signature**: `sr_order_statistic(x DOUBLE, k DOUBLE) -> DOUBLE`
+**Signature**: `sr_order_statistic(x DOUBLE[], k UBIGINT) -> DOUBLE`
 
-k-th smallest value (1-based). NULL when k is outside the data range.
+k-th smallest value (1-based). NULL when k is outside the data range. An aggregate's constant argument needs an explicit `::UBIGINT` cast.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_order_statistic(x, 2.0) FROM (VALUES (3.0), (1.0), (2.0)) t(x)
+SELECT sr_order_statistic(x, 2::UBIGINT) FROM (VALUES (3.0), (1.0), (2.0)) t(x)
 -- 2.0
 ```
 
 ### sr_percentile(x, p)
 
-**Signature**: `sr_percentile(x DOUBLE, p DOUBLE) -> DOUBLE`
+**Signature**: `sr_percentile(x DOUBLE[], p UBIGINT) -> DOUBLE`
 
-p-th percentile. `p` is a whole-number DOUBLE in [0, 100].
+p-th percentile. `p` is a UBIGINT in [0, 100]; an aggregate's constant argument needs an explicit `::UBIGINT` cast.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_percentile(x, 50.0) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)
+SELECT sr_percentile(x, 50::UBIGINT) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)
 -- 2.5
 ```
 
 ### sr_lower_quartile(x)
 
-**Signature**: `sr_lower_quartile(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_lower_quartile(x DOUBLE[]) -> DOUBLE`
 
 First quartile (lower hinge).
 
@@ -114,7 +114,7 @@ SELECT sr_lower_quartile(x) FROM (VALUES (2.0), (1.0), (3.0), (4.0)) t(x)
 
 ### sr_upper_quartile(x)
 
-**Signature**: `sr_upper_quartile(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_upper_quartile(x DOUBLE[]) -> DOUBLE`
 
 Third quartile (upper hinge).
 
@@ -125,7 +125,7 @@ SELECT sr_upper_quartile(x) FROM (VALUES (2.0), (1.0), (3.0), (4.0)) t(x)
 
 ### sr_interquartile_range(x)
 
-**Signature**: `sr_interquartile_range(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_interquartile_range(x DOUBLE[]) -> DOUBLE`
 
 IQR = upper_quartile - lower_quartile.
 
@@ -136,7 +136,7 @@ SELECT sr_interquartile_range(x) FROM (VALUES (2.0), (1.0), (3.0), (4.0)) t(x)
 
 ### sr_ranks(x, method)
 
-**Signature**: `sr_ranks(x DOUBLE, method DOUBLE) -> LIST(DOUBLE)`
+**Signature**: `sr_ranks(x DOUBLE[], method DOUBLE) -> LIST(DOUBLE)`
 
 Ranks of each value. Method: 1=average, 2=min, 3=max, 4=first.
 
@@ -149,7 +149,7 @@ SELECT sr_ranks(x, 1.0) FROM (VALUES (1.0), (3.0), (2.0), (2.0)) t(x)
 
 ### sr_variance(x)
 
-**Signature**: `sr_variance(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_variance(x DOUBLE[]) -> DOUBLE`
 
 Sample variance (Bessel-corrected). NULL when fewer than two rows.
 
@@ -160,7 +160,7 @@ SELECT sr_variance(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_std_dev(x)
 
-**Signature**: `sr_std_dev(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_std_dev(x DOUBLE[]) -> DOUBLE`
 
 Sample standard deviation. NULL when fewer than two rows.
 
@@ -171,7 +171,7 @@ SELECT sr_std_dev(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_population_variance(x)
 
-**Signature**: `sr_population_variance(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_population_variance(x DOUBLE[]) -> DOUBLE`
 
 Population variance (divides by N, not N-1).
 
@@ -182,7 +182,7 @@ SELECT sr_population_variance(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_population_std_dev(x)
 
-**Signature**: `sr_population_std_dev(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_population_std_dev(x DOUBLE[]) -> DOUBLE`
 
 Population standard deviation.
 
@@ -193,7 +193,7 @@ SELECT sr_population_std_dev(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_skewness(x)
 
-**Signature**: `sr_skewness(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_skewness(x DOUBLE[]) -> DOUBLE`
 
 Sample skewness (statrs' `OnlineMoments<3>`: the third central moment divided by the 3/2 power
 of the population second moment). NULL when fewer than two rows are non-NULL; a constant column
@@ -209,7 +209,7 @@ FROM (VALUES (2.0), (4.0), (4.0), (4.0), (5.0), (5.0), (7.0), (9.0)) t(x)
 
 ### sr_min(x)
 
-**Signature**: `sr_min(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_min(x DOUBLE[]) -> DOUBLE`
 
 Minimum value.
 
@@ -220,7 +220,7 @@ SELECT sr_min(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_max(x)
 
-**Signature**: `sr_max(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_max(x DOUBLE[]) -> DOUBLE`
 
 Maximum value.
 
@@ -231,7 +231,7 @@ SELECT sr_max(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_abs_min(x)
 
-**Signature**: `sr_abs_min(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_abs_min(x DOUBLE[]) -> DOUBLE`
 
 Smallest absolute value.
 
@@ -242,7 +242,7 @@ SELECT sr_abs_min(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 
 ### sr_abs_max(x)
 
-**Signature**: `sr_abs_max(x DOUBLE) -> DOUBLE`
+**Signature**: `sr_abs_max(x DOUBLE[]) -> DOUBLE`
 
 Largest absolute value.
 
@@ -255,7 +255,7 @@ SELECT sr_abs_max(x) FROM (VALUES (0.0), (3.0), (-8.0)) t(x)
 
 ### sr_covariance(x, y)
 
-**Signature**: `sr_covariance(x DOUBLE, y DOUBLE) -> DOUBLE`
+**Signature**: `sr_covariance(x DOUBLE[], y DOUBLE[]) -> DOUBLE`
 
 Sample covariance (Bessel-corrected). A row with NULL in either column is skipped entirely.
 NULL when fewer than two fully non-NULL rows.
@@ -267,7 +267,7 @@ SELECT sr_covariance(x, y) FROM (VALUES (0.0, -5.0), (3.0, 4.0), (-2.0, 10.0)) t
 
 ### sr_population_covariance(x, y)
 
-**Signature**: `sr_population_covariance(x DOUBLE, y DOUBLE) -> DOUBLE`
+**Signature**: `sr_population_covariance(x DOUBLE[], y DOUBLE[]) -> DOUBLE`
 
 Population covariance (divides by N). NULL when no fully non-NULL row exists.
 

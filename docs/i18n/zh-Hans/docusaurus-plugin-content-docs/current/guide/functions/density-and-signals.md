@@ -10,7 +10,7 @@ description: KDE 与 kNN 密度估计；正弦、方波、三角、锯齿、周�
 
 ### sr_kde_pdf(x, sample, bandwidth)
 
-**签名**：`sr_kde_pdf(x DOUBLE, sample LIST(DOUBLE), bandwidth DOUBLE) -> DOUBLE`
+**签名**：`sr_kde_pdf(x DOUBLE, sample DOUBLE[], bandwidth DOUBLE) -> DOUBLE`
 
 在 `x` 处的高斯核密度估计，样本是 `sample` LIST，用 k-d tree 加速。`bandwidth` 传 NULL 让
 statrs 自动选择带宽。
@@ -30,7 +30,7 @@ SELECT sr_kde_pdf(0.5, [0.0, 0.2, 0.7, 1.0], NULL)
 
 ### sr_knn_pdf(x, sample, bandwidth)
 
-**签名**：`sr_knn_pdf(x DOUBLE, sample LIST(DOUBLE), bandwidth DOUBLE) -> DOUBLE`
+**签名**：`sr_knn_pdf(x DOUBLE, sample DOUBLE[], bandwidth DOUBLE) -> DOUBLE`
 
 在 `x` 处的 k 近邻密度估计。`bandwidth` 传 NULL 使用自动 k。
 
@@ -98,12 +98,12 @@ SELECT sr_gen_periodic(10, 8.0, 1.0, 1.0, 0.0, 0)
 
 ### sr_gen_log_spaced(n, start_exp, stop_exp)
 
-**签名**：`sr_gen_log_spaced(n DOUBLE, start_exp DOUBLE, stop_exp DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_gen_log_spaced(n UBIGINT, start_exp DOUBLE, stop_exp DOUBLE) -> LIST(DOUBLE)`
 
-在 `10^start_exp` 与 `10^stop_exp` 之间取 n 个对数间距的点。`n` 是整数值 DOUBLE。
+在 `10^start_exp` 与 `10^stop_exp` 之间取 n 个对数间距的点。`n` 是 UBIGINT。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_gen_log_spaced(3.0, 0.0, 2.0)
+SELECT sr_gen_log_spaced(3, 0.0, 2.0)
 -- [1.0, 10.0, 100.0]
 ```
 

@@ -25,7 +25,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | 统计量（`statistics/`） | 聚合 | 一/两列 DOUBLE -> DOUBLE | 均值族、顺序统计量（中位数/分位数/百分位/秩）、方差族、协方差；`auto_collect`，NULL 行跳过，算不出的出 NULL。 |
 | 连续分布（`distribution/`） | 标量 | DOUBLE -> DOUBLE | 20 种分布 × `sr_<分布>_pdf / ln_pdf / cdf / sf / quantile`；非法参数报查询错误。 |
-| 离散分布（`distribution/`） | 标量 | DOUBLE -> DOUBLE | 7 种分布 × `pmf / ln_pmf / cdf / sf / quantile`；整数槽位吃整数值 DOUBLE 字面量（校验，不四舍五入）。 |
+| 离散分布（`distribution/`） | 标量 | DOUBLE -> DOUBLE | 7 种分布 × `pmf / ln_pmf / cdf / sf / quantile`；整数槽位吃 UBIGINT/BIGINT 参数。 |
 | 特殊函数（`function.rs`） | 标量 | DOUBLE -> DOUBLE | erf / gamma / beta 族，阶乘与二项系数，调和数，logistic 与 logit。 |
 | 常量（`consts.rs`） | 标量 | () -> DOUBLE | statrs::consts 的零参函数。 |
 
