@@ -1,7 +1,7 @@
 extension:
   name: duckfn_statrs
-  description: Statistical functions from the Rust statrs crate - summary statistics as aggregates over DOUBLE columns and the normal distribution
-  version: 0.1.0
+  description: Statistical functions from the Rust statrs crate - 34 aggregates and 509 scalars covering every statrs module
+  version: 0.0.3
   language: Rust
   build: cargo
   license: MIT
@@ -11,7 +11,7 @@ extension:
 
 repo:
   github: shijianjs/duckfn-statrs
-  ref: <40-character commit SHA of the released version>
+  ref: a529ed5de51a879c1338eed3f60ed77c6f94fb93
 
 docs:
   hello_world: |
@@ -27,7 +27,7 @@ docs:
     SELECT sr_normal_quantile(0.975, 0.0, 1.0);
     -- 1.9599639845400538
   extended_description: |
-    Wraps the Rust statrs crate as DuckDB functions - currently 34 aggregates and 503 scalars,
+    Wraps the Rust statrs crate as DuckDB functions - currently 34 aggregates and 509 scalars,
     covering every statrs module: statistics (means, order statistics incl. percentile / ranks,
     variance families, covariance of two row-paired columns), distribution (20 continuous and 8
     discrete univariate incl. Categorical, 4 multivariate over LIST vectors and row-major

@@ -9,7 +9,7 @@ it does, which crate owns which part, and how to build and test.
 duckfn's own conventions (the entry-point chain, the process for adding a function, which source to
 read first) are **not** repeated here: they are in [AGENTS.md](AGENTS.md), which also says where duckfn's
 documentation and example extension sit in the local cargo registry (they ship with the crate since
-0.0.21, so no duckfn clone is needed).
+0.0.31, so no duckfn clone is needed).
 
 This repository is [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template):
 it started from DuckDB's official
@@ -113,7 +113,7 @@ implementation of `DuckAggregateState`:
   `Ok(None)`.
 
 None of this is written by hand here: every statistic is a
-`#[duck_aggregate_function(auto_collect = true)]` function (duckfn 0.0.28+) — the annotated function
+`#[duck_aggregate_function(auto_collect = true)]` function (duckfn 0.0.38+) — the annotated function
 *is* the finalize handler (`Vec<f64>` parameters are the collected columns, `DuckFirst<f64>` a
 per-query constant), and the macro generates the state, the merging `simple_combine` and the
 `result` that folds statrs' NAN (empty group, too few samples, undefined statistic) into SQL NULL
