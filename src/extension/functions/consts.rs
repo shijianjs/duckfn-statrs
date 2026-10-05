@@ -155,3 +155,16 @@ fn sr_almost_eq(a: f64, b: f64, acc: f64) -> bool {
     #[allow(deprecated)] // statrs 0.19 marks almost_eq deprecated; wrapping it is the point here.
     prec::almost_eq(a, b, acc)
 }
+// ============================================================================
+// statrs::function::factorial::MAX_FACTORIAL：64 位浮点数能表示的最大阶乘（170! 刚好
+// 不溢出，171! → ∞）。statrs 原文是 `usize`，SQL 侧对应 UBIGINT。
+// ============================================================================
+
+/// 最大可表示的阶乘 n（`factorial(n)` 不溢出为 ∞ 的最大 n）。
+#[duck_scalar_function(
+    description = "The maximum n such that factorial(n) does not overflow to infinity (statrs' factorial::MAX_FACTORIAL, as a UBIGINT)",
+    example = "SELECT sr_max_factorial()"
+)]
+fn sr_max_factorial() -> u64 {
+    statrs::function::factorial::MAX_FACTORIAL as u64
+}

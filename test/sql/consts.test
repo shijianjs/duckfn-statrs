@@ -57,3 +57,17 @@ SELECT sr_almost_eq('inf'::DOUBLE, 'inf'::DOUBLE, 1e-9),
        sr_almost_eq('nan'::DOUBLE, 0.0, 'inf'::DOUBLE);
 ----
 true	false	false	false
+
+# MAX_FACTORIAL：64 位浮点数能表示的最大阶乘（170! 刚好不溢出，171! → ∞）。
+# statrs 原文 MAX_FACTORIAL = 170（usize），SQL 侧以 UBIGINT 透出。
+query R
+SELECT sr_max_factorial();
+----
+170
+
+# 自洽性断言：factorial(170) 不溢出、factorial(171) 溢出为 ∞。
+# 170! 的值太大，DECIMAL 放不下，直接用 DOUBLE 比较（溢出为 'inf'）。
+query RR
+SELECT sr_factorial(170) > 0, sr_factorial(171);
+----
+true	inf

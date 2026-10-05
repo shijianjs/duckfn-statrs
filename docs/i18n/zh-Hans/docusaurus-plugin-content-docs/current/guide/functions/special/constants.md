@@ -87,6 +87,17 @@ SELECT sr_euler_mascheroni()
 -- 0.5772156649015329
 ```
 
+### sr_max_factorial()
+
+**签名**：`sr_max_factorial() -> UBIGINT`
+
+最大的 `n` 使得 `factorial(n)` 不溢出为 ∞，即 `statrs::function::factorial::MAX_FACTORIAL`（170）。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_max_factorial()
+-- 170
+```
+
 ## 精度阈值
 
 下面这组来自 statrs 自己的 `prec` 模块 —— statrs 内部比较浮点结果时用的容差。暴露出来是为了

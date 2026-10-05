@@ -87,6 +87,17 @@ SELECT sr_euler_mascheroni()
 -- 0.5772156649015329
 ```
 
+### sr_max_factorial()
+
+**Signature**: `sr_max_factorial() -> UBIGINT`
+
+The largest `n` such that `factorial(n)` does not overflow to infinity, i.e. `statrs::function::factorial::MAX_FACTORIAL` (170).
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_max_factorial()
+-- 170
+```
+
 ## Precision thresholds
 
 These come from statrs' own `prec` module — the tolerances it uses internally when comparing
