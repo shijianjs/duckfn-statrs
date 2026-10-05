@@ -39,7 +39,7 @@ The `Justfile` wraps the same commands: `just build`, `just sql "SELECT sr_mean(
 Every registered name carries the `sr_` prefix, so the whole set is one `duckdb_functions()` filter
 away; the code tree mirrors statrs' module tree (`functions/{consts,function,generate,density,
 statistics,distribution,sampling,stats_tests}/`) and the correspondence table is in
-`src/extension/functions/mod.rs`. Currently 26 aggregates + 226 scalars = 252 functions, by family:
+`src/extension/functions/mod.rs`. Currently 34 aggregates + 495 scalars = 529 functions, by family:
 
 **Aggregates** (a DOUBLE column in, one DOUBLE out, all `auto_collect`):
 
@@ -47,7 +47,7 @@ statistics,distribution,sampling,stats_tests}/`) and the correspondence table is
 | --- | --- |
 | Central tendency | `sr_mean` / `sr_geometric_mean` / `sr_harmonic_mean` / `sr_quadratic_mean` |
 | Order statistics | `sr_median` / `sr_quantile(x, tau)` / `sr_order_statistic(x, k)` / `sr_percentile(x, p)` / `sr_lower_quartile` / `sr_upper_quartile` / `sr_interquartile_range` / `sr_ranks(x, method)` (returns LIST) |
-| Dispersion | `sr_variance` / `sr_std_dev` / `sr_population_variance` / `sr_population_std_dev` |
+| Dispersion | `sr_variance` / `sr_std_dev` / `sr_population_variance` / `sr_population_std_dev` / `sr_skewness` |
 | Extremes & pairing | `sr_min` / `sr_max` / `sr_abs_min` / `sr_abs_max`; `sr_covariance(x, y)` / `sr_population_covariance(x, y)` |
 
 **Scalars** (row by row; DOUBLE parameters, LIST for vectors and count vectors, BIGINT for sample
@@ -57,11 +57,11 @@ counts and waveform durations):
 | --- | --- |
 | Continuous distributions (20) | per distribution `sr_<dist>_pdf / ln_pdf / cdf / sf / quantile` (normal, log_normal, beta, gamma, chi_squared, students_t, uniform, weibull, pareto, …) |
 | Discrete distributions (8) | per distribution `pmf / ln_pmf / cdf / sf / quantile` (binomial, poisson, geometric, hypergeometric, categorical, …) |
-| Multivariate (4) | `sr_multivariate_normal_pdf` / `sr_dirichlet_pdf` / `sr_multinomial_pmf` / `sr_multivariate_students_t_pdf` (LIST vectors, row-major flattened matrices) + `sr_dirichlet_entropy` |
+| Multivariate (4) | per distribution densities (`pdf` / `ln_pdf`), moments (`mean` / `variance` / `mode`, matrices row-major flattened) and `entropy` / `min` / `max` — `sr_multivariate_normal_*`, `sr_multivariate_students_t_*`, `sr_dirichlet_*`, `sr_multinomial_*` (LIST vectors, count vectors as LIST(BIGINT)) |
 | Empirical (aggregate) | `sr_empirical_cdf / sf / quantile(x, k)`; sampling via `sr_sample_empirical` |
-| Random sampling (31) | `sr_sample_<dist>(params..., k BIGINT)` draws k points into a LIST; binomial also `sr_sample_binomial_algorithm` (statrs' BinomialAlgorithm) |
+| Random sampling (34) | `sr_sample_<dist>(params..., k BIGINT)` draws k points into a LIST; binomial also `sr_sample_binomial_algorithm` (statrs' BinomialAlgorithm) |
 | Density estimation | `sr_kde_pdf(x, sample LIST, bandwidth or NULL)` / `sr_knn_pdf` (kde feature, k-d tree) |
-| Hypothesis tests (9) | `sr_ttest_onesample` / `sr_skewtest` / `sr_anderson_darling` / `sr_ks_twosample` / `sr_mannwhitneyu` / `sr_chisquare` / `sr_f_oneway` / `sr_fishers_exact(_with_odds_ratio)`, returning [statistic, p-value] |
+| Hypothesis tests (9) | `sr_ttest_onesample` / `sr_skewtest` / `sr_anderson_darling` / `sr_ks_onesample` / `sr_ks_twosample` / `sr_mannwhitneyu` / `sr_chisquare` / `sr_f_oneway` / `sr_fishers_exact(_with_odds_ratio)`, returning [statistic, p-value] |
 | Signal generators | `sr_gen_square / triangle / sawtooth / periodic / sinusoidal / log_spaced` (first k points as a LIST) |
 | Special functions | `sr_erf` / `sr_erfc` / `sr_gamma` / `sr_ln_gamma` / `sr_digamma` / `sr_beta` / `sr_beta_regularized` / the four incomplete-Gamma variants / `sr_factorial` / `sr_choose` / `sr_harmonic` / `sr_logistic` / `sr_logit` / `sr_polynomial` / `sr_kernel_eval` / `sr_kernel_support` … |
 | Constants | `sr_sqrt_2pi()` / `sr_euler_mascheroni()` and friends (statrs::consts) |

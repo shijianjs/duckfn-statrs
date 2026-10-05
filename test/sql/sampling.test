@@ -51,6 +51,37 @@ SELECT count(*) = 25 FROM (SELECT unnest(sr_sample_multivariate_normal([0.0, 0.0
 ----
 true
 
+# 多元 t 的每个抽样点与 location 等长（statrs multivariate_students_t.rs 的 rand impl）
+query II
+SELECT len(sr_sample_multivariate_students_t([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0, 6)),
+       len(sr_sample_multivariate_students_t([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0, 6)[1])
+----
+6	2
+
+# Dirichlet 的每个抽样点落在单纯形上（statrs dirichlet.rs test_sample：分量和 = 1）
+query RR
+SELECT min(s) > 0.999999, max(s) < 1.000001
+FROM (SELECT list_sum(x) AS s FROM (SELECT unnest(sr_sample_dirichlet([1.0, 2.0], 8)) AS x))
+----
+true	true
+
+# Multinomial 的每个计数向量分量和恒为 n（statrs multinomial.rs test_sample_sums_to_n）
+query I
+SELECT count(*) FROM (SELECT unnest(sr_sample_multinomial([0.3, 0.7], 10.0, 8)) AS x) WHERE list_sum(x) <> 10
+----
+0
+
+query I
+SELECT len(sr_sample_multinomial([0.3, 0.7], 10.0, 4))
+----
+4
+
+# 尺度矩阵形状不符是调用错误
+statement error
+SELECT sr_sample_multivariate_students_t([0.0, 0.0], [1.0, 0.0, 0.0], 3.0, 4)
+----
+expected 4 entries for a 2x2 scale matrix
+
 # Empirical 抽样（聚合形态）：子样本长度 = k
 query I
 SELECT len(sr_sample_empirical(v, 6)) FROM (VALUES (1.0), (2.0), (3.0)) t(v)

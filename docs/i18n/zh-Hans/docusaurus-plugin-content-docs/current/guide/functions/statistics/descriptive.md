@@ -1,7 +1,7 @@
 ---
 title: 描述统计量
 sidebar_position: 1
-description: 26 个聚合函数——均值、中位数、方差、协方差等。一列 DOUBLE 进，每组一个值出。
+description: 27 个聚合函数——均值、中位数、方差、协方差等。一列 DOUBLE 进，每组一个值出。
 ---
 
 # 描述统计量（聚合函数）
@@ -189,6 +189,19 @@ SELECT sr_population_variance(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_population_std_dev(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 -- 2.0548046670007003
+```
+
+### sr_skewness(x)
+
+**签名**：`sr_skewness(x DOUBLE) -> DOUBLE`
+
+样本偏度（statrs 的 `OnlineMoments<3>`：三阶中心矩除以总体二阶矩的 3/2 次幂）。
+非 NULL 行少于两个时为 NULL；常数列（零方差）按 statrs 的约定给 0。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_skewness(x)
+FROM (VALUES (2.0), (4.0), (4.0), (4.0), (5.0), (5.0), (7.0), (9.0)) t(x)
+-- 0.65625
 ```
 
 ## 极值

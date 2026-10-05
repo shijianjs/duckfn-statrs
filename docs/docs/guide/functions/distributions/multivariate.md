@@ -1,7 +1,7 @@
 ---
 title: Multivariate distributions
 sidebar_position: 3
-description: Multivariate normal, Student-t, Dirichlet and multinomial densities and moments — vectors as LIST(DOUBLE), matrices as row-major flattened LIST.
+description: Multivariate normal, Student-t, Dirichlet and multinomial densities, log-densities, moments and supports — vectors as LIST(DOUBLE), matrices as row-major flattened LIST.
 ---
 
 # Multivariate distributions
@@ -25,6 +25,41 @@ SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0]):
 ```
 
 The value is `1 / (2π)` — the density of a standard bivariate normal at the origin.
+
+### sr_multivariate_normal_ln_pdf(x, mean, cov)
+
+**Signature**: `sr_multivariate_normal_ln_pdf(x LIST(DOUBLE), mean LIST(DOUBLE), covariance LIST(DOUBLE)) -> DOUBLE`
+
+Log probability density of `x` — equivalent to `ln(sr_multivariate_normal_pdf(...))` but computed
+without the intermediate exponential, so it stays finite far into the tails where the density
+underflows to 0.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_ln_pdf([1.0, 1.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- -2.8378770664093453
+```
+
+### sr_multivariate_normal_min(mean, cov)
+
+**Signature**: `sr_multivariate_normal_min(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE[]`
+
+Lower bound of the support: a vector of `-inf` with the dimension of the mean.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_min([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- [-inf, -inf]
+```
+
+### sr_multivariate_normal_max(mean, cov)
+
+**Signature**: `sr_multivariate_normal_max(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE[]`
+
+Upper bound of the support: a vector of `+inf` with the dimension of the mean.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_max([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- [inf, inf]
+```
 
 ### sr_multivariate_normal_entropy(mean, cov)
 
@@ -82,6 +117,64 @@ SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.
 -- 0.15915494
 ```
 
+### sr_multivariate_students_t_ln_pdf(x, location, scale, freedom)
+
+**Signature**: `sr_multivariate_students_t_ln_pdf(x LIST(DOUBLE), location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE) -> DOUBLE`
+
+Log probability density under a multivariate Student's t distribution. As `freedom` grows the
+values converge to the multivariate normal's `ln_pdf`.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_students_t_ln_pdf([1.0, 1.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 4.0)
+-- -3.0542723907338383
+```
+
+### sr_multivariate_students_t_mean(location, scale, freedom)
+
+**Signature**: `sr_multivariate_students_t_mean(location DOUBLE[], scale DOUBLE[], freedom DOUBLE) -> DOUBLE[]`
+
+Mean vector of the multivariate Student's t distribution (equal to `location`). Only defined for
+`freedom > 1`; otherwise the result is NULL.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_students_t_mean([-1.0, 1.0, 3.0], [1.0, 0.0, 0.5, 0.0, 2.0, 0.0, 0.5, 0.0, 3.0], 2.0)
+-- [-1.0, 1.0, 3.0]
+```
+
+### sr_multivariate_students_t_variance(location, scale, freedom)
+
+**Signature**: `sr_multivariate_students_t_variance(location DOUBLE[], scale DOUBLE[], freedom DOUBLE) -> DOUBLE[]`
+
+Covariance matrix `scale · ν / (ν − 2)` as a row-major flattened LIST. Only defined for
+`freedom > 2`; otherwise the result is NULL.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_students_t_variance([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
+-- [3.0, 0.0, 0.0, 3.0]
+```
+
+### sr_multivariate_students_t_min(location, scale, freedom)
+
+**Signature**: `sr_multivariate_students_t_min(location DOUBLE[], scale DOUBLE[], freedom DOUBLE) -> DOUBLE[]`
+
+Lower bound of the support: a vector of `-inf` with the dimension of `location`.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_students_t_min([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
+-- [-inf, -inf]
+```
+
+### sr_multivariate_students_t_max(location, scale, freedom)
+
+**Signature**: `sr_multivariate_students_t_max(location DOUBLE[], scale DOUBLE[], freedom DOUBLE) -> DOUBLE[]`
+
+Upper bound of the support: a vector of `+inf` with the dimension of `location`.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_students_t_max([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
+-- [inf, inf]
+```
+
 ### sr_multivariate_students_t_mode(location, scale, freedom)
 
 **Signature**: `sr_multivariate_students_t_mode(location DOUBLE[], scale DOUBLE[], freedom DOUBLE) -> DOUBLE[]`
@@ -107,6 +200,43 @@ SELECT sr_dirichlet_pdf([0.5, 0.5], [1.0, 1.0])::DECIMAL(12,8)
 
 For `alpha = (1, 1)` the Dirichlet is uniform on the simplex, so the density is 1 everywhere
 on `{(x1, x2) : x1 + x2 = 1, xi >= 0}`.
+
+### sr_dirichlet_ln_pdf(x, alpha)
+
+**Signature**: `sr_dirichlet_ln_pdf(x LIST(DOUBLE), alpha LIST(DOUBLE)) -> DOUBLE`
+
+Log density of `x` on the simplex. Every component of `x` must lie in `(0, 1)` and the components
+must sum to 1 (within `1e-4`) — violations are statrs assertion failures, which surface as query
+errors.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_dirichlet_ln_pdf([0.1, 0.2, 0.3, 0.4], [0.1, 0.3, 0.5, 0.8])
+-- -0.18456529434757482
+```
+
+### sr_dirichlet_mean(alpha)
+
+**Signature**: `sr_dirichlet_mean(alpha LIST(DOUBLE)) -> DOUBLE[]`
+
+Mean vector of the Dirichlet distribution: `alpha_i / alpha_0` where `alpha_0` is the sum of the
+concentration parameters.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_dirichlet_mean([1.0, 2.0, 3.0, 4.0])
+-- [0.1, 0.2, 0.3, 0.4]
+```
+
+### sr_dirichlet_variance(alpha)
+
+**Signature**: `sr_dirichlet_variance(alpha LIST(DOUBLE)) -> DOUBLE[]`
+
+Covariance matrix of the Dirichlet distribution as a row-major flattened LIST of length
+`len(alpha)²`.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_dirichlet_variance([1.0, 2.0])
+-- [0.05555555555555556, -0.05555555555555556, -0.05555555555555556, 0.05555555555555556]
+```
 
 ## sr_dirichlet_entropy(alpha)
 
@@ -139,6 +269,42 @@ SELECT sr_multinomial_pmf([0.5, 0.5], 4.0, [2, 2])::DECIMAL(12,8)
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_multinomial_pmf([0.5, 0.5], 4.5, [2, 2])
 -- error: expected a non-negative whole number, got 4.5
+```
+
+### sr_multinomial_ln_pmf(probs, trials, counts)
+
+**Signature**: `sr_multinomial_ln_pmf(probs LIST(DOUBLE), trials DOUBLE, counts LIST(BIGINT)) -> DOUBLE`
+
+Log probability mass of a count vector. Unlike `pmf`, a count vector that does not sum to
+`trials` is not an error but a legitimate `-inf` (the log of probability 0). For large `trials`
+the log form stays finite where the mass itself would underflow.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multinomial_ln_pmf([0.5, 0.5], 2000.0, [1000, 1000])
+-- -4.026367582410558
+```
+
+### sr_multinomial_mean(probs, trials)
+
+**Signature**: `sr_multinomial_mean(probs LIST(DOUBLE), trials DOUBLE) -> DOUBLE[]`
+
+Mean vector of the multinomial distribution: `n · p_i` per category.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multinomial_mean([0.3, 0.7], 5.0)
+-- [1.5, 3.5]
+```
+
+### sr_multinomial_variance(probs, trials)
+
+**Signature**: `sr_multinomial_variance(probs LIST(DOUBLE), trials DOUBLE) -> DOUBLE[]`
+
+Covariance matrix of the multinomial distribution as a row-major flattened LIST of length
+`len(probs)²`: diagonal `n · p_i · (1 − p_i)`, off-diagonal `−n · p_i · p_j`.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multinomial_variance([0.1, 0.3, 0.6], 10.0)
+-- [0.9, -0.3, -0.6, -0.3, 2.1, -1.8, -0.6, -1.8, 2.4]
 ```
 
 ## Shape validation

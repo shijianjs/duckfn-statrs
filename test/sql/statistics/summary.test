@@ -109,3 +109,47 @@ query R
 SELECT sr_std_dev(x::DOUBLE)::DECIMAL(10,4) FROM range(3000) t(x);
 ----
 866.1697
+
+# ============================================================================
+# sr_skewness（statrs online.rs 的 OnlineMoments<3> / OnlineSkewness）
+# ============================================================================
+
+# 官方用例 skewness_known_dataset：[2,4,4,4,5,5,7,9]，M2=32、M3=42 → (42/8)/(32/8)^1.5 = 0.65625
+query R
+SELECT sr_skewness(x) FROM (VALUES (2.0), (4.0), (4.0), (4.0), (5.0), (5.0), (7.0), (9.0)) t(x);
+----
+0.65625
+
+# 官方用例 single_element：不足 2 个值没有偏度（None → NULL）
+query R
+SELECT sr_skewness(x) FROM (VALUES (5.0), (NULL)) t(x);
+----
+NULL
+
+# 常数列分母为 0：statrs 约定为 0 而不是 NULL
+query R
+SELECT sr_skewness(x) FROM (VALUES (1.0), (1.0), (1.0)) t(x);
+----
+0.0
+
+# 空组 → NULL
+query R
+SELECT sr_skewness(x) FROM (VALUES (1.0)) t(x) WHERE 1 = 0;
+----
+NULL
+
+# SQL NULL 行不进状态（[1, NULL, 3] 对称 → 0）
+query R
+SELECT sr_skewness(x) FROM (VALUES (1.0), (NULL), (3.0)) t(x);
+----
+0.0
+
+# GROUP BY：每个分组各自建状态（第二组 [1,2,3] 对称 → 0）
+query RI
+SELECT g, sr_skewness(x)::DECIMAL(12,6)
+FROM (VALUES (1, 2.0), (1, 4.0), (1, 4.0), (1, 4.0), (1, 5.0), (1, 5.0), (1, 7.0), (1, 9.0),
+             (2, 1.0), (2, 2.0), (2, 3.0)) t(g, x)
+GROUP BY g ORDER BY g;
+----
+1	0.656250
+2	0.000000

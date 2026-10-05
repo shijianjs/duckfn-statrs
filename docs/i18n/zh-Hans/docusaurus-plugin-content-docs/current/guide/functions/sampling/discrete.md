@@ -119,6 +119,48 @@ FROM (SELECT unnest(sr_sample_multivariate_normal([0.0, 0.0], [1.0, 0.0, 0.0, 1.
 -- true
 ```
 
+## Multivariate Student's t（多元 t）
+
+### sr_sample_multivariate_students_t(location, scale, freedom, k)
+
+**签名**：`sr_sample_multivariate_students_t(location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE, k BIGINT) -> LIST(LIST(DOUBLE))`
+
+返回 `k` 个点的列表，每个点的长度与 `location` 一致。`scale` 是行主序展平的尺度矩阵
+（`len(location)²` 个元素），长度不符报查询错误。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT len(sr_sample_multivariate_students_t([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0, 6))
+-- 6
+```
+
+## Dirichlet
+
+### sr_sample_dirichlet(alpha, k)
+
+**签名**：`sr_sample_dirichlet(alpha LIST(DOUBLE), k BIGINT) -> LIST(LIST(DOUBLE))`
+
+返回单纯形上的 `k` 个点：每次抽样都是与 `alpha` 等长、分量和为 1 的向量。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT min(s) > 0.999999, max(s) < 1.000001
+FROM (SELECT list_sum(x) AS s FROM (SELECT unnest(sr_sample_dirichlet([1.0, 2.0], 8)) AS x))
+-- true	true
+```
+
+## Multinomial（多项式）
+
+### sr_sample_multinomial(probs, trials, k)
+
+**签名**：`sr_sample_multinomial(probs LIST(DOUBLE), trials DOUBLE, k BIGINT) -> LIST(LIST(BIGINT))`
+
+返回 `k` 个计数向量，长度与 `probs` 一致；每个计数向量的分量和恒等于 `trials`。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT count(*) FROM (SELECT unnest(sr_sample_multinomial([0.3, 0.7], 10.0, 8)) AS x)
+WHERE list_sum(x) <> 10
+-- 0
+```
+
 ## Empirical（经验分布，聚合）
 
 ### sr_sample_empirical(v, k)

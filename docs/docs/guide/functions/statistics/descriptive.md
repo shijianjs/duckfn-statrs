@@ -1,7 +1,7 @@
 ---
 title: Summary statistics
 sidebar_position: 1
-description: 26 aggregate functions — mean, median, variance, covariance and more. One column in, one value per group.
+description: 27 aggregate functions — mean, median, variance, covariance and more. One column in, one value per group.
 ---
 
 # Summary statistics (aggregates)
@@ -189,6 +189,20 @@ Population standard deviation.
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_population_std_dev(x) FROM (VALUES (0.0), (3.0), (-2.0)) t(x)
 -- 2.0548046670007003
+```
+
+### sr_skewness(x)
+
+**Signature**: `sr_skewness(x DOUBLE) -> DOUBLE`
+
+Sample skewness (statrs' `OnlineMoments<3>`: the third central moment divided by the 3/2 power
+of the population second moment). NULL when fewer than two rows are non-NULL; a constant column
+(zero variance) yields 0, following statrs.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_skewness(x)
+FROM (VALUES (2.0), (4.0), (4.0), (4.0), (5.0), (5.0), (7.0), (9.0)) t(x)
+-- 0.65625
 ```
 
 ## Extremes

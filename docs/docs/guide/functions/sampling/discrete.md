@@ -119,6 +119,50 @@ FROM (SELECT unnest(sr_sample_multivariate_normal([0.0, 0.0], [1.0, 0.0, 0.0, 1.
 -- true
 ```
 
+## Multivariate Student's t
+
+### sr_sample_multivariate_students_t(location, scale, freedom, k)
+
+**Signature**: `sr_sample_multivariate_students_t(location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE, k BIGINT) -> LIST(LIST(DOUBLE))`
+
+Returns a list of `k` point vectors, each of the same length as `location`. `scale` is the
+row-major flattened scale matrix (`len(location)²` entries); a mismatch is a query error.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT len(sr_sample_multivariate_students_t([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0, 6))
+-- 6
+```
+
+## Dirichlet
+
+### sr_sample_dirichlet(alpha, k)
+
+**Signature**: `sr_sample_dirichlet(alpha LIST(DOUBLE), k BIGINT) -> LIST(LIST(DOUBLE))`
+
+Returns `k` points on the simplex: each draw is a vector of the same length as `alpha` whose
+components sum to 1.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT min(s) > 0.999999, max(s) < 1.000001
+FROM (SELECT list_sum(x) AS s FROM (SELECT unnest(sr_sample_dirichlet([1.0, 2.0], 8)) AS x))
+-- true	true
+```
+
+## Multinomial
+
+### sr_sample_multinomial(probs, trials, k)
+
+**Signature**: `sr_sample_multinomial(probs LIST(DOUBLE), trials DOUBLE, k BIGINT) -> LIST(LIST(BIGINT))`
+
+Returns `k` count vectors of the same length as `probs`; the components of every count vector
+sum to `trials` exactly.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT count(*) FROM (SELECT unnest(sr_sample_multinomial([0.3, 0.7], 10.0, 8)) AS x)
+WHERE list_sum(x) <> 10
+-- 0
+```
+
 ## Empirical (aggregate)
 
 ### sr_sample_empirical(v, k)

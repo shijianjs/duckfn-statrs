@@ -1,12 +1,12 @@
 ---
 title: Overview
 sidebar_position: 1
-description: Index of all function reference pages — 511 statistical functions with executable SQL examples.
+description: Index of all function reference pages — 529 statistical functions with executable SQL examples.
 ---
 
 # Function reference overview
 
-All 511 functions registered by `duckfn_statrs` share the `sr_` prefix. Every function in the
+All 529 functions registered by `duckfn_statrs` share the `sr_` prefix. Every function in the
 sub-pages below includes at least one executable SQL example that runs directly in your browser.
 
 Search all registered functions at runtime:

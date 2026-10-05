@@ -21,7 +21,7 @@
 // ============================================================================
 
 use duckfn::{DuckOptionResult, duck_aggregate_function};
-use statrs::statistics::Statistics;
+use statrs::statistics::{Accumulate, OnlineSkewness, Statistics};
 
 use crate::extension::functions::nan_to_null;
 
@@ -146,6 +146,31 @@ fn sr_population_variance(values: Vec<f64>) -> DuckOptionResult<f64> {
 )]
 fn sr_population_std_dev(values: Vec<f64>) -> DuckOptionResult<f64> {
     nan_to_null(values.population_std_dev())
+}
+
+/// `sr_skewness(x)`：样本偏度（statrs 的 `OnlineSkewness`，即三阶 OnlineMoments：
+/// m3/m2^1.5，分母用总体二阶矩）。少于 2 个值没有偏度 → NULL；常数列（分母为 0）
+/// statrs 约定为 0 而不是 NULL。
+///
+/// ```sql
+/// SELECT sr_skewness(x) FROM (VALUES (2.0), (4.0), (4.0), (4.0), (5.0), (5.0), (7.0), (9.0)) t(x);  -- 0.65625
+/// SELECT sr_skewness(x) FROM (VALUES (1.0)) t(x);                                                   -- NULL
+/// ```
+#[duck_aggregate_function(
+    auto_collect = true,
+    description = "Sample skewness of a DOUBLE column (statrs' OnlineMoments<3>, m3/m2^1.5), NULL when fewer than two rows are non-NULL; constant columns give 0",
+    comment = "Fewer than two observations have no skewness; a zero-variance column is defined as 0, following statrs",
+    example = "SELECT sr_skewness(x) FROM (VALUES (2.0), (4.0), (4.0), (4.0), (5.0), (5.0), (7.0), (9.0)) t(x)"
+)]
+fn sr_skewness(values: Vec<f64>) -> DuckOptionResult<f64> {
+    let moments = values
+        .into_iter()
+        .fold(OnlineSkewness::default(), Accumulate::push);
+    // Option 侧的 None（不足 2 个值）与 NAN 侧的「算不出」都折成 SQL NULL
+    match moments.skewness() {
+        Some(v) => nan_to_null(v),
+        None => Ok(None),
+    }
 }
 
 /// `sr_min(x)`：最小值（`Statistics::min`）。DuckDB 自带 `min` 是聚合、语义相同；这里

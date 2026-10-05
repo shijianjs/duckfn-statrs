@@ -207,3 +207,227 @@ query R
 SELECT sr_multivariate_students_t_mode([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
 ----
 [0.0, 0.0]
+
+# ============================================================================
+# 多元分布补齐的矩/域/对数密度。期望值全部取 statrs 各分布源码 #[cfg(test)] 的
+# 官方断言（multivariate_normal.rs / multivariate_students_t.rs / dirichlet.rs /
+# multinomial.rs 的 test_*），其中 ln_pdf 的期望按官方用例由 pdf 断言值取 ln 得到。
+# 列表结果里的小数经 unnest 走 R 列的浮点近似比较。
+# ============================================================================
+
+# ---- MultivariateNormal::ln_pdf（statrs test_ln_pdf，9 例） ----
+query RRR
+SELECT sr_multivariate_normal_ln_pdf([1.0, 1.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0]),
+       sr_multivariate_normal_ln_pdf([1.0, 2.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0]),
+       sr_multivariate_normal_ln_pdf([1.0, 10.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+----
+-2.8378770664093453	-4.337877066409345	-52.33787706640935
+
+query RR
+SELECT sr_multivariate_normal_ln_pdf([10.0, 10.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0]),
+       sr_multivariate_normal_ln_pdf([1.0, -1.0], [0.0, 0.0], [1.0, 0.9, 0.9, 1.0])
+----
+-101.83787706640935	-11.007511462998526
+
+query R
+SELECT sr_multivariate_normal_ln_pdf([1.0, -1.0], [0.0, 0.0], [1.0, 0.99, 0.99, 1.0])
+----
+-99.87935929278393
+
+query R
+SELECT sr_multivariate_normal_ln_pdf([2.0, 2.0], [0.5, -0.2], [2.0, 0.3, 0.3, 0.5])
+----
+-6.639622825574824
+
+# 退化协方差（inf）：密度 0 → ln_pdf = -inf
+query R
+SELECT sr_multivariate_normal_ln_pdf([10.0, 10.0], [0.0, 0.0], ['inf'::DOUBLE, 0.0, 0.0, 'inf'::DOUBLE])
+----
+-inf
+
+# ---- MultivariateNormal::min / max（statrs test_min_max） ----
+query RR
+SELECT sr_multivariate_normal_min([0.0, 0.0], [1.0, 0.0, 0.0, 1.0]),
+       sr_multivariate_normal_max([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+----
+[-inf, -inf]	[inf, inf]
+
+query RR
+SELECT sr_multivariate_normal_min([10.0, 1.0], [1.0, 0.0, 0.0, 1.0]),
+       sr_multivariate_normal_max([-3.0, 5.0], [1.0, 0.0, 0.0, 1.0])
+----
+[-inf, -inf]	[inf, inf]
+
+# ---- Dirichlet::mean（statrs test_mean，3 例） ----
+query R
+SELECT sr_dirichlet_mean([0.5, 0.5, 0.5, 0.5, 0.5])
+----
+[0.2, 0.2, 0.2, 0.2, 0.2]
+
+query RR
+SELECT sr_dirichlet_mean([0.1, 0.2, 0.3, 0.4]),
+       sr_dirichlet_mean([1.0, 2.0, 3.0, 4.0])
+----
+[0.1, 0.2, 0.3, 0.4]	[0.1, 0.2, 0.3, 0.4]
+
+# ---- Dirichlet::variance（statrs test_variance，2 例，行主序摊平） ----
+query R
+SELECT unnest(sr_dirichlet_variance([1.0, 2.0]))
+----
+0.0555555555555556
+-0.0555555555555556
+-0.0555555555555556
+0.0555555555555556
+
+query R
+SELECT unnest(sr_dirichlet_variance([0.1, 0.2, 0.3, 0.4]))
+----
+0.045000000000000005
+-0.010000000000000002
+-0.015
+-0.020000000000000004
+-0.010000000000000002
+0.08000000000000002
+-0.03
+-0.04000000000000001
+-0.015
+-0.03
+0.105
+-0.06
+-0.020000000000000004
+-0.04000000000000001
+-0.06
+0.12
+
+# ---- Dirichlet::ln_pdf（statrs test_ln_pdf，2 例） ----
+query RR
+SELECT sr_dirichlet_ln_pdf([0.01, 0.03, 0.5, 0.46], [0.1, 0.3, 0.5, 0.8]),
+       sr_dirichlet_ln_pdf([0.1, 0.2, 0.3, 0.4], [0.1, 0.3, 0.5, 0.8])
+----
+2.9323800784091563	-0.18456529434757482
+
+# x 不在 (0,1) 或不和为 1：statrs 断言 panic → 查询错误
+statement error
+SELECT sr_dirichlet_ln_pdf([0.5, 0.6], [1.0, 1.0])
+----
+
+statement error
+SELECT sr_dirichlet_ln_pdf([-0.5, 1.5], [1.0, 1.0])
+----
+
+# ---- Multinomial::mean（statrs test_mean，4 例） ----
+query RR
+SELECT sr_multinomial_mean([0.3, 0.7], 5.0),
+       sr_multinomial_mean([0.1, 0.3, 0.6], 10.0)
+----
+[1.5, 3.5]	[1.0, 3.0, 6.0]
+
+query RR
+SELECT sr_multinomial_mean([1.0, 3.0, 6.0], 10.0),
+       sr_multinomial_mean([0.15, 0.35, 0.3, 0.2], 20.0)
+----
+[1.0, 3.0, 6.0]	[3.0, 7.0, 6.0, 4.0]
+
+# ---- Multinomial::variance（statrs test_variance，3 例，行主序摊平） ----
+query R
+SELECT unnest(sr_multinomial_variance([0.3, 0.7], 5.0))
+----
+1.05
+-1.05
+-1.05
+1.05
+
+query R
+SELECT unnest(sr_multinomial_variance([0.1, 0.3, 0.6], 10.0))
+----
+0.9
+-0.3
+-0.6
+-0.3
+2.1
+-1.8
+-0.6
+-1.8
+2.4
+
+query R
+SELECT unnest(sr_multinomial_variance([0.15, 0.35, 0.3, 0.2], 20.0))
+----
+2.55
+-1.05
+-0.9
+-0.6
+-1.05
+4.55
+-2.1
+-1.4
+-0.9
+-2.1
+4.2
+-1.2
+-0.6
+-1.4
+-1.2
+3.2
+
+# ---- Multinomial::ln_pmf（statrs test_pmf_large_n_no_overflow 的 ln_pmf 断言） ----
+# n=2000 的大 n 回归（#370）：系数溢出路径不得产生 NaN/inf
+query R
+SELECT sr_multinomial_ln_pmf([0.5, 0.5], 2000.0, [1000, 1000])
+----
+-4.026367582410558
+
+# counts 之和 ≠ n 是合法的 -inf（概率 0 的对数）
+query R
+SELECT sr_multinomial_ln_pmf([0.5, 0.5], 4.0, [1, 2])
+----
+-inf
+
+# ---- MultivariateStudent::ln_pdf（statrs test_ln_pdf，4 例） ----
+query RRRR
+SELECT sr_multivariate_students_t_ln_pdf([1.0, 1.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 4.0),
+       sr_multivariate_students_t_ln_pdf([1.0, 2.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 2.0),
+       sr_multivariate_students_t_ln_pdf([1.0, 10.0], [2.0, 1.0], [5.0, 0.0, 0.0, 1.0], 2.5),
+       sr_multivariate_students_t_ln_pdf([10.0, 10.0], [-1.0, 0.0], [2.0, 1.0, 1.0, 6.0], 1.5)
+----
+-3.0542723907338383	-4.3434030034000815	-10.542229575274265	-9.650699521198622
+
+# ---- MultivariateStudent::mean / variance（statrs test_mean / test_variance / bad cases） ----
+query RR
+SELECT sr_multivariate_students_t_mean([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 2.0),
+       sr_multivariate_students_t_mean([-1.0, 1.0, 3.0], [1.0, 0.0, 0.5, 0.0, 2.0, 0.0, 0.5, 0.0, 3.0], 2.0)
+----
+[0.0, 0.0]	[-1.0, 1.0, 3.0]
+
+query R
+SELECT sr_multivariate_students_t_mean([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 1.0)
+----
+NULL
+
+query R
+SELECT unnest(sr_multivariate_students_t_variance([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0))
+----
+3.0
+0.0
+0.0
+3.0
+
+query R
+SELECT unnest(sr_multivariate_students_t_variance([0.0, 0.0], ['inf'::DOUBLE, 0.0, 0.0, 'inf'::DOUBLE], 3.0))
+----
+inf
+0.0
+0.0
+inf
+
+query R
+SELECT sr_multivariate_students_t_variance([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 2.0)
+----
+NULL
+
+# ---- MultivariateStudent::min / max（statrs test_min_max） ----
+query RR
+SELECT sr_multivariate_students_t_min([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0),
+       sr_multivariate_students_t_max([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
+----
+[-inf, -inf]	[inf, inf]

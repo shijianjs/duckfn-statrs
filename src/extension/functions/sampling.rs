@@ -2,21 +2,19 @@
 // statrs 的随机采样能力（rand::distr::Distribution impls + binomial 的 sampler 导出）
 //
 // statrs 0.19 给每个分布都实现了 rand 的 Distribution trait（清单核对：一元 27 个
-// 全部有 f64 或 u64 实例；二项另有 BinomialAlgorithm / BinomialSampler 导出；多元里
-// 只有 MultivariateNormal 有 Distribution<OVector> —— Dirichlet / Multinomial /
-// MultivariateStudent 在 statrs 里本就没有采样实现，这里也就无从"缺失"）。
+// 全部有 f64 或 u64 实例；二项另有 BinomialAlgorithm / BinomialSampler 导出；多元
+// 4 个都有 OVector 实例——Dirichlet / Multinomial / MultivariateStudent 也一样）。
 //
 // SQL 形态：`sr_sample_<分布>(<分布参数...>, k)` 抽 k 个点返回 LIST(DOUBLE)，
-// k 是 BIGINT。离散分布经 u64 impl 采样后转 DOUBLE。Empirical 的采样是聚合形态
-// （样本列进、k 为 DuckFirst 常量、随机子样本出 LIST）。随机源是线程级
-// ThreadRng —— 每次调用独立、不可复现；这是 SQL 即席采样的固有语义，statrs 侧同样
-// 由调用方提供 rng。
+// k 是 BIGINT。离散分布经 u64 impl 采样后转 DOUBLE。多元分布出 LIST(LIST(DOUBLE))
+// （Multinomial 的计数保持 LIST(BIGINT)）。Empirical 的采样是聚合形态（样本列进、
+// k 为 DuckFirst 常量、随机子样本出 LIST）。随机源是线程级 ThreadRng —— 每次调用
+// 独立、不可复现；这是 SQL 即席采样的固有语义，statrs 侧同样由调用方提供 rng。
 //
 // statrs' sampling surface: every distribution implements rand's Distribution trait
 // (all 27 univariate ones have an f64 or u64 instance; Binomial additionally exports
-// BinomialAlgorithm / BinomialSampler; among the multivariate ones only
-// MultivariateNormal has Distribution<OVector> — statrs itself has no sampling impl
-// for Dirichlet / Multinomial / MultivariateStudent, so nothing is missing here).
+// BinomialAlgorithm / BinomialSampler; all four multivariate ones have OVector
+// instances — Dirichlet / Multinomial / MultivariateStudent included).
 // `sr_sample_<dist>(params..., k BIGINT)` draws k points into a LIST(DOUBLE); the
 // thread rng makes each call independent.
 // ============================================================================
@@ -26,11 +24,11 @@ use quack_rs::error::ExtensionError;
 use rand::RngExt;
 use statrs::distribution::{
     Bernoulli, Beta, Binomial, BinomialAlgorithm, BinomialSampler, Categorical, Cauchy, Chi,
-    ChiSquared, Dirac, DiscreteUniform, Empirical, Erlang, Exp, FisherSnedecor, Gamma,
-    Geometric, Gumbel, Hypergeometric, InverseGamma, Laplace, Levy, LogNormal, NegativeBinomial,
-    Normal, Pareto, Poisson, StudentsT, Triangular, Uniform, Weibull,
+    ChiSquared, Dirac, Dirichlet, DiscreteUniform, Empirical, Erlang, Exp, FisherSnedecor, Gamma,
+    Geometric, Gumbel, Hypergeometric, InverseGamma, Laplace, Levy, LogNormal, Multinomial,
+    MultivariateNormal, MultivariateStudent, NegativeBinomial, Normal, Pareto, Poisson, StudentsT,
+    Triangular, Uniform, Weibull,
 };
-use statrs::distribution::MultivariateNormal;
 
 use crate::extension::functions::as_u64;
 
@@ -423,6 +421,76 @@ fn sr_sample_multivariate_normal(
         .map(|_| {
             let v: nalgebra::DVector<f64> = rng.sample(&d);
             v.iter().copied().collect()
+        })
+        .collect();
+    Ok(Some(rows))
+}
+
+/// 从 MultivariateStudent(location, scale 行主序摊平, freedom) 抽 k 个向量。
+#[duck_scalar_function(
+    description = "Draw k multivariate Student's t samples (location LIST, row-major flattened scale LIST, degrees of freedom) as a LIST of point LISTs",
+    example = "SELECT len(sr_sample_multivariate_students_t([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0, 4))"
+)]
+fn sr_sample_multivariate_students_t(
+    location: Vec<f64>,
+    scale: Vec<f64>,
+    freedom: f64,
+    k: i64,
+) -> DuckOptionResult<Vec<Vec<f64>>> {
+    let dim = location.len();
+    if scale.len() != dim * dim {
+        return Err(duck_error(format!(
+            "sr_sample_multivariate_students_t: expected {} entries for a {dim}x{dim} scale matrix (row-major), got {}",
+            dim * dim,
+            scale.len()
+        )));
+    }
+    let d = MultivariateStudent::new(location, scale, freedom)
+        .map_err(|e| duck_error(format!("sr_sample_multivariate_students_t: {e}")))?;
+    let k = take_len("sr_sample_multivariate_students_t", k)?;
+    let mut rng = rand::rng();
+    let rows: Vec<Vec<f64>> = (0..k)
+        .map(|_| {
+            let v: nalgebra::DVector<f64> = rng.sample(&d);
+            v.iter().copied().collect()
+        })
+        .collect();
+    Ok(Some(rows))
+}
+
+/// 从 Dirichlet(alpha) 抽 k 个单纯形上的点（每行分量和为 1）。
+#[duck_scalar_function(
+    description = "Draw k Dirichlet samples on the simplex (concentration LIST alpha) as a LIST of point LISTs, each summing to 1",
+    example = "SELECT len(sr_sample_dirichlet([1.0, 2.0], 4))"
+)]
+fn sr_sample_dirichlet(alpha: Vec<f64>, k: i64) -> DuckOptionResult<Vec<Vec<f64>>> {
+    let d = Dirichlet::new(alpha).map_err(|e| duck_error(format!("sr_sample_dirichlet: {e}")))?;
+    let k = take_len("sr_sample_dirichlet", k)?;
+    let mut rng = rand::rng();
+    let rows: Vec<Vec<f64>> = (0..k)
+        .map(|_| {
+            let v: nalgebra::DVector<f64> = rng.sample(&d);
+            v.iter().copied().collect()
+        })
+        .collect();
+    Ok(Some(rows))
+}
+
+/// 从 Multinomial(p, n) 抽 k 个计数向量（LIST(BIGINT)，每行分量和恒为 n）。
+#[duck_scalar_function(
+    description = "Draw k multinomial count vectors (BIGINT LISTs summing to n) given category probabilities and the trial count",
+    example = "SELECT len(sr_sample_multinomial([0.3, 0.7], 10.0, 4))"
+)]
+fn sr_sample_multinomial(p: Vec<f64>, n: f64, k: i64) -> DuckOptionResult<Vec<Vec<i64>>> {
+    let n_u64 = as_u64("sr_sample_multinomial", n)?;
+    let d = Multinomial::new(p, n_u64)
+        .map_err(|e| duck_error(format!("sr_sample_multinomial: {e}")))?;
+    let k = take_len("sr_sample_multinomial", k)?;
+    let mut rng = rand::rng();
+    let rows: Vec<Vec<i64>> = (0..k)
+        .map(|_| {
+            let v: nalgebra::DVector<u64> = rng.sample(&d);
+            v.iter().map(|c| *c as i64).collect()
         })
         .collect();
     Ok(Some(rows))
