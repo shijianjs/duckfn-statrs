@@ -308,11 +308,11 @@ const config: Config = {
     algolia: {
       appId: 'J72GU161MT',
       apiKey: 'ed529cc7365e034dee6c1359a3ecddda',   // the public search key; safe to commit
-      indexName: 'duckfn_statrs',
+      indexName: 'duckfn-statrs',
       // The index URLs carry the GitHub Pages sub-path; a deployment served from a domain root
       // (`npm start`) has to drop it again, otherwise hits link to /zh-Hans/<sub-path>/...
       replaceSearchResultPathname: {
-        from: '^/duckfn_statrs/',
+        from: '^/duckfn-statrs/',
         to: '/',
       },
     },
