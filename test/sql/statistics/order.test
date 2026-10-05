@@ -68,19 +68,19 @@ NULL	NULL
 # percentile doc：[1,5,3,4,10,9,6,7,8,2] 的 p50 = 5.5、p100 = 10、p105 → NULL
 # ============================================================================
 query RR
-SELECT sr_order_statistic(x, 2.0), sr_order_statistic(x, 10.0)
+SELECT sr_order_statistic(x::DOUBLE, 2::UBIGINT), sr_order_statistic(x::DOUBLE, 10::UBIGINT)
 FROM (VALUES (-1.0), (5.0), (0.0), (-3.0), (10.0), (-0.5), (4.0), (1.0), (6.0)) t(x);
 ----
 -1.0	NULL
 
 query RR
-SELECT sr_percentile(x, 50.0), sr_percentile(x, 100.0)
+SELECT sr_percentile(x::DOUBLE, 50::UBIGINT), sr_percentile(x::DOUBLE, 100::UBIGINT)
 FROM (VALUES (1.0), (5.0), (3.0), (4.0), (10.0), (9.0), (6.0), (7.0), (8.0), (2.0)) t(x);
 ----
 5.5	10.0
 
 query R
-SELECT sr_percentile(x, 105.0) FROM (VALUES (1.0), (2.0)) t(x);
+SELECT sr_percentile(x::DOUBLE, 105::UBIGINT) FROM (VALUES (1.0), (2.0)) t(x);
 ----
 NULL
 
@@ -88,7 +88,7 @@ NULL
 statement error
 SELECT sr_order_statistic(x, 2.5) FROM (VALUES (1.0), (2.0)) t(x);
 ----
-expected a non-negative whole number, got 2.5
+No function matches
 
 # ============================================================================
 # 官方 doc example（order_statistics.rs::ranks）：[1,3,2,2] 的 Average 秩

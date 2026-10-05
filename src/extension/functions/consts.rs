@@ -133,14 +133,14 @@ fn sr_default_eps() -> f64 {
 
 /// statrs f64 运算的默认 ULP 精度目标（5 个 ULP）。
 ///
-/// statrs 里是 u32；这里返回 DOUBLE，让「零参标量返回 DOUBLE」这条约定保持一致
-/// （见 functions/mod.rs 的类型面），值本身是个小整数，DOUBLE 装得下且无损。
+/// 返回类型照 statrs 原文是 `u32`（DuckDB 的 `UINTEGER`）—— 原版是什么类型就原样透出，
+/// 不做「统一成 DOUBLE」的抹平。
 #[duck_scalar_function(
-    description = "statrs' default target ULPs accuracy for f64 operations (5), as a DOUBLE",
+    description = "statrs' default target ULPs accuracy for f64 operations (5), as a UINTEGER",
     example = "SELECT sr_default_ulps()"
 )]
-fn sr_default_ulps() -> f64 {
-    f64::from(prec::DEFAULT_ULPS)
+fn sr_default_ulps() -> u32 {
+    prec::DEFAULT_ULPS
 }
 
 /// statrs 的 `almost_eq(a, b, acc)`：按绝对阈值 acc 比较两个浮点是否足够接近。

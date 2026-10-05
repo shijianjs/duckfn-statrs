@@ -9,52 +9,52 @@ require duckfn_statrs
 
 # Bernoulli：pmf(1)=p、cdf(0)=1-p、quantile 端 0/1
 query RRRR
-SELECT sr_bernoulli_pmf(1.0, 0.7), sr_bernoulli_pmf(0.0, 0.7),
-       sr_bernoulli_cdf(0.0, 0.7), sr_bernoulli_quantile(0.5, 0.7)
+SELECT sr_bernoulli_pmf(1, 0.7), sr_bernoulli_pmf(0, 0.7),
+       sr_bernoulli_cdf(0, 0.7), sr_bernoulli_quantile(0.5, 0.7)
 ----
 0.7	0.3	0.30000000000000004	1.0
 
 # Binomial：C(10,3)·0.5^10 = 120/1024（尾差由近似比较吸收）；对称点 cdf/quantile
 query RR
-SELECT sr_binomial_pmf(3.0, 0.5, 10.0)::DECIMAL(12,8), sr_binomial_quantile(0.5, 0.5, 10.0)
+SELECT sr_binomial_pmf(3, 0.5, 10)::DECIMAL(12,8), sr_binomial_quantile(0.5, 0.5, 10)
 ----
 0.11718750	5.0
 
 # Poisson：pmf(2|3) = e^-3·9/2；ln_pmf 与 pmf 互证
 query RR
-SELECT sr_poisson_pmf(2.0, 3.0)::DECIMAL(12,8), exp(sr_poisson_ln_pmf(2.0, 3.0))::DECIMAL(12,8)
+SELECT sr_poisson_pmf(2, 3.0)::DECIMAL(12,8), exp(sr_poisson_ln_pmf(2, 3.0))::DECIMAL(12,8)
 ----
 0.22404181	0.22404181
 
 # Geometric（statrs 定义：首次成功所需的试验数，支撑从 1 起）：cdf(1|0.5) = p = 0.5
 query RR
-SELECT sr_geometric_cdf(1.0, 0.5), sr_geometric_sf(1.0, 0.5)::DECIMAL(12,8)
+SELECT sr_geometric_cdf(1, 0.5), sr_geometric_sf(1, 0.5)::DECIMAL(12,8)
 ----
 0.5	0.50000000
 
 # Hypergeometric：pmf(2 | N=10, K=5, n=4) = C(5,2)C(5,2)/C(10,4) = 100/210
 query R
-SELECT sr_hypergeometric_pmf(2.0, 10.0, 5.0, 4.0)::DECIMAL(12,8)
+SELECT sr_hypergeometric_pmf(2, 10, 5, 4)::DECIMAL(12,8)
 ----
 0.47619048
 
 # NegativeBinomial：pmf(3|2,0.5) = C(4,1)·0.5^4 = 0.125
 query R
-SELECT sr_negative_binomial_pmf(3.0, 2.0, 0.5)::DECIMAL(12,8)
+SELECT sr_negative_binomial_pmf(3, 2.0, 0.5)::DECIMAL(12,8)
 ----
 0.12500000
 
 # DiscreteUniform：pmf = 1/6、quantile(0.5) 取到第 3 个点
 query RR
-SELECT sr_discrete_uniform_pmf(2.0, 1.0, 6.0)::DECIMAL(12,8), sr_discrete_uniform_quantile(0.5, 1.0, 6.0)
+SELECT sr_discrete_uniform_pmf(2, 1, 6)::DECIMAL(12,8), sr_discrete_uniform_quantile(0.5, 1, 6)
 ----
 0.16666667	3.0
 
 # x 非整数报错（不四舍五入）；负数同样
 statement error
-SELECT sr_binomial_pmf(2.5, 0.5, 10.0)
+SELECT sr_binomial_pmf(2.5, 0.5, 10)
 ----
-expected a non-negative whole number, got 2.5
+No function matches
 
 # 概率参数越界
 statement error
@@ -64,7 +64,7 @@ the probability must be within [0, 1], got -0.1
 
 # 非法分布参数（二项 p 越出 [0,1]）
 statement error
-SELECT sr_binomial_pmf(1.0, 1.5, 10.0)
+SELECT sr_binomial_pmf(1, 1.5, 10)
 ----
 sr_binomial_pmf
 
@@ -87,7 +87,7 @@ SELECT sr_bernoulli_entropy(0.7)
 
 # Bernoulli log probability mass at x
 query R
-SELECT sr_bernoulli_ln_pmf(1.0, 0.7)
+SELECT sr_bernoulli_ln_pmf(1, 0.7)
 ----
 -0.35667494393873245
 
@@ -123,7 +123,7 @@ SELECT sr_bernoulli_mode(0.7)
 
 # Bernoulli survival function P(X > x)
 query R
-SELECT sr_bernoulli_sf(0.0, 0.7)
+SELECT sr_bernoulli_sf(0, 0.7)
 ----
 0.6999999999999997
 
@@ -147,145 +147,145 @@ SELECT sr_bernoulli_variance(0.7)
 
 # Binomial cumulative distribution function P(X <= x)
 query R
-SELECT sr_binomial_cdf(3.0, 0.5, 10.0)
+SELECT sr_binomial_cdf(3, 0.5, 10)
 ----
 0.17187500000000047
 
 # Binomial entropy
 query R
-SELECT sr_binomial_entropy(0.5, 10.0)
+SELECT sr_binomial_entropy(0.5, 10)
 ----
 1.8759536052468009
 
 # Binomial log probability mass at x
 query R
-SELECT sr_binomial_ln_pmf(3.0, 0.5, 10.0)
+SELECT sr_binomial_ln_pmf(3, 0.5, 10)
 ----
 -2.143980062817406
 
 # Binomial maximum of the support (n)
 query R
-SELECT sr_binomial_max(0.5, 10.0)
+SELECT sr_binomial_max(0.5, 10)
 ----
 10.0
 
 # Binomial mean
 query R
-SELECT sr_binomial_mean(0.5, 10.0)
+SELECT sr_binomial_mean(0.5, 10)
 ----
 5.0
 
 # Binomial median
 query R
-SELECT sr_binomial_median(0.5, 10.0)
+SELECT sr_binomial_median(0.5, 10)
 ----
 5.0
 
 # Binomial minimum of the support (0)
 query R
-SELECT sr_binomial_min(0.5, 10.0)
+SELECT sr_binomial_min(0.5, 10)
 ----
 0.0
 
 # Binomial mode
 query R
-SELECT sr_binomial_mode(0.5, 10.0)
+SELECT sr_binomial_mode(0.5, 10)
 ----
 5.0
 
 # Binomial survival function P(X > x)
 query R
-SELECT sr_binomial_sf(3.0, 0.5, 10.0)
+SELECT sr_binomial_sf(3, 0.5, 10)
 ----
 0.8281249999999996
 
 # Binomial skewness
 query R
-SELECT sr_binomial_skewness(0.5, 10.0)
+SELECT sr_binomial_skewness(0.5, 10)
 ----
 0.0
 
 # Binomial standard deviation
 query R
-SELECT sr_binomial_std_dev(0.5, 10.0)
+SELECT sr_binomial_std_dev(0.5, 10)
 ----
 1.5811388300841898
 
 # Binomial variance
 query R
-SELECT sr_binomial_variance(0.5, 10.0)
+SELECT sr_binomial_variance(0.5, 10)
 ----
 2.5
 
 # Discrete uniform cumulative distribution function P(X <= x)
 query R
-SELECT sr_discrete_uniform_cdf(3.0, 1.0, 6.0)
+SELECT sr_discrete_uniform_cdf(3, 1, 6)
 ----
 0.5
 
 # Discrete uniform entropy
 query R
-SELECT sr_discrete_uniform_entropy(1.0, 6.0)
+SELECT sr_discrete_uniform_entropy(1, 6)
 ----
 1.791759469228055
 
 # Discrete uniform log probability mass at x
 query R
-SELECT sr_discrete_uniform_ln_pmf(2.0, 1.0, 6.0)
+SELECT sr_discrete_uniform_ln_pmf(2, 1, 6)
 ----
 -1.791759469228055
 
 # Discrete uniform maximum of the support (max)
 query R
-SELECT sr_discrete_uniform_max(1.0, 6.0)
+SELECT sr_discrete_uniform_max(1, 6)
 ----
 6.0
 
 # Discrete uniform mean
 query R
-SELECT sr_discrete_uniform_mean(1.0, 6.0)
+SELECT sr_discrete_uniform_mean(1, 6)
 ----
 3.5
 
 # Discrete uniform median
 query R
-SELECT sr_discrete_uniform_median(1.0, 6.0)
+SELECT sr_discrete_uniform_median(1, 6)
 ----
 3.5
 
 # Discrete uniform minimum of the support (min)
 query R
-SELECT sr_discrete_uniform_min(1.0, 6.0)
+SELECT sr_discrete_uniform_min(1, 6)
 ----
 1.0
 
 # Discrete uniform mode
 query R
-SELECT sr_discrete_uniform_mode(1.0, 6.0)
+SELECT sr_discrete_uniform_mode(1, 6)
 ----
 3.0
 
 # Discrete uniform survival function P(X > x)
 query R
-SELECT sr_discrete_uniform_sf(3.0, 1.0, 6.0)
+SELECT sr_discrete_uniform_sf(3, 1, 6)
 ----
 0.5
 
 # Discrete uniform skewness
 query R
-SELECT sr_discrete_uniform_skewness(1.0, 6.0)
+SELECT sr_discrete_uniform_skewness(1, 6)
 ----
 0.0
 
 # Discrete uniform standard deviation
 query R
-SELECT sr_discrete_uniform_std_dev(1.0, 6.0)
+SELECT sr_discrete_uniform_std_dev(1, 6)
 ----
 1.707825127659933
 
 # Discrete uniform variance
 query R
-SELECT sr_discrete_uniform_variance(1.0, 6.0)
+SELECT sr_discrete_uniform_variance(1, 6)
 ----
 2.9166666666666665
 
@@ -303,7 +303,7 @@ SELECT sr_geometric_entropy(0.5)
 
 # Geometric log probability mass at x
 query R
-SELECT sr_geometric_ln_pmf(2.0, 0.5)
+SELECT sr_geometric_ln_pmf(2, 0.5)
 ----
 -1.3862943611198906
 
@@ -311,7 +311,7 @@ SELECT sr_geometric_ln_pmf(2.0, 0.5)
 query R
 SELECT sr_geometric_max(0.5)
 ----
-1.8446744073709552e+19
+18446744073709551615
 
 # Geometric median
 query R
@@ -333,7 +333,7 @@ SELECT sr_geometric_mode(0.5)
 
 # Geometric probability mass P(X = x) for the number of trials until the first success (statrs' support starts at 1)
 query R
-SELECT sr_geometric_pmf(2.0, 0.5)
+SELECT sr_geometric_pmf(2, 0.5)
 ----
 0.25
 
@@ -363,151 +363,151 @@ SELECT sr_geometric_variance(0.5)
 
 # Hypergeometric cumulative distribution function P(X <= x)
 query R
-SELECT sr_hypergeometric_cdf(2.0, 10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_cdf(2, 10, 5, 4)
 ----
 0.7380952380952372
 
 # Hypergeometric entropy
 query R
-SELECT sr_hypergeometric_entropy(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_entropy(10, 5, 4)
 ----
 NULL
 
 # Hypergeometric log probability mass at x
 query R
-SELECT sr_hypergeometric_ln_pmf(2.0, 10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_ln_pmf(2, 10, 5, 4)
 ----
 -0.7419373447293784
 
 # Hypergeometric maximum of the support
 query R
-SELECT sr_hypergeometric_max(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_max(10, 5, 4)
 ----
 4.0
 
 # Hypergeometric mean
 query R
-SELECT sr_hypergeometric_mean(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_mean(10, 5, 4)
 ----
 2.0
 
 # Hypergeometric minimum of the support
 query R
-SELECT sr_hypergeometric_min(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_min(10, 5, 4)
 ----
 0.0
 
 # Hypergeometric mode
 query R
-SELECT sr_hypergeometric_mode(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_mode(10, 5, 4)
 ----
 2.0
 
 # Hypergeometric quantile function: the x whose CDF equals p, for p in [0, 1]
 query R
-SELECT sr_hypergeometric_quantile(0.5, 10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_quantile(0.5, 10, 5, 4)
 ----
 2.0
 
 # Hypergeometric survival function P(X > x)
 query R
-SELECT sr_hypergeometric_sf(2.0, 10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_sf(2, 10, 5, 4)
 ----
 0.2619047619047616
 
 # Hypergeometric skewness
 query R
-SELECT sr_hypergeometric_skewness(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_skewness(10, 5, 4)
 ----
 0.0
 
 # Hypergeometric standard deviation
 query R
-SELECT sr_hypergeometric_std_dev(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_std_dev(10, 5, 4)
 ----
 0.816496580927726
 
 # Hypergeometric variance
 query R
-SELECT sr_hypergeometric_variance(10.0, 5.0, 4.0)
+SELECT sr_hypergeometric_variance(10, 5, 4)
 ----
 0.6666666666666666
 
 # Negative-binomial cumulative distribution function P(X <= x)
 query R
-SELECT sr_negative_binomial_cdf(3.0, 2.0, 0.5)
+SELECT sr_negative_binomial_cdf(3, 2.0, 0.5)
 ----
 0.8125000000000002
 
 # Negative-binomial entropy
 query R
-SELECT sr_negative_binomial_entropy(2.0, 0.5)
+SELECT sr_negative_binomial_entropy(2, 0.5)
 ----
 NULL
 
 # Negative-binomial log probability mass at x
 query R
-SELECT sr_negative_binomial_ln_pmf(3.0, 2.0, 0.5)
+SELECT sr_negative_binomial_ln_pmf(3, 2.0, 0.5)
 ----
 -2.079441541679829
 
 # Negative-binomial maximum of the support (u64::MAX, shown as 1.8e19)
 query R
-SELECT sr_negative_binomial_max(2.0, 0.5)
+SELECT sr_negative_binomial_max(2, 0.5)
 ----
-1.8446744073709552e+19
+18446744073709551615
 
 # Negative-binomial mean
 query R
-SELECT sr_negative_binomial_mean(2.0, 0.5)
+SELECT sr_negative_binomial_mean(2, 0.5)
 ----
 2.0
 
 # Negative-binomial minimum of the support (0)
 query R
-SELECT sr_negative_binomial_min(2.0, 0.5)
+SELECT sr_negative_binomial_min(2, 0.5)
 ----
 0.0
 
 # Negative-binomial mode (statrs returns a real-valued Option<f64>)
 query R
-SELECT sr_negative_binomial_mode(2.0, 0.5)
+SELECT sr_negative_binomial_mode(2, 0.5)
 ----
 1.0
 
 # Negative-binomial quantile function: the x whose CDF equals p, for p in [0, 1]
 query R
-SELECT sr_negative_binomial_quantile(0.5, 2.0, 0.5)
+SELECT sr_negative_binomial_quantile(0.5, 2, 0.5)
 ----
 1.0
 
 # Negative-binomial survival function P(X > x)
 query R
-SELECT sr_negative_binomial_sf(3.0, 2.0, 0.5)
+SELECT sr_negative_binomial_sf(3, 2.0, 0.5)
 ----
 0.18749999999999972
 
 # Negative-binomial skewness
 query R
-SELECT sr_negative_binomial_skewness(2.0, 0.5)
+SELECT sr_negative_binomial_skewness(2, 0.5)
 ----
 1.5
 
 # Negative-binomial standard deviation
 query R
-SELECT sr_negative_binomial_std_dev(2.0, 0.5)
+SELECT sr_negative_binomial_std_dev(2, 0.5)
 ----
 2.0
 
 # Negative-binomial variance
 query R
-SELECT sr_negative_binomial_variance(2.0, 0.5)
+SELECT sr_negative_binomial_variance(2, 0.5)
 ----
 4.0
 
 # Poisson cumulative distribution function P(X <= x)
 query R
-SELECT sr_poisson_cdf(2.0, 3.0)
+SELECT sr_poisson_cdf(2, 3.0)
 ----
 0.4231900811268454
 
@@ -521,7 +521,7 @@ SELECT sr_poisson_entropy(3.0)
 query R
 SELECT sr_poisson_max(3.0)
 ----
-1.8446744073709552e+19
+18446744073709551615
 
 # Poisson mean
 query R
@@ -549,7 +549,7 @@ SELECT sr_poisson_mode(3.0)
 
 # Poisson survival function P(X > x)
 query R
-SELECT sr_poisson_sf(2.0, 3.0)
+SELECT sr_poisson_sf(2, 3.0)
 ----
 0.5768099188731546
 

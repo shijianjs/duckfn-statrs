@@ -21,7 +21,6 @@ use statrs::distribution::{
 };
 use statrs::statistics::{Max, MeanN, Min, Mode, VarianceN};
 
-use crate::extension::functions::as_u64;
 
 /// 协方差/尺度/计数矩阵按行主序摊平成 LIST(DOUBLE)。statrs 返回的是 nalgebra 矩阵，
 /// SQL 侧的统一形状（与构造参数同构）。
@@ -171,58 +170,47 @@ fn sr_dirichlet_variance(alpha: Vec<f64>) -> DuckOptionResult<Vec<f64>> {
 fn multinomial(
     name: &str,
     p: Vec<f64>,
-    n: f64,
+    n: u64,
 ) -> Result<Multinomial<nalgebra::Dyn>, ExtensionError> {
-    let n = as_u64(name, n)?;
     Multinomial::new(p, n).map_err(|e| duck_error(format!("{name}: {e}")))
 }
 
-/// LIST(BIGINT) 计数向量 → u64 向量（pmf / ln_pmf 共用；负数或非整数是调用错误）。
-fn counts_to_u64(name: &str, counts: &[i64]) -> Result<Vec<u64>, ExtensionError> {
-    counts
-        .iter()
-        .map(|c| as_u64(name, *c as f64))
-        .collect()
-}
-
-/// 多项分布概率质量 P(X = counts)：counts 为 LIST(BIGINT)，与概率向量 p 等长。
+/// 多项分布概率质量 P(X = counts)：counts 为 LIST(UBIGINT)（statrs 的计数类型是 u64），与概率向量 p 等长。
 #[duck_scalar_function(
-    description = "Multinomial probability mass of a count LIST(BIGINT), given category probabilities and the trial count",
-    example = "SELECT sr_multinomial_pmf([1.0, 2.0], 3.0, [1, 2])"
+    description = "Multinomial probability mass of a count LIST(UBIGINT), given category probabilities and the trial count (UBIGINT)",
+    example = "SELECT sr_multinomial_pmf([1.0, 2.0], 3, [1, 2])"
 )]
-fn sr_multinomial_pmf(p: Vec<f64>, n: f64, counts: Vec<i64>) -> DuckOptionResult<f64> {
+fn sr_multinomial_pmf(p: Vec<f64>, n: u64, counts: Vec<u64>) -> DuckOptionResult<f64> {
     let dist = multinomial("sr_multinomial_pmf", p, n)?;
-    let counts = counts_to_u64("sr_multinomial_pmf", &counts)?;
     Ok(Some(dist.pmf(&DVector::from_vec(counts))))
 }
 
 /// 多项分布对数概率质量：counts 之和 ≠ n 时是合法结果 -inf（概率 0 的对数）。
 #[duck_scalar_function(
-    description = "Log probability mass of a count LIST(BIGINT) under the multinomial distribution; -inf when the counts do not sum to n",
-    example = "SELECT sr_multinomial_ln_pmf([0.5, 0.5], 2000.0, [1000, 1000])"
+    description = "Log probability mass of a count LIST(UBIGINT) under the multinomial distribution; -inf when the counts do not sum to n",
+    example = "SELECT sr_multinomial_ln_pmf([0.5, 0.5], 2000, [1000, 1000])"
 )]
-fn sr_multinomial_ln_pmf(p: Vec<f64>, n: f64, counts: Vec<i64>) -> DuckOptionResult<f64> {
+fn sr_multinomial_ln_pmf(p: Vec<f64>, n: u64, counts: Vec<u64>) -> DuckOptionResult<f64> {
     let dist = multinomial("sr_multinomial_ln_pmf", p, n)?;
-    let counts = counts_to_u64("sr_multinomial_ln_pmf", &counts)?;
     Ok(Some(dist.ln_pmf(&DVector::from_vec(counts))))
 }
 
 /// 多项分布均值向量：n * p_i。
 #[duck_scalar_function(
-    description = "Mean vector of the multinomial distribution (n * p_i) given category probabilities and the trial count",
-    example = "SELECT sr_multinomial_mean([0.3, 0.7], 5.0)"
+    description = "Mean vector of the multinomial distribution (n * p_i) given category probabilities and the trial count (UBIGINT)",
+    example = "SELECT sr_multinomial_mean([0.3, 0.7], 5)"
 )]
-fn sr_multinomial_mean(p: Vec<f64>, n: f64) -> DuckOptionResult<Vec<f64>> {
+fn sr_multinomial_mean(p: Vec<f64>, n: u64) -> DuckOptionResult<Vec<f64>> {
     let dist = multinomial("sr_multinomial_mean", p, n)?;
     Ok(dist.mean().map(|v| v.iter().copied().collect()))
 }
 
 /// 多项分布协方差矩阵（行主序摊平成 LIST(DOUBLE)，长度为 k²）。
 #[duck_scalar_function(
-    description = "Covariance matrix of the multinomial distribution (row-major flattened LIST) given category probabilities and the trial count",
-    example = "SELECT sr_multinomial_variance([0.1, 0.3, 0.6], 10.0)"
+    description = "Covariance matrix of the multinomial distribution (row-major flattened LIST) given category probabilities and the trial count (UBIGINT)",
+    example = "SELECT sr_multinomial_variance([0.1, 0.3, 0.6], 10)"
 )]
-fn sr_multinomial_variance(p: Vec<f64>, n: f64) -> DuckOptionResult<Vec<f64>> {
+fn sr_multinomial_variance(p: Vec<f64>, n: u64) -> DuckOptionResult<Vec<f64>> {
     let dist = multinomial("sr_multinomial_variance", p, n)?;
     Ok(dist.variance().map(row_major))
 }

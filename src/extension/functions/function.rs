@@ -13,7 +13,7 @@
 use duckfn::{DuckOptionResult, duck_error, duck_scalar_function};
 use statrs::function::{beta, erf, evaluate, exponential, factorial, gamma, harmonic, logistic};
 
-use super::{as_u64, nan_to_null};
+use super::nan_to_null;
 
 // ---------------------------------------------------------------------------
 // 误差函数族（statrs::function::erf）
@@ -184,84 +184,73 @@ fn sr_inv_beta_regularized(a: f64, b: f64, p: f64) -> DuckOptionResult<f64> {
 // 阶乘与二项/多项式系数（statrs::function::factorial）
 // ---------------------------------------------------------------------------
 
-/// n 的阶乘（`factorial::factorial`）。
+/// n 的阶乘（`factorial::factorial`）。n 是 statrs 的 `u64`（DuckDB 的 `UBIGINT`）。
 #[duck_scalar_function(
-    description = "Factorial of n, given as a whole-number DOUBLE",
-    example = "SELECT sr_factorial(10.0)"
+    description = "Factorial of n, n as a UBIGINT (statrs' factorial::factorial)",
+    example = "SELECT sr_factorial(10)"
 )]
-fn sr_factorial(n: f64) -> DuckOptionResult<f64> {
-    nan_to_null(factorial::factorial(as_u64("sr_factorial", n)?))
+fn sr_factorial(n: u64) -> DuckOptionResult<f64> {
+    nan_to_null(factorial::factorial(n))
 }
 
 /// ln(n!)。
 #[duck_scalar_function(
-    description = "Natural logarithm of n!, given as a whole-number DOUBLE",
-    example = "SELECT sr_ln_factorial(100.0)"
+    description = "Natural logarithm of n!, n as a UBIGINT",
+    example = "SELECT sr_ln_factorial(100)"
 )]
-fn sr_ln_factorial(n: f64) -> DuckOptionResult<f64> {
-    nan_to_null(factorial::ln_factorial(as_u64("sr_ln_factorial", n)?))
+fn sr_ln_factorial(n: u64) -> DuckOptionResult<f64> {
+    nan_to_null(factorial::ln_factorial(n))
 }
 
 /// 二项系数 `C(n, k)`（statrs 原名 `factorial::binomial`；取 SQL 侧更常见的 choose 一词，
-/// 避免与二项分布撞名）。
+/// 避免与二项分布撞名）。n、k 都是 statrs 的 `u64`。
 #[duck_scalar_function(
-    description = "Binomial coefficient C(n, k) (statrs' factorial::binomial), n and k whole-number DOUBLEs",
-    example = "SELECT sr_choose(10.0, 3.0)"
+    description = "Binomial coefficient C(n, k) (statrs' factorial::binomial), n and k UBIGINTs",
+    example = "SELECT sr_choose(10, 3)"
 )]
-fn sr_choose(n: f64, k: f64) -> DuckOptionResult<f64> {
-    nan_to_null(factorial::binomial(
-        as_u64("sr_choose", n)?,
-        as_u64("sr_choose", k)?,
-    ))
+fn sr_choose(n: u64, k: u64) -> DuckOptionResult<f64> {
+    nan_to_null(factorial::binomial(n, k))
 }
 
 /// ln(C(n, k))。
 #[duck_scalar_function(
-    description = "Natural logarithm of the binomial coefficient C(n, k), n and k whole-number DOUBLEs",
-    example = "SELECT sr_ln_choose(100.0, 50.0)"
+    description = "Natural logarithm of the binomial coefficient C(n, k), n and k UBIGINTs",
+    example = "SELECT sr_ln_choose(100, 50)"
 )]
-fn sr_ln_choose(n: f64, k: f64) -> DuckOptionResult<f64> {
-    nan_to_null(factorial::ln_binomial(
-        as_u64("sr_ln_choose", n)?,
-        as_u64("sr_ln_choose", k)?,
-    ))
+fn sr_ln_choose(n: u64, k: u64) -> DuckOptionResult<f64> {
+    nan_to_null(factorial::ln_binomial(n, k))
 }
 
 /// 多项式系数 `n! / (n1! n2! …)`（statrs 原名 `factorial::multinomial`，用其 checked 版：
-/// 各 ni 之和 ≠ n 时给 None → SQL NULL）。counts 为 LIST(BIGINT)。
+/// 各 ni 之和 ≠ n 时给 None → SQL NULL）。counts 为 statrs 的 `&[u64]` → LIST(UBIGINT)。
 #[duck_scalar_function(
-    description = "Multinomial coefficient n! / (n1! n2! ...) over a whole-number n and a count LIST(BIGINT); NULL when the counts do not sum to n",
-    example = "SELECT sr_multinomial_coefficient(5.0, [2, 2, 1])"
+    description = "Multinomial coefficient n! / (n1! n2! ...) over a UBIGINT n and a count LIST(UBIGINT); NULL when the counts do not sum to n",
+    example = "SELECT sr_multinomial_coefficient(5, [2, 2, 1])"
 )]
-fn sr_multinomial_coefficient(total: f64, counts: Vec<i64>) -> DuckOptionResult<f64> {
-    let n = as_u64("sr_multinomial_coefficient", total)?;
-    let ni = counts
-        .iter()
-        .map(|c| as_u64("sr_multinomial_coefficient", *c as f64))
-        .collect::<Result<Vec<u64>, _>>()?;
-    Ok(factorial::checked_multinomial(n, &ni))
+fn sr_multinomial_coefficient(total: u64, counts: Vec<u64>) -> DuckOptionResult<f64> {
+    Ok(factorial::checked_multinomial(total, &counts))
 }
 
 // ---------------------------------------------------------------------------
 // 调和数（statrs::function::harmonic）
 // ---------------------------------------------------------------------------
 
-/// 第 n 个调和数 `H(n) = Σ 1/k`。
+/// 第 n 个调和数 `H(n) = Σ 1/k`。n 是 statrs 的 `u64`。
 #[duck_scalar_function(
-    description = "Harmonic number H(n) = sum of 1/k for k = 1..n, n a whole-number DOUBLE",
-    example = "SELECT sr_harmonic(10.0)"
+    description = "Harmonic number H(n) = sum of 1/k for k = 1..n, n as a UBIGINT",
+    example = "SELECT sr_harmonic(10)"
 )]
-fn sr_harmonic(n: f64) -> DuckOptionResult<f64> {
-    nan_to_null(harmonic::harmonic(as_u64("sr_harmonic", n)?))
+fn sr_harmonic(n: u64) -> DuckOptionResult<f64> {
+    nan_to_null(harmonic::harmonic(n))
 }
 
-/// 广义调和数 `H(n, m) = Σ 1/k^m`。
+/// 广义调和数 `H(n, m) = Σ 1/k^m`。n 是 statrs 的 `u64`，m 是实数。
 #[duck_scalar_function(
-    description = "Generalized harmonic number sum of 1/k^m for k = 1..n, n a whole-number DOUBLE",
-    example = "SELECT sr_generalized_harmonic(10.0, 2.0)"
+    description = "Generalized harmonic number sum of 1/k^m for k = 1..n, n as a UBIGINT and m real",
+    example = "SELECT sr_generalized_harmonic(10, 2.0)"
 )]
-fn sr_generalized_harmonic(n: f64, m: f64) -> DuckOptionResult<f64> {
-    nan_to_null(harmonic::gen_harmonic(as_u64("sr_generalized_harmonic", n)?, m))
+fn sr_generalized_harmonic(n: u64, m: f64) -> DuckOptionResult<f64> {
+    nan_to_null(harmonic::gen_harmonic(n, m))
 }
 
 // ---------------------------------------------------------------------------
@@ -294,13 +283,13 @@ fn sr_logit(p: f64) -> DuckOptionResult<f64> {
 // 指数积分（statrs::function::exponential）
 // ---------------------------------------------------------------------------
 
-/// 指数积分 `E_n(x)`；statrs 对无定义的输入返回 None → SQL NULL。
+/// 指数积分 `E_n(x)`；n 是 statrs 的 `u64`；statrs 对无定义的输入返回 None → SQL NULL。
 #[duck_scalar_function(
-    description = "Exponential integral E_n(x) for n >= 0 and x >= 0; NULL where statrs leaves it undefined",
-    example = "SELECT sr_exponential_integral(1.0, 0.0)"
+    description = "Exponential integral E_n(x) for n (UBIGINT) >= 0 and x >= 0; NULL where statrs leaves it undefined",
+    example = "SELECT sr_exponential_integral(1.0, 0)"
 )]
-fn sr_exponential_integral(x: f64, n: f64) -> DuckOptionResult<f64> {
-    Ok(exponential::integral(x, as_u64("sr_exponential_integral", n)?))
+fn sr_exponential_integral(x: f64, n: u64) -> DuckOptionResult<f64> {
+    Ok(exponential::integral(x, n))
 }
 
 // ---------------------------------------------------------------------------

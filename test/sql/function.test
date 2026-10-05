@@ -51,15 +51,15 @@ SELECT sr_inv_beta_regularized(2.0, 3.0, 0.5)::DECIMAL(12,8),
 
 # 阶乘与二项系数（doc：10! = 3628800、choose(10,3) = 120；ln 往返）
 query RRRR
-SELECT sr_factorial(10.0), sr_choose(10.0, 3.0),
-       sr_ln_factorial(10.0)::DECIMAL(12,8),
-       exp(sr_ln_choose(10.0, 3.0))::DECIMAL(12,8);
+SELECT sr_factorial(10), sr_choose(10, 3),
+       sr_ln_factorial(10)::DECIMAL(12,8),
+       exp(sr_ln_choose(10, 3))::DECIMAL(12,8);
 ----
 3628800.0	120.0	15.10441257	120.00000000
 
 # 调和数（H(10)=7381/2520=2.92896825；广义 H(10,2)=1.54976773）
 query RR
-SELECT sr_harmonic(10.0)::DECIMAL(12,8), sr_generalized_harmonic(10.0, 2.0)::DECIMAL(12,8);
+SELECT sr_harmonic(10)::DECIMAL(12,8), sr_generalized_harmonic(10, 2.0)::DECIMAL(12,8);
 ----
 2.92896825	1.54976773
 
@@ -72,7 +72,7 @@ SELECT sr_logistic(0.0), sr_logit(sr_logistic(1.3))::DECIMAL(12,8),
 
 # 指数积分 E_n（E_1(0) 发散为 inf，doc 定义域内 n>=1 的取值以实跑为准）
 query RR
-SELECT sr_exponential_integral(0.0, 1.0), sr_exponential_integral(1.0, 1.0)::DECIMAL(12,8);
+SELECT sr_exponential_integral(0.0, 1), sr_exponential_integral(1.0, 1)::DECIMAL(12,8);
 ----
 inf	0.21938393
 
@@ -80,12 +80,12 @@ inf	0.21938393
 statement error
 SELECT sr_factorial(3.5);
 ----
-expected a non-negative whole number, got 3.5
+No function matches
 
 statement error
 SELECT sr_choose(10.0, 2.5);
 ----
-expected a non-negative whole number, got 2.5
+No function matches
 
 # ============================================================================
 # doc example 全覆盖：本组其余函数各一条用例。SQL 取自函数源码的 `example`
@@ -104,8 +104,8 @@ SELECT sr_inv_digamma(0.42278433509846713)
 ----
 2.0000000000000018
 
-# Multinomial coefficient n! / (n1! n2! ...) over a whole-number n and a count LIST(BIGINT); NULL when the counts do not sum to n
+# Multinomial coefficient n! / (n1! n2! ...) over a UBIGINT n and a count LIST(UBIGINT); NULL when the counts do not sum to n
 query R
-SELECT sr_multinomial_coefficient(5.0, [2, 2, 1])
+SELECT sr_multinomial_coefficient(5::UBIGINT, [2::UBIGINT, 2::UBIGINT, 1::UBIGINT])
 ----
 30.0

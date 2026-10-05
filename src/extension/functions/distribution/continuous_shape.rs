@@ -4,11 +4,11 @@
 // fisher_snedecor）
 //
 // 方法集与位置-尺度族相同：pdf / ln_pdf / cdf / sf / quantile。Erlang 的 shape、
-// Chi 的自由度在 statrs 里是 u64：SQL 侧写整数值的DOUBLE 字面量，转换与校验走
-// `as_u64`（3.5 报错，不四舍五入）。
+// Chi 的自由度在 statrs 里是 u64：SQL 侧对应 UBIGINT（写整数，如
+// `sr_erlang_pdf(1.0, 2, 2.0)`），不再接受整数值的 DOUBLE 字面量。
 //
 // Shape/rate continuous distributions; same five methods each. Erlang's shape and Chi's
-// freedom are u64 in statrs — validated whole-number DOUBLEs on the SQL side.
+// freedom are u64 in statrs — UBIGINT on the SQL side.
 // ============================================================================
 
 use duckfn::{DuckOptionResult, duck_error, duck_scalar_function};
@@ -19,7 +19,6 @@ use statrs::distribution::{
 };
 
 use super::check_probability;
-use crate::extension::functions::as_u64;
 // 分布的矩与域：Distribution 提供 mean/variance/std_dev/entropy/skewness，
 // Min/Max/Median/Mode 提供支撑集端点与典型值。刻意不导入 DiscreteDistribution ——
 // 它与 Distribution 的同名方法（mean 等）会造成方法解析歧义。
@@ -83,53 +82,53 @@ fn sr_gamma_quantile(p: f64, shape: f64, rate: f64) -> DuckOptionResult<f64> {
 // Erlang（statrs::distribution::Erlang，shape 为整数）
 // ---------------------------------------------------------------------------
 
-/// Erlang 的 shape 是 u64：先过 `as_u64` 的整数校验再构造。
-fn erlang(name: &str, shape: f64, rate: f64) -> Result<Erlang, ExtensionError> {
-    Erlang::new(as_u64(name, shape)?, rate).map_err(|e| duck_error(format!("{name}: {e}")))
+/// Erlang 的 shape 是 statrs 的 u64 → SQL 的 UBIGINT。
+fn erlang(name: &str, shape: u64, rate: f64) -> Result<Erlang, ExtensionError> {
+    Erlang::new(shape, rate).map_err(|e| duck_error(format!("{name}: {e}")))
 }
 
 /// Erlang 概率密度（整数 shape / rate）。
 #[duck_scalar_function(
     description = "Erlang probability density at x (whole-number shape, rate)",
-    example = "SELECT sr_erlang_pdf(1.0, 2.0, 2.0)"
+    example = "SELECT sr_erlang_pdf(1.0, 2, 2.0)"
 )]
-fn sr_erlang_pdf(x: f64, shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_pdf(x: f64, shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(Some(erlang("sr_erlang_pdf", shape, rate)?.pdf(x)))
 }
 
 /// Erlang 对数密度。
 #[duck_scalar_function(
     description = "Erlang log-density at x",
-    example = "SELECT sr_erlang_ln_pdf(1.0, 2.0, 2.0)"
+    example = "SELECT sr_erlang_ln_pdf(1.0, 2, 2.0)"
 )]
-fn sr_erlang_ln_pdf(x: f64, shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_ln_pdf(x: f64, shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(Some(erlang("sr_erlang_ln_pdf", shape, rate)?.ln_pdf(x)))
 }
 
 /// Erlang 累积分布。
 #[duck_scalar_function(
     description = "Erlang cumulative distribution function P(X <= x)",
-    example = "SELECT sr_erlang_cdf(1.0, 2.0, 2.0)"
+    example = "SELECT sr_erlang_cdf(1.0, 2, 2.0)"
 )]
-fn sr_erlang_cdf(x: f64, shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_cdf(x: f64, shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(Some(erlang("sr_erlang_cdf", shape, rate)?.cdf(x)))
 }
 
 /// Erlang 生存函数。
 #[duck_scalar_function(
     description = "Erlang survival function P(X > x)",
-    example = "SELECT sr_erlang_sf(1.0, 2.0, 2.0)"
+    example = "SELECT sr_erlang_sf(1.0, 2, 2.0)"
 )]
-fn sr_erlang_sf(x: f64, shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_sf(x: f64, shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(Some(erlang("sr_erlang_sf", shape, rate)?.sf(x)))
 }
 
 /// Erlang 分位数函数。
 #[duck_scalar_function(
     description = "Erlang quantile function: the x whose CDF equals p, for p in [0, 1]",
-    example = "SELECT sr_erlang_quantile(0.5, 2.0, 2.0)"
+    example = "SELECT sr_erlang_quantile(0.5, 2, 2.0)"
 )]
-fn sr_erlang_quantile(p: f64, shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_quantile(p: f64, shape: u64, rate: f64) -> DuckOptionResult<f64> {
     check_probability("sr_erlang_quantile", p)?;
     Ok(Some(erlang("sr_erlang_quantile", shape, rate)?.inverse_cdf(p)))
 }
@@ -138,53 +137,53 @@ fn sr_erlang_quantile(p: f64, shape: f64, rate: f64) -> DuckOptionResult<f64> {
 // Chi（statrs::distribution::Chi，自由度为整数）
 // ---------------------------------------------------------------------------
 
-fn chi(name: &str, freedom: f64) -> Result<Chi, ExtensionError> {
-    Chi::new(as_u64(name, freedom)?).map_err(|e| duck_error(format!("{name}: {e}")))
+fn chi(name: &str, freedom: u64) -> Result<Chi, ExtensionError> {
+    Chi::new(freedom).map_err(|e| duck_error(format!("{name}: {e}")))
 }
 
 /// Chi 分布概率密度 —— statrs 的 Chi 是 **√(χ²) 的分布**（自由度为整数的根卡方分布），
 /// 与下面的 ChiSquared 是两个不同的分布，别弄混。
 #[duck_scalar_function(
     description = "Chi distribution probability density at x (the sqrt-chi-squared distribution), whole-number freedom",
-    example = "SELECT sr_chi_pdf(1.0, 2.0)"
+    example = "SELECT sr_chi_pdf(1.0, 2)"
 )]
-fn sr_chi_pdf(x: f64, freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_pdf(x: f64, freedom: u64) -> DuckOptionResult<f64> {
     Ok(Some(chi("sr_chi_pdf", freedom)?.pdf(x)))
 }
 
 /// Chi 分布对数密度。
 #[duck_scalar_function(
     description = "Chi distribution log-density at x",
-    example = "SELECT sr_chi_ln_pdf(1.0, 2.0)"
+    example = "SELECT sr_chi_ln_pdf(1.0, 2)"
 )]
-fn sr_chi_ln_pdf(x: f64, freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_ln_pdf(x: f64, freedom: u64) -> DuckOptionResult<f64> {
     Ok(Some(chi("sr_chi_ln_pdf", freedom)?.ln_pdf(x)))
 }
 
 /// Chi 分布累积分布。
 #[duck_scalar_function(
     description = "Chi distribution cumulative distribution function P(X <= x)",
-    example = "SELECT sr_chi_cdf(1.0, 2.0)"
+    example = "SELECT sr_chi_cdf(1.0, 2)"
 )]
-fn sr_chi_cdf(x: f64, freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_cdf(x: f64, freedom: u64) -> DuckOptionResult<f64> {
     Ok(Some(chi("sr_chi_cdf", freedom)?.cdf(x)))
 }
 
 /// Chi 分布生存函数。
 #[duck_scalar_function(
     description = "Chi distribution survival function P(X > x)",
-    example = "SELECT sr_chi_sf(1.0, 2.0)"
+    example = "SELECT sr_chi_sf(1.0, 2)"
 )]
-fn sr_chi_sf(x: f64, freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_sf(x: f64, freedom: u64) -> DuckOptionResult<f64> {
     Ok(Some(chi("sr_chi_sf", freedom)?.sf(x)))
 }
 
 /// Chi 分布分位数函数。
 #[duck_scalar_function(
     description = "Chi distribution quantile function: the x whose CDF equals p, for p in [0, 1]",
-    example = "SELECT sr_chi_quantile(0.5, 2.0)"
+    example = "SELECT sr_chi_quantile(0.5, 2)"
 )]
-fn sr_chi_quantile(p: f64, freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_quantile(p: f64, freedom: u64) -> DuckOptionResult<f64> {
     check_probability("sr_chi_quantile", p)?;
     Ok(Some(chi("sr_chi_quantile", freedom)?.inverse_cdf(p)))
 }
@@ -660,72 +659,72 @@ fn sr_gamma_mode(shape: f64, rate: f64) -> DuckOptionResult<f64> {
 /// Erlang 均值，对应 `Distribution::mean`。
 #[duck_scalar_function(
     description = "Erlang mean (whole-number shape, rate)",
-    example = "SELECT sr_erlang_mean(2.0, 1.0)"
+    example = "SELECT sr_erlang_mean(2, 1.0)"
 )]
-fn sr_erlang_mean(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_mean(shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(erlang("sr_erlang_mean", shape, rate)?.mean())
 }
 
 /// Erlang 方差，对应 `Distribution::variance`。
 #[duck_scalar_function(
     description = "Erlang variance (whole-number shape, rate)",
-    example = "SELECT sr_erlang_variance(2.0, 1.0)"
+    example = "SELECT sr_erlang_variance(2, 1.0)"
 )]
-fn sr_erlang_variance(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_variance(shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(erlang("sr_erlang_variance", shape, rate)?.variance())
 }
 
 /// Erlang 标准差，对应 `Distribution::std_dev`。
 #[duck_scalar_function(
     description = "Erlang standard deviation (whole-number shape, rate)",
-    example = "SELECT sr_erlang_std_dev(2.0, 1.0)"
+    example = "SELECT sr_erlang_std_dev(2, 1.0)"
 )]
-fn sr_erlang_std_dev(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_std_dev(shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(erlang("sr_erlang_std_dev", shape, rate)?.std_dev())
 }
 
 /// Erlang 微分熵，对应 `Distribution::entropy`。
 #[duck_scalar_function(
     description = "Erlang differential entropy (whole-number shape, rate)",
-    example = "SELECT sr_erlang_entropy(2.0, 1.0)"
+    example = "SELECT sr_erlang_entropy(2, 1.0)"
 )]
-fn sr_erlang_entropy(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_entropy(shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(erlang("sr_erlang_entropy", shape, rate)?.entropy())
 }
 
 /// Erlang 偏度，对应 `Distribution::skewness`。
 #[duck_scalar_function(
     description = "Erlang skewness (whole-number shape, rate)",
-    example = "SELECT sr_erlang_skewness(2.0, 1.0)"
+    example = "SELECT sr_erlang_skewness(2, 1.0)"
 )]
-fn sr_erlang_skewness(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_skewness(shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(erlang("sr_erlang_skewness", shape, rate)?.skewness())
 }
 
 /// Erlang 支撑集下确界，对应 `Min::min`（恒为 0）。
 #[duck_scalar_function(
     description = "Erlang minimum of the support (0)",
-    example = "SELECT sr_erlang_min(2.0, 1.0)"
+    example = "SELECT sr_erlang_min(2, 1.0)"
 )]
-fn sr_erlang_min(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_min(shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(Some(erlang("sr_erlang_min", shape, rate)?.min()))
 }
 
 /// Erlang 支撑集上确界，对应 `Max::max`（无界，返回 +inf）。
 #[duck_scalar_function(
     description = "Erlang maximum of the support (positive infinity)",
-    example = "SELECT sr_erlang_max(2.0, 1.0)"
+    example = "SELECT sr_erlang_max(2, 1.0)"
 )]
-fn sr_erlang_max(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_max(shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(Some(erlang("sr_erlang_max", shape, rate)?.max()))
 }
 
 /// Erlang 众数，对应 `Mode::mode`。
 #[duck_scalar_function(
     description = "Erlang mode (whole-number shape, rate)",
-    example = "SELECT sr_erlang_mode(2.0, 1.0)"
+    example = "SELECT sr_erlang_mode(2, 1.0)"
 )]
-fn sr_erlang_mode(shape: f64, rate: f64) -> DuckOptionResult<f64> {
+fn sr_erlang_mode(shape: u64, rate: f64) -> DuckOptionResult<f64> {
     Ok(erlang("sr_erlang_mode", shape, rate)?.mode())
 }
 
@@ -736,72 +735,72 @@ fn sr_erlang_mode(shape: f64, rate: f64) -> DuckOptionResult<f64> {
 /// Chi 分布均值，对应 `Distribution::mean`。
 #[duck_scalar_function(
     description = "Chi distribution mean, given whole-number freedom",
-    example = "SELECT sr_chi_mean(2.0)"
+    example = "SELECT sr_chi_mean(2)"
 )]
-fn sr_chi_mean(freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_mean(freedom: u64) -> DuckOptionResult<f64> {
     Ok(chi("sr_chi_mean", freedom)?.mean())
 }
 
 /// Chi 分布方差，对应 `Distribution::variance`。
 #[duck_scalar_function(
     description = "Chi distribution variance, given whole-number freedom",
-    example = "SELECT sr_chi_variance(2.0)"
+    example = "SELECT sr_chi_variance(2)"
 )]
-fn sr_chi_variance(freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_variance(freedom: u64) -> DuckOptionResult<f64> {
     Ok(chi("sr_chi_variance", freedom)?.variance())
 }
 
 /// Chi 分布标准差，对应 `Distribution::std_dev`。
 #[duck_scalar_function(
     description = "Chi distribution standard deviation, given whole-number freedom",
-    example = "SELECT sr_chi_std_dev(2.0)"
+    example = "SELECT sr_chi_std_dev(2)"
 )]
-fn sr_chi_std_dev(freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_std_dev(freedom: u64) -> DuckOptionResult<f64> {
     Ok(chi("sr_chi_std_dev", freedom)?.std_dev())
 }
 
 /// Chi 分布微分熵，对应 `Distribution::entropy`。
 #[duck_scalar_function(
     description = "Chi distribution differential entropy, given whole-number freedom",
-    example = "SELECT sr_chi_entropy(2.0)"
+    example = "SELECT sr_chi_entropy(2)"
 )]
-fn sr_chi_entropy(freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_entropy(freedom: u64) -> DuckOptionResult<f64> {
     Ok(chi("sr_chi_entropy", freedom)?.entropy())
 }
 
 /// Chi 分布偏度，对应 `Distribution::skewness`。
 #[duck_scalar_function(
     description = "Chi distribution skewness, given whole-number freedom",
-    example = "SELECT sr_chi_skewness(2.0)"
+    example = "SELECT sr_chi_skewness(2)"
 )]
-fn sr_chi_skewness(freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_skewness(freedom: u64) -> DuckOptionResult<f64> {
     Ok(chi("sr_chi_skewness", freedom)?.skewness())
 }
 
 /// Chi 分布支撑集下确界，对应 `Min::min`（恒为 0）。
 #[duck_scalar_function(
     description = "Chi distribution minimum of the support (0)",
-    example = "SELECT sr_chi_min(2.0)"
+    example = "SELECT sr_chi_min(2)"
 )]
-fn sr_chi_min(freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_min(freedom: u64) -> DuckOptionResult<f64> {
     Ok(Some(chi("sr_chi_min", freedom)?.min()))
 }
 
 /// Chi 分布支撑集上确界，对应 `Max::max`（无界，返回 +inf）。
 #[duck_scalar_function(
     description = "Chi distribution maximum of the support (positive infinity)",
-    example = "SELECT sr_chi_max(2.0)"
+    example = "SELECT sr_chi_max(2)"
 )]
-fn sr_chi_max(freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_max(freedom: u64) -> DuckOptionResult<f64> {
     Ok(Some(chi("sr_chi_max", freedom)?.max()))
 }
 
 /// Chi 分布众数，对应 `Mode::mode`。
 #[duck_scalar_function(
     description = "Chi distribution mode, given whole-number freedom",
-    example = "SELECT sr_chi_mode(2.0)"
+    example = "SELECT sr_chi_mode(2)"
 )]
-fn sr_chi_mode(freedom: f64) -> DuckOptionResult<f64> {
+fn sr_chi_mode(freedom: u64) -> DuckOptionResult<f64> {
     Ok(chi("sr_chi_mode", freedom)?.mode())
 }
 

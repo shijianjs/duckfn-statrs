@@ -27,7 +27,7 @@ use statrs::stats_tests::skewtest::skewtest;
 use statrs::stats_tests::ttest_onesample::ttest_onesample;
 
 use super::{alternative, nan_policy, pair};
-use crate::extension::functions::{as_u64, as_usize_vec};
+
 
 /// `sr_ttest_onesample(x, mu, alternative, nan_policy)`：单样本 t 检验
 /// （statrs::stats_tests::ttest_onesample）。返回 [t 统计量, p 值]。
@@ -279,23 +279,20 @@ fn sr_mannwhitneyu(x: Vec<f64>, y: Vec<f64>, method: f64, alt: f64) -> DuckOptio
 }
 
 /// `sr_chisquare(observed, expected, ddof)`：卡方拟合优度检验（statrs::chisquare）。
-/// observed 为计数 LIST（statrs 侧是 &[usize]），expected 可为 NULL（均匀假设，
-/// statrs 侧是 &[f64]）；ddof 可为 NULL（默认 0）。
+/// observed 为计数 LIST（statrs 侧是 &[usize] → LIST(UBIGINT)），expected 可为 NULL（均匀假设，
+/// statrs 侧是 &[f64]）；ddof 可为 NULL（默认 0，statrs 侧是 usize → UBIGINT）。
 #[duck_scalar_function(
     special_null_handling = true,
-    description = "Chi-square goodness-of-fit test on an observed-count LIST (expected frequencies optional, defaults to uniform; ddof optional): LIST [chi-square statistic, p-value]",
-    example = "SELECT sr_chisquare([16.0, 18.0, 16.0, 14.0, 12.0, 12.0], NULL, NULL)"
+    description = "Chi-square goodness-of-fit test on an observed-count LIST(UBIGINT) (expected frequencies optional, defaults to uniform; ddof optional UBIGINT): LIST [chi-square statistic, p-value]",
+    example = "SELECT sr_chisquare([16, 18, 16, 14, 12, 12], NULL, NULL)"
 )]
 fn sr_chisquare(
-    observed: Vec<f64>,
+    observed: Vec<u64>,
     expected: Option<Vec<f64>>,
-    ddof: Option<f64>,
+    ddof: Option<u64>,
 ) -> DuckOptionResult<Vec<f64>> {
-    let f_obs = as_usize_vec("sr_chisquare", &observed)?;
-    let ddof = ddof
-        .map(|d| as_u64("sr_chisquare", d))
-        .transpose()?
-        .map(|d| d as usize);
+    let f_obs: Vec<usize> = observed.iter().map(|v| *v as usize).collect();
+    let ddof = ddof.map(|d| d as usize);
     let (statistic, p_value) = chisquare(&f_obs, expected.as_deref(), ddof)
         .map_err(|e| duck_error(format!("sr_chisquare: {e}")))?;
     Ok(Some(pair(statistic, p_value)))
@@ -315,12 +312,12 @@ fn sr_f_oneway(samples: Vec<Vec<f64>>, nan: f64) -> DuckOptionResult<Vec<f64>> {
 }
 
 /// `sr_fishers_exact(table, alternative)`：Fisher 精确检验的 p 值
-/// （statrs::fishers_exact），table 是 2×2 列联表的 LIST（行主序 4 项）。
+/// （statrs::fishers_exact），table 是 2×2 列联表的 LIST(UBIGINT)（行主序 4 项）。
 #[duck_scalar_function(
-    description = "Fisher's exact test p-value on a 2x2 contingency table given as a 4-entry whole-number LIST, row-major; alternative codes as elsewhere",
-    example = "SELECT sr_fishers_exact([1.0, 2.0, 3.0, 4.0], 1.0)"
+    description = "Fisher's exact test p-value on a 2x2 contingency table given as a 4-entry UBIGINT LIST, row-major; alternative codes as elsewhere",
+    example = "SELECT sr_fishers_exact([1, 2, 3, 4], 1.0)"
 )]
-fn sr_fishers_exact(table: Vec<f64>, alt: f64) -> DuckOptionResult<f64> {
+fn sr_fishers_exact(table: Vec<u64>, alt: f64) -> DuckOptionResult<f64> {
     let table = fisher_table("sr_fishers_exact", table)?;
     let alternative = alternative("sr_fishers_exact", alt)?;
     fishers_exact(&table, alternative)
@@ -331,10 +328,10 @@ fn sr_fishers_exact(table: Vec<f64>, alt: f64) -> DuckOptionResult<f64> {
 /// `sr_fishers_exact_with_odds_ratio(table, alternative)`：同上，返回
 /// [odds ratio, p 值]（statrs::fishers_exact_with_odds_ratio）。
 #[duck_scalar_function(
-    description = "Fisher's exact test on a 2x2 contingency table (4-entry whole-number LIST, row-major): LIST [odds ratio, p-value]",
-    example = "SELECT sr_fishers_exact_with_odds_ratio([1.0, 2.0, 3.0, 4.0], 1.0)"
+    description = "Fisher's exact test on a 2x2 contingency table (4-entry UBIGINT LIST, row-major): LIST [odds ratio, p-value]",
+    example = "SELECT sr_fishers_exact_with_odds_ratio([1, 2, 3, 4], 1.0)"
 )]
-fn sr_fishers_exact_with_odds_ratio(table: Vec<f64>, alt: f64) -> DuckOptionResult<Vec<f64>> {
+fn sr_fishers_exact_with_odds_ratio(table: Vec<u64>, alt: f64) -> DuckOptionResult<Vec<f64>> {
     let table = fisher_table("sr_fishers_exact_with_odds_ratio", table)?;
     let alternative = alternative("sr_fishers_exact_with_odds_ratio", alt)?;
     let (odds_ratio, p_value) = fishers_exact_with_odds_ratio(&table, alternative)
@@ -342,16 +339,12 @@ fn sr_fishers_exact_with_odds_ratio(table: Vec<f64>, alt: f64) -> DuckOptionResu
     Ok(Some(pair(odds_ratio, p_value)))
 }
 
-fn fisher_table(name: &str, values: Vec<f64>) -> Result<[u64; 4], ExtensionError> {
+fn fisher_table(name: &str, values: Vec<u64>) -> Result<[u64; 4], ExtensionError> {
     if values.len() != 4 {
         return Err(duck_error(format!(
             "{name}: the contingency table needs exactly 4 entries (row-major 2x2), got {}",
             values.len()
         )));
     }
-    let converted: Vec<u64> = values
-        .iter()
-        .map(|v| as_u64(name, *v))
-        .collect::<Result<_, _>>()?;
-    Ok([converted[0], converted[1], converted[2], converted[3]])
+    Ok([values[0], values[1], values[2], values[3]])
 }

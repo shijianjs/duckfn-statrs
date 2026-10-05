@@ -13,7 +13,6 @@ use duckfn::{DuckOptionResult, duck_error, duck_scalar_function};
 use quack_rs::error::ExtensionError;
 use statrs::generate;
 
-use crate::extension::functions::as_u64;
 
 /// 长度校验：k 必须是正整数。
 ///
@@ -28,13 +27,13 @@ fn take_len(fn_name: &str, k: i64) -> Result<usize, ExtensionError> {
 }
 
 /// 对数间距序列（statrs::generate::log_spaced）：length 个点、指数从 start_exp 到 stop_exp。
+/// length 是 statrs 的 `usize` → UBIGINT。
 #[duck_scalar_function(
     description = "Log-spaced sequence of length points between 10^start_exp and 10^stop_exp, returned as LIST(DOUBLE)",
-    example = "SELECT sr_gen_log_spaced(5.0, 0.0, 2.0)"
+    example = "SELECT sr_gen_log_spaced(5, 0.0, 2.0)"
 )]
-fn sr_gen_log_spaced(length: f64, start_exp: f64, stop_exp: f64) -> DuckOptionResult<Vec<f64>> {
-    let length = as_u64("sr_gen_log_spaced", length)? as usize;
-    Ok(Some(generate::log_spaced(length, start_exp, stop_exp)))
+fn sr_gen_log_spaced(length: u64, start_exp: f64, stop_exp: f64) -> DuckOptionResult<Vec<f64>> {
+    Ok(Some(generate::log_spaced(length as usize, start_exp, stop_exp)))
 }
 
 /// 无限方波（InfiniteSquare::new）取前 k 点。

@@ -107,12 +107,12 @@ SELECT (sr_bernoulli_mean(0.7) - 0.7)::DECIMAL(12,10),
 #   mode=floor((n+1)p)=5、median=5；cdf + sf = 1
 # ============================================================================
 query RRRRRR
-SELECT (sr_binomial_mean(0.5, 10.0) - 5.0)::DECIMAL(12,10),
-       (sr_binomial_variance(0.5, 10.0) - 2.5)::DECIMAL(12,10),
-       (sr_binomial_skewness(0.5, 10.0))::DECIMAL(12,10),
-       (sr_binomial_mode(0.5, 10.0) - 5.0)::DECIMAL(12,10),
-       (sr_binomial_median(0.5, 10.0) - 5.0)::DECIMAL(12,10),
-       (sr_binomial_cdf(3.0, 0.5, 10.0) + sr_binomial_sf(3.0, 0.5, 10.0) - 1.0)::DECIMAL(12,10)
+SELECT (sr_binomial_mean(0.5, 10) - 5.0)::DECIMAL(12,10),
+       (sr_binomial_variance(0.5, 10) - 2.5)::DECIMAL(12,10),
+       (sr_binomial_skewness(0.5, 10))::DECIMAL(12,10),
+       (sr_binomial_mode(0.5, 10) - 5.0)::DECIMAL(12,10),
+       (sr_binomial_median(0.5, 10) - 5.0)::DECIMAL(12,10),
+       (sr_binomial_cdf(3, 0.5, 10) + sr_binomial_sf(3, 0.5, 10) - 1.0)::DECIMAL(12,10)
 ----
 0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000	0.0000000000
 
@@ -217,9 +217,9 @@ SELECT (sr_chi_squared_mean(2.0) - 2.0)::DECIMAL(12,10),
 # Chi(df=2)：mean=√(2π)/2、variance=df-mean²=2-π/2、mode=√(df-1)=1
 # ============================================================================
 query RRR
-SELECT (sr_chi_mean(2.0) - sqrt(2.0 * pi()) / 2.0)::DECIMAL(12,10),
-       (sr_chi_variance(2.0) - (2.0 - pi() / 2.0))::DECIMAL(12,10),
-       (sr_chi_mode(2.0) - 1.0)::DECIMAL(12,10)
+SELECT (sr_chi_mean(2) - sqrt(2.0 * pi()) / 2.0)::DECIMAL(12,10),
+       (sr_chi_variance(2) - (2.0 - pi() / 2.0))::DECIMAL(12,10),
+       (sr_chi_mode(2) - 1.0)::DECIMAL(12,10)
 ----
 0.0000000000	0.0000000000	0.0000000000
 
@@ -237,8 +237,8 @@ SELECT (sr_weibull_mean(1.0, 1.0) - 1.0)::DECIMAL(12,10),
 # Erlang(shape=2, rate=1) 即 Gamma(2,1)：mean=variance=2
 # ============================================================================
 query RR
-SELECT (sr_erlang_mean(2.0, 1.0) - 2.0)::DECIMAL(12,10),
-       (sr_erlang_variance(2.0, 1.0) - 2.0)::DECIMAL(12,10)
+SELECT (sr_erlang_mean(2, 1.0) - 2.0)::DECIMAL(12,10),
+       (sr_erlang_variance(2, 1.0) - 2.0)::DECIMAL(12,10)
 ----
 0.0000000000	0.0000000000
 
@@ -299,18 +299,18 @@ SELECT (sr_geometric_dist_mean(0.5) - 2.0)::DECIMAL(12,10),
 
 # Hypergeometric(N=10, K=5, n=4)：mean=nK/N、variance=n(K/N)(1-K/N)(N-n)/(N-1)、mode=2
 query RRR
-SELECT (sr_hypergeometric_mean(10.0, 5.0, 4.0) - 2.0)::DECIMAL(12,10),
-       (sr_hypergeometric_variance(10.0, 5.0, 4.0) - 4.0 * 0.5 * 0.5 * 6.0 / 9.0)::DECIMAL(12,10),
-       (sr_hypergeometric_mode(10.0, 5.0, 4.0) - 2.0)::DECIMAL(12,10)
+SELECT (sr_hypergeometric_mean(10, 5, 4) - 2.0)::DECIMAL(12,10),
+       (sr_hypergeometric_variance(10, 5, 4) - 4.0 * 0.5 * 0.5 * 6.0 / 9.0)::DECIMAL(12,10),
+       (sr_hypergeometric_mode(10, 5, 4) - 2.0)::DECIMAL(12,10)
 ----
 0.0000000000	0.0000000000	0.0000000000
 
 # DiscreteUniform(1, 6)：mean=(min+max)/2、variance=(n²-1)/12、median=3.5、mode=3
 query RRRR
-SELECT (sr_discrete_uniform_mean(1.0, 6.0) - 3.5)::DECIMAL(12,10),
-       (sr_discrete_uniform_variance(1.0, 6.0) - 35.0 / 12.0)::DECIMAL(12,10),
-       (sr_discrete_uniform_median(1.0, 6.0) - 3.5)::DECIMAL(12,10),
-       (sr_discrete_uniform_mode(1.0, 6.0) - 3.0)::DECIMAL(12,10)
+SELECT (sr_discrete_uniform_mean(1, 6) - 3.5)::DECIMAL(12,10),
+       (sr_discrete_uniform_variance(1, 6) - 35.0 / 12.0)::DECIMAL(12,10),
+       (sr_discrete_uniform_median(1, 6) - 3.5)::DECIMAL(12,10),
+       (sr_discrete_uniform_mode(1, 6) - 3.0)::DECIMAL(12,10)
 ----
 0.0000000000	0.0000000000	0.0000000000	0.0000000000
 

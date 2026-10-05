@@ -28,19 +28,19 @@ SELECT sr_beta_pdf(0.5, 2.0, 3.0)::DECIMAL(12,6), sr_beta_cdf(0.5, 2.0, 3.0)::DE
 
 # 卡方：chi_squared_cdf 由 doc 锚点（9.23635, df=3）实测；Chi 是根卡方分布、独立验证
 query RR
-SELECT sr_chi_squared_cdf(9.23635, 3.0)::DECIMAL(12,8), sr_chi_cdf(1.0, 1.0)::DECIMAL(12,8)
+SELECT sr_chi_squared_cdf(9.23635, 3.0)::DECIMAL(12,8), sr_chi_cdf(1.0, 1)::DECIMAL(12,8)
 ----
 0.97369194	0.68268949
 
 # Chi(1) 是 |N(0,1)|：与正态互证 P(|Z| <= 1) = 2Φ(1) - 1
 query RR
-SELECT sr_chi_cdf(1.0, 1.0)::DECIMAL(12,8), (2 * sr_normal_cdf(1.0, 0.0, 1.0) - 1)::DECIMAL(12,8)
+SELECT sr_chi_cdf(1.0, 1)::DECIMAL(12,8), (2 * sr_normal_cdf(1.0, 0.0, 1.0) - 1)::DECIMAL(12,8)
 ----
 0.68268949	0.68268949
 
 # Erlang（整数 shape）：cdf(1|shape2,rate2) = 1 - e^-2(1+2) 的级数形式，取实跑值
 query R
-SELECT sr_erlang_cdf(1.0, 2.0, 2.0)::DECIMAL(12,8)
+SELECT sr_erlang_cdf(1.0, 2, 2.0)::DECIMAL(12,8)
 ----
 0.59399415
 
@@ -70,11 +70,11 @@ SELECT sr_gamma_pdf(1.0, 2.0, -0.5)
 ----
 Rate is NaN zero, or less than zero.
 
-# 整数参数校验（Erlang shape、Chi freedom）：3.5 这种「写错的整数」报错
+# 整数参数校验（Erlang shape、Chi freedom）：非整数类型在绑定期就被拒绝
 statement error
 SELECT sr_erlang_pdf(1.0, 2.5, 2.0)
 ----
-sr_erlang_pdf: expected a non-negative whole number, got 2.5
+No function matches
 
 # quantile 概率越界
 statement error
@@ -155,217 +155,217 @@ SELECT sr_beta_variance(2.0, 3.0)
 
 # Chi distribution differential entropy, given whole-number freedom
 query R
-SELECT sr_chi_entropy(2.0)
+SELECT sr_chi_entropy(2)
 ----
 0.9420342421707942
 
 # Chi distribution log-density at x
 query R
-SELECT sr_chi_ln_pdf(1.0, 2.0)
+SELECT sr_chi_ln_pdf(1.0, 2)
 ----
 -0.49999999999999956
 
 # Chi distribution maximum of the support (positive infinity)
 query R
-SELECT sr_chi_max(2.0)
+SELECT sr_chi_max(2)
 ----
 inf
 
 # Chi distribution mean, given whole-number freedom
 query R
-SELECT sr_chi_mean(2.0)
+SELECT sr_chi_mean(2)
 ----
 1.2533141373155032
 
 # Chi distribution minimum of the support (0)
 query R
-SELECT sr_chi_min(2.0)
+SELECT sr_chi_min(2)
 ----
 0.0
 
 # Chi distribution mode, given whole-number freedom
 query R
-SELECT sr_chi_mode(2.0)
+SELECT sr_chi_mode(2)
 ----
 1.0
 
 # Chi distribution probability density at x (the sqrt-chi-squared distribution), whole-number freedom
 query R
-SELECT sr_chi_pdf(1.0, 2.0)
+SELECT sr_chi_pdf(1.0, 2)
 ----
 0.6065306597126336
 
 # Chi distribution quantile function: the x whose CDF equals p, for p in [0, 1]
 query R
-SELECT sr_chi_quantile(0.5, 2.0)
+SELECT sr_chi_quantile(0.5, 2)
 ----
 1.1774100225154744
 
 # Chi distribution survival function P(X > x)
 query R
-SELECT sr_chi_sf(1.0, 2.0)
+SELECT sr_chi_sf(1.0, 2)
 ----
 0.6065306597126333
 
 # Chi distribution skewness, given whole-number freedom
 query R
-SELECT sr_chi_skewness(2.0)
+SELECT sr_chi_skewness(2)
 ----
 0.6311106578190224
 
 # Chi-squared differential entropy, given degrees of freedom
 query R
-SELECT sr_chi_squared_entropy(2.0)
+SELECT sr_chi_squared_entropy(2)
 ----
 1.693147180559945
 
 # Chi-squared log-density at x
 query R
-SELECT sr_chi_squared_ln_pdf(1.0, 2.0)
+SELECT sr_chi_squared_ln_pdf(1.0, 2)
 ----
 -1.1931471805599454
 
 # Chi-squared maximum of the support (positive infinity)
 query R
-SELECT sr_chi_squared_max(2.0)
+SELECT sr_chi_squared_max(2)
 ----
 inf
 
 # Chi-squared mean, given degrees of freedom
 query R
-SELECT sr_chi_squared_mean(2.0)
+SELECT sr_chi_squared_mean(2)
 ----
 2.0
 
 # Chi-squared median, given degrees of freedom
 query R
-SELECT sr_chi_squared_median(2.0)
+SELECT sr_chi_squared_median(2)
 ----
 1.3333333333333335
 
 # Chi-squared minimum of the support (0)
 query R
-SELECT sr_chi_squared_min(2.0)
+SELECT sr_chi_squared_min(2)
 ----
 0.0
 
 # Chi-squared mode, given degrees of freedom
 query R
-SELECT sr_chi_squared_mode(2.0)
+SELECT sr_chi_squared_mode(2)
 ----
 0.0
 
 # Chi-squared probability density at x, given degrees of freedom
 query R
-SELECT sr_chi_squared_pdf(1.0, 2.0)
+SELECT sr_chi_squared_pdf(1.0, 2)
 ----
 0.3032653298563167
 
 # Chi-squared quantile function: the x whose CDF equals p, for p in [0, 1]
 query R
-SELECT sr_chi_squared_quantile(0.95, 2.0)
+SELECT sr_chi_squared_quantile(0.95, 2)
 ----
 5.991464546114399
 
 # Chi-squared survival function P(X > x)
 query R
-SELECT sr_chi_squared_sf(1.0, 2.0)
+SELECT sr_chi_squared_sf(1.0, 2)
 ----
 0.6065306597126333
 
 # Chi-squared skewness, given degrees of freedom
 query R
-SELECT sr_chi_squared_skewness(2.0)
+SELECT sr_chi_squared_skewness(2)
 ----
 2.0
 
 # Chi-squared standard deviation, given degrees of freedom
 query R
-SELECT sr_chi_squared_std_dev(2.0)
+SELECT sr_chi_squared_std_dev(2)
 ----
 2.0
 
 # Chi-squared variance, given degrees of freedom
 query R
-SELECT sr_chi_squared_variance(2.0)
+SELECT sr_chi_squared_variance(2)
 ----
 4.0
 
 # Chi distribution standard deviation, given whole-number freedom
 query R
-SELECT sr_chi_std_dev(2.0)
+SELECT sr_chi_std_dev(2)
 ----
 0.6551363775620278
 
 # Chi distribution variance, given whole-number freedom
 query R
-SELECT sr_chi_variance(2.0)
+SELECT sr_chi_variance(2)
 ----
 0.4292036732050959
 
 # Erlang differential entropy (whole-number shape, rate)
 query R
-SELECT sr_erlang_entropy(2.0, 1.0)
+SELECT sr_erlang_entropy(2, 1.0)
 ----
 1.5772156649015352
 
 # Erlang log-density at x
 query R
-SELECT sr_erlang_ln_pdf(1.0, 2.0, 2.0)
+SELECT sr_erlang_ln_pdf(1.0, 2, 2.0)
 ----
 -0.6137056388801094
 
 # Erlang maximum of the support (positive infinity)
 query R
-SELECT sr_erlang_max(2.0, 1.0)
+SELECT sr_erlang_max(2, 1.0)
 ----
 inf
 
 # Erlang mean (whole-number shape, rate)
 query R
-SELECT sr_erlang_mean(2.0, 1.0)
+SELECT sr_erlang_mean(2, 1.0)
 ----
 2.0
 
 # Erlang minimum of the support (0)
 query R
-SELECT sr_erlang_min(2.0, 1.0)
+SELECT sr_erlang_min(2, 1.0)
 ----
 0.0
 
 # Erlang mode (whole-number shape, rate)
 query R
-SELECT sr_erlang_mode(2.0, 1.0)
+SELECT sr_erlang_mode(2, 1.0)
 ----
 1.0
 
 # Erlang quantile function: the x whose CDF equals p, for p in [0, 1]
 query R
-SELECT sr_erlang_quantile(0.5, 2.0, 2.0)
+SELECT sr_erlang_quantile(0.5, 2, 2.0)
 ----
 0.8391734950083306
 
 # Erlang survival function P(X > x)
 query R
-SELECT sr_erlang_sf(1.0, 2.0, 2.0)
+SELECT sr_erlang_sf(1.0, 2, 2.0)
 ----
 0.40600584970983833
 
 # Erlang skewness (whole-number shape, rate)
 query R
-SELECT sr_erlang_skewness(2.0, 1.0)
+SELECT sr_erlang_skewness(2, 1.0)
 ----
 1.414213562373095
 
 # Erlang standard deviation (whole-number shape, rate)
 query R
-SELECT sr_erlang_std_dev(2.0, 1.0)
+SELECT sr_erlang_std_dev(2, 1.0)
 ----
 1.4142135623730951
 
 # Erlang variance (whole-number shape, rate)
 query R
-SELECT sr_erlang_variance(2.0, 1.0)
+SELECT sr_erlang_variance(2, 1.0)
 ----
 2.0
 

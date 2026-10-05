@@ -48,13 +48,13 @@ SELECT sr_normal_cdf(1.96, 0.0, 1.0);
 | 离散程度 | `sr_variance` / `sr_std_dev` / `sr_population_variance` / `sr_population_std_dev` / `sr_skewness` |
 | 极值与配对 | `sr_min` / `sr_max` / `sr_abs_min` / `sr_abs_max`；`sr_covariance(x, y)` / `sr_population_covariance(x, y)` |
 
-**标量函数**（逐行求值；参数用 DOUBLE，向量/计数走 LIST，BIGINT 用于随机抽样点数与波形时长）：
+**标量函数**（逐行求值；实数参数用 DOUBLE，整数参数按 statrs 原版类型（UBIGINT / BIGINT / UINTEGER），向量/计数走 LIST，BIGINT 用于随机抽样点数与波形时长）：
 
 | 族 | 函数 |
 | --- | --- |
 | 连续分布（20 种） | 每分布 `sr_<分布>_pdf / ln_pdf / cdf / sf / quantile`（normal、log_normal、beta、gamma、chi_squared、students_t、uniform、weibull、pareto…） |
 | 离散分布（8 种） | 每分布 `sr_<分布>_pmf / ln_pmf / cdf / sf / quantile`（binomial、poisson、geometric、hypergeometric、categorical…） |
-| 多元分布（4 种） | 每种分布的密度（`pdf` / `ln_pdf`）、各阶矩（`mean` / `variance` / `mode`，矩阵行主序摊平）与 `entropy` / `min` / `max` —— `sr_multivariate_normal_*`、`sr_multivariate_students_t_*`、`sr_dirichlet_*`、`sr_multinomial_*`（向量走 LIST，计数向量走 LIST(BIGINT)） |
+| 多元分布（4 种） | 每种分布的密度（`pdf` / `ln_pdf`）、各阶矩（`mean` / `variance` / `mode`，矩阵行主序摊平）与 `entropy` / `min` / `max` —— `sr_multivariate_normal_*`、`sr_multivariate_students_t_*`、`sr_dirichlet_*`、`sr_multinomial_*`（向量走 LIST，计数向量走 LIST(UBIGINT)） |
 | 经验分布（聚合） | `sr_empirical_cdf / sf / quantile(x, k)`；抽样 `sr_sample_empirical` |
 | 随机采样（34 个） | `sr_sample_<分布>(<参数...>, k BIGINT)` 抽 k 个点出 LIST；二项另有 `sr_sample_binomial_algorithm`（statrs 的 BinomialAlgorithm） |
 | 密度估计 | `sr_kde_pdf(x, 样本 LIST, 带宽可 NULL)` / `sr_knn_pdf`（kde feature，k-d tree） |

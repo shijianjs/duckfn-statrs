@@ -8,7 +8,7 @@ require duckfn_statrs
 
 # log_spaced(3, 0, 2) = [10^0, 10^1, 10^2]
 query R
-SELECT sr_gen_log_spaced(3.0, 0.0, 2.0)
+SELECT sr_gen_log_spaced(3, 0.0, 2.0)
 ----
 [1.0, 10.0, 100.0]
 

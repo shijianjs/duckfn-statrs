@@ -14,7 +14,7 @@ SELECT sr_ttest_onesample([1.0, 2.0, 3.0, 4.0, 5.0], 3.0, 1.0, 1.0)
 
 # 实跑锚点：默认均匀期望、ddof=0（statrs chisquare，[16,18,16,14,12,12]）
 query R
-SELECT sr_chisquare([16.0, 18.0, 16.0, 14.0, 12.0, 12.0], NULL, NULL)
+SELECT sr_chisquare([16::UBIGINT, 18::UBIGINT, 16::UBIGINT, 14::UBIGINT, 12::UBIGINT, 12::UBIGINT], NULL, NULL)
 ----
 [2.0, 0.8491450360846101]
 
@@ -26,13 +26,13 @@ SELECT sr_f_oneway([[1.0, 3.0, 5.0], [2.0, 4.0, 8.0]], 1.0)
 
 # 官方 doc example：fishers_exact [[1,2],[3,4]] 双侧 → p=1.0；odds ratio 版给 (OR, p)
 query R
-SELECT sr_fishers_exact([1.0, 2.0, 3.0, 4.0], 1.0)
+SELECT sr_fishers_exact([1::UBIGINT, 2::UBIGINT, 3::UBIGINT, 4::UBIGINT], 1.0)
 ----
 1.0
 
 query RR
-SELECT sr_fishers_exact([1.0, 2.0, 3.0, 4.0], 2.0),
-       sr_fishers_exact_with_odds_ratio([1.0, 2.0, 3.0, 4.0], 2.0)
+SELECT sr_fishers_exact([1::UBIGINT, 2::UBIGINT, 3::UBIGINT, 4::UBIGINT], 2.0),
+       sr_fishers_exact_with_odds_ratio([1::UBIGINT, 2::UBIGINT, 3::UBIGINT, 4::UBIGINT], 2.0)
 ----
 0.6666666666666666	[0.6666666666666666, 0.6666666666666666]
 

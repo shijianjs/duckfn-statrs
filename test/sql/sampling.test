@@ -8,7 +8,7 @@ require duckfn_statrs
 
 # k 条样本、长度即 k
 query III
-SELECT len(sr_sample_normal(0.0, 1.0, 7)), len(sr_sample_exp(2.0, 5)), len(sr_sample_binomial(0.5, 10.0, 12))
+SELECT len(sr_sample_normal(0.0, 1.0, 7)), len(sr_sample_exp(2.0, 5)), len(sr_sample_binomial(0.5, 10, 12))
 ----
 7	5	12
 
@@ -21,7 +21,7 @@ true	true
 
 query R
 SELECT count(*) FILTER (WHERE s < 0.0 OR s > 10.0) = 0
-FROM (SELECT unnest(sr_sample_binomial(0.5, 10.0, 200)) AS s)
+FROM (SELECT unnest(sr_sample_binomial(0.5, 10, 200)) AS s)
 ----
 true
 
@@ -33,15 +33,15 @@ FROM (SELECT unnest(sr_sample_uniform(2.0, 3.0, 300)) AS s)
 true
 
 query III
-SELECT len(sr_sample_binomial_algorithm(0.5, 10.0, 1.0, 4)),
-       len(sr_sample_binomial_algorithm(0.5, 10.0, 2.0, 4)),
-       len(sr_sample_binomial_algorithm(0.5, 10.0, 3.0, 4))
+SELECT len(sr_sample_binomial_algorithm(0.5, 10, 1.0, 4)),
+       len(sr_sample_binomial_algorithm(0.5, 10, 2.0, 4)),
+       len(sr_sample_binomial_algorithm(0.5, 10, 3.0, 4))
 ----
 4	4	4
 
 # Categorical 样本是类别索引 0..len-1；多元正态的每个抽样点是与 mean 等长的向量
 query R
-SELECT count(*) FILTER (WHERE s NOT IN (0.0, 1.0, 2.0)) = 0
+SELECT count(*) FILTER (WHERE s NOT IN (0, 1, 2)) = 0
 FROM (SELECT unnest(sr_sample_categorical([1.0, 2.0, 1.0], 100)) AS s)
 ----
 true
@@ -67,12 +67,12 @@ true	true
 
 # Multinomial 的每个计数向量分量和恒为 n（statrs multinomial.rs test_sample_sums_to_n）
 query I
-SELECT count(*) FROM (SELECT unnest(sr_sample_multinomial([0.3, 0.7], 10.0, 8)) AS x) WHERE list_sum(x) <> 10
+SELECT count(*) FROM (SELECT unnest(sr_sample_multinomial([0.3, 0.7], 10, 8)) AS x) WHERE list_sum(x) <> 10
 ----
 0
 
 query I
-SELECT len(sr_sample_multinomial([0.3, 0.7], 10.0, 4))
+SELECT len(sr_sample_multinomial([0.3, 0.7], 10, 4))
 ----
 4
 
@@ -95,7 +95,7 @@ SELECT sr_sample_normal(0.0, 1.0, 0)
 sr_sample_normal: k must be a positive whole number, got 0
 
 statement error
-SELECT sr_sample_binomial_algorithm(0.5, 10.0, 9.0, 4)
+SELECT sr_sample_binomial_algorithm(0.5, 10, 9.0, 4)
 ----
 the algorithm must be 1 (automatic), 2 (inversion) or 3 (rejection), got 9
 
@@ -118,7 +118,7 @@ SELECT len(sr_sample_cauchy(0.0, 1.0, 10))
 
 # Draw k Chi(whole-number freedom) samples into a LIST(DOUBLE)
 query R
-SELECT len(sr_sample_chi(2.0, 10))
+SELECT len(sr_sample_chi(2, 10))
 ----
 10
 
@@ -134,15 +134,15 @@ SELECT sr_sample_dirac(3.0, 2)
 ----
 [3.0, 3.0]
 
-# Draw k DiscreteUniform(whole-number min, max) samples into a LIST(DOUBLE)
+# Draw k DiscreteUniform(whole-number min, max) samples into a LIST(BIGINT)
 query R
-SELECT len(sr_sample_discrete_uniform(1.0, 6.0, 10))
+SELECT len(sr_sample_discrete_uniform(1, 6, 10))
 ----
 10
 
 # Draw k Erlang(whole-number shape, rate) samples into a LIST(DOUBLE)
 query R
-SELECT len(sr_sample_erlang(2.0, 2.0, 10))
+SELECT len(sr_sample_erlang(2, 2.0, 10))
 ----
 10
 
@@ -158,7 +158,7 @@ SELECT len(sr_sample_gamma(2.0, 2.0, 10))
 ----
 10
 
-# Draw k Geometric(p) samples into a LIST(DOUBLE)
+# Draw k Geometric(p) samples into a LIST(UBIGINT)
 query R
 SELECT len(sr_sample_geometric(0.5, 10))
 ----
@@ -170,9 +170,9 @@ SELECT len(sr_sample_gumbel(0.0, 1.0, 10))
 ----
 10
 
-# Draw k Hypergeometric(population, successes, draws as whole numbers) samples into a LIST(DOUBLE)
+# Draw k Hypergeometric(population, successes, draws as whole numbers) samples into a LIST(UBIGINT)
 query R
-SELECT len(sr_sample_hypergeometric(10.0, 5.0, 4.0, 8))
+SELECT len(sr_sample_hypergeometric(10, 5, 4, 8))
 ----
 8
 
@@ -200,7 +200,7 @@ SELECT len(sr_sample_log_normal(0.0, 1.0, 10))
 ----
 10
 
-# Draw k NegativeBinomial(r, p) samples into a LIST(DOUBLE)
+# Draw k NegativeBinomial(r, p) samples into a LIST(UBIGINT)
 query R
 SELECT len(sr_sample_negative_binomial(2.0, 0.5, 10))
 ----
@@ -212,7 +212,7 @@ SELECT len(sr_sample_pareto(1.0, 2.0, 10))
 ----
 10
 
-# Draw k Poisson(lambda) samples into a LIST(DOUBLE)
+# Draw k Poisson(lambda) samples into a LIST(UBIGINT)
 query R
 SELECT len(sr_sample_poisson(3.0, 10))
 ----

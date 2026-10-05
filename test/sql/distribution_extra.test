@@ -9,17 +9,17 @@ require duckfn_statrs
 
 # Categorical([1,2,1]) 归一化为 [.25,.5,.25]：pmf(1)=0.5、cdf(1)=0.75、quantile(0.5)=1
 query RRR
-SELECT sr_categorical_pmf(1.0, [1.0, 2.0, 1.0]),
-       sr_categorical_cdf(1.0, [1.0, 2.0, 1.0]),
+SELECT sr_categorical_pmf(1, [1.0, 2.0, 1.0]),
+       sr_categorical_cdf(1, [1.0, 2.0, 1.0]),
        sr_categorical_quantile(0.5, [1.0, 2.0, 1.0])
 ----
-0.5	0.75	1.0
+0.5	0.75	1
 
-# x 非整数报错（statrs 的 pmf 吃 u64）
+# x 是 statrs 的 u64 → UBIGINT；DOUBLE/DECIMAL 字面量在绑定期就被拒绝
 statement error
 SELECT sr_categorical_pmf(1.5, [1.0, 2.0, 1.0])
 ----
-expected a non-negative whole number, got 1.5
+No function matches
 
 # Empirical（聚合形态）：[1,2,3,4] 的 cdf(2)=0.5、sf(2)=0.5、quantile(0.5)≈2
 query RRR
@@ -55,8 +55,8 @@ SELECT sr_dirichlet_pdf([0.5, 0.5], [1.0, 1.0])::DECIMAL(12,8),
 1.00000000	0.00000000
 
 query RR
-SELECT sr_multinomial_pmf([0.5, 0.5], 4.0, [2, 2])::DECIMAL(12,8),
-       sr_multinomial_pmf([0.5, 0.5], 4.0, [4, 0])::DECIMAL(12,8)
+SELECT sr_multinomial_pmf([0.5::DOUBLE, 0.5::DOUBLE], 4, [2::UBIGINT, 2::UBIGINT])::DECIMAL(12,8),
+       sr_multinomial_pmf([0.5::DOUBLE, 0.5::DOUBLE], 4, [4::UBIGINT, 0::UBIGINT])::DECIMAL(12,8)
 ----
 0.37500000	0.06250000
 
@@ -67,9 +67,9 @@ SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.
 0.15915494
 
 statement error
-SELECT sr_multinomial_pmf([0.5, 0.5], 4.5, [2, 2])
+SELECT sr_multinomial_pmf([0.5::DOUBLE, 0.5::DOUBLE], 4.5, [2::UBIGINT, 2::UBIGINT])
 ----
-expected a non-negative whole number, got 4.5
+No function matches
 
 # 精度矩阵 = 协方差（多元正态）/ 尺度（多元 t）的逆。I₂ 的逆还是 I₂；[[2,0],[0,4]] 的逆
 # 是 [[1/2,0],[0,1/4]]。
@@ -129,7 +129,7 @@ SELECT sr_categorical_entropy([1.0, 2.0, 1.0])
 
 # Categorical log probability mass at x
 query R
-SELECT sr_categorical_ln_pmf(1.0, [1.0, 2.0, 1.0])
+SELECT sr_categorical_ln_pmf(1, [1.0, 2.0, 1.0])
 ----
 -0.6931471805599453
 
@@ -137,7 +137,7 @@ SELECT sr_categorical_ln_pmf(1.0, [1.0, 2.0, 1.0])
 query R
 SELECT sr_categorical_max([1.0, 2.0, 1.0])
 ----
-2.0
+2
 
 # Categorical mean
 query R
@@ -155,11 +155,11 @@ SELECT sr_categorical_median([1.0, 2.0, 1.0])
 query R
 SELECT sr_categorical_min([1.0, 2.0, 1.0])
 ----
-0.0
+0
 
 # Categorical survival function P(X > x)
 query R
-SELECT sr_categorical_sf(1.0, [1.0, 2.0, 1.0])
+SELECT sr_categorical_sf(1, [1.0, 2.0, 1.0])
 ----
 0.25
 
@@ -362,20 +362,20 @@ SELECT sr_dirichlet_ln_pdf([-0.5, 1.5], [1.0, 1.0])
 
 # ---- Multinomial::mean（statrs test_mean，4 例） ----
 query RR
-SELECT sr_multinomial_mean([0.3, 0.7], 5.0),
-       sr_multinomial_mean([0.1, 0.3, 0.6], 10.0)
+SELECT sr_multinomial_mean([0.3::DOUBLE, 0.7::DOUBLE], 5),
+       sr_multinomial_mean([0.1::DOUBLE, 0.3::DOUBLE, 0.6::DOUBLE], 10)
 ----
 [1.5, 3.5]	[1.0, 3.0, 6.0]
 
 query RR
-SELECT sr_multinomial_mean([1.0, 3.0, 6.0], 10.0),
-       sr_multinomial_mean([0.15, 0.35, 0.3, 0.2], 20.0)
+SELECT sr_multinomial_mean([1.0::DOUBLE, 3.0::DOUBLE, 6.0::DOUBLE], 10),
+       sr_multinomial_mean([0.15::DOUBLE, 0.35::DOUBLE, 0.3::DOUBLE, 0.2::DOUBLE], 20)
 ----
 [1.0, 3.0, 6.0]	[3.0, 7.0, 6.0, 4.0]
 
 # ---- Multinomial::variance（statrs test_variance，3 例，行主序摊平） ----
 query R
-SELECT unnest(sr_multinomial_variance([0.3, 0.7], 5.0))
+SELECT unnest(sr_multinomial_variance([0.3::DOUBLE, 0.7::DOUBLE], 5))
 ----
 1.05
 -1.05
@@ -383,7 +383,7 @@ SELECT unnest(sr_multinomial_variance([0.3, 0.7], 5.0))
 1.05
 
 query R
-SELECT unnest(sr_multinomial_variance([0.1, 0.3, 0.6], 10.0))
+SELECT unnest(sr_multinomial_variance([0.1::DOUBLE, 0.3::DOUBLE, 0.6::DOUBLE], 10))
 ----
 0.9
 -0.3
@@ -396,7 +396,7 @@ SELECT unnest(sr_multinomial_variance([0.1, 0.3, 0.6], 10.0))
 2.4
 
 query R
-SELECT unnest(sr_multinomial_variance([0.15, 0.35, 0.3, 0.2], 20.0))
+SELECT unnest(sr_multinomial_variance([0.15::DOUBLE, 0.35::DOUBLE, 0.3::DOUBLE, 0.2::DOUBLE], 20))
 ----
 2.55
 -1.05
@@ -418,13 +418,13 @@ SELECT unnest(sr_multinomial_variance([0.15, 0.35, 0.3, 0.2], 20.0))
 # ---- Multinomial::ln_pmf（statrs test_pmf_large_n_no_overflow 的 ln_pmf 断言） ----
 # n=2000 的大 n 回归（#370）：系数溢出路径不得产生 NaN/inf
 query R
-SELECT sr_multinomial_ln_pmf([0.5, 0.5], 2000.0, [1000, 1000])
+SELECT sr_multinomial_ln_pmf([0.5::DOUBLE, 0.5::DOUBLE], 2000, [1000::UBIGINT, 1000::UBIGINT])
 ----
 -4.026367582410558
 
 # counts 之和 ≠ n 是合法的 -inf（概率 0 的对数）
 query R
-SELECT sr_multinomial_ln_pmf([0.5, 0.5], 4.0, [1, 2])
+SELECT sr_multinomial_ln_pmf([0.5::DOUBLE, 0.5::DOUBLE], 4, [1::UBIGINT, 2::UBIGINT])
 ----
 -inf
 

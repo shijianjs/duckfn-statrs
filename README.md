@@ -50,14 +50,13 @@ statistics,distribution,sampling,stats_tests}/`) and the correspondence table is
 | Dispersion | `sr_variance` / `sr_std_dev` / `sr_population_variance` / `sr_population_std_dev` / `sr_skewness` |
 | Extremes & pairing | `sr_min` / `sr_max` / `sr_abs_min` / `sr_abs_max`; `sr_covariance(x, y)` / `sr_population_covariance(x, y)` |
 
-**Scalars** (row by row; DOUBLE parameters, LIST for vectors and count vectors, BIGINT for sample
-counts and waveform durations):
+**Scalars** (row by row; real-valued parameters as DOUBLE, integer parameters follow statrs' native types (UBIGINT / BIGINT / UINTEGER), vectors and count vectors as LIST, BIGINT for sample counts and waveform durations):
 
 | Family | Functions |
 | --- | --- |
 | Continuous distributions (20) | per distribution `sr_<dist>_pdf / ln_pdf / cdf / sf / quantile` (normal, log_normal, beta, gamma, chi_squared, students_t, uniform, weibull, pareto, …) |
 | Discrete distributions (8) | per distribution `pmf / ln_pmf / cdf / sf / quantile` (binomial, poisson, geometric, hypergeometric, categorical, …) |
-| Multivariate (4) | per distribution densities (`pdf` / `ln_pdf`), moments (`mean` / `variance` / `mode`, matrices row-major flattened) and `entropy` / `min` / `max` — `sr_multivariate_normal_*`, `sr_multivariate_students_t_*`, `sr_dirichlet_*`, `sr_multinomial_*` (LIST vectors, count vectors as LIST(BIGINT)) |
+| Multivariate (4) | per distribution densities (`pdf` / `ln_pdf`), moments (`mean` / `variance` / `mode`, matrices row-major flattened) and `entropy` / `min` / `max` — `sr_multivariate_normal_*`, `sr_multivariate_students_t_*`, `sr_dirichlet_*`, `sr_multinomial_*` (LIST vectors, count vectors as LIST(UBIGINT)) |
 | Empirical (aggregate) | `sr_empirical_cdf / sf / quantile(x, k)`; sampling via `sr_sample_empirical` |
 | Random sampling (34) | `sr_sample_<dist>(params..., k BIGINT)` draws k points into a LIST; binomial also `sr_sample_binomial_algorithm` (statrs' BinomialAlgorithm) |
 | Density estimation | `sr_kde_pdf(x, sample LIST, bandwidth or NULL)` / `sr_knn_pdf` (kde feature, k-d tree) |

@@ -14,7 +14,7 @@
 use duckfn::{DuckFirst, DuckOptionResult, duck_aggregate_function, duck_error};
 use statrs::statistics::{Data, OrderStatistics, RankTieBreaker};
 
-use crate::extension::functions::{as_u64, nan_to_null};
+use crate::extension::functions::nan_to_null;
 
 /// `sr_median(x)`：中位数（`OrderStatistics::median`，就地选择算法），偶数个取中间两数平均。
 ///
@@ -52,36 +52,34 @@ fn sr_quantile(values: Vec<f64>, tau: DuckFirst<f64>) -> DuckOptionResult<f64> {
 }
 
 /// `sr_order_statistic(x, k)`：第 k 小的值（`OrderStatistics::order_statistic`，1-based）。
-/// k 越出 `1..=n` 是 NAN → NULL；k 写成整数值的双精度字面量，3.5 这种直接报错。
+/// statrs 的 order 是 `usize` → `k` 用 UBIGINT；k 越出 `1..=n` 是 NAN → NULL。
 ///
 /// ```sql
-/// SELECT sr_order_statistic(x, 2.0) FROM (VALUES (-1.0), (5.0), (0.0), (-3.0), (10.0), (-0.5), (4.0), (1.0), (6.0)) t(x);  -- -1.0
+/// SELECT sr_order_statistic(x, 2) FROM (VALUES (-1.0), (5.0), (0.0), (-3.0), (10.0), (-0.5), (4.0), (1.0), (6.0)) t(x);  -- -1.0
 /// ```
 #[duck_aggregate_function(
     auto_collect = true,
-    description = "k-th smallest value of a DOUBLE column (1-based), NULL when k is outside the data range",
-    example = "SELECT sr_order_statistic(x, 2.0) FROM (VALUES (3.0), (1.0), (2.0)) t(x)"
+    description = "k-th smallest value of a DOUBLE column (1-based, k as UBIGINT), NULL when k is outside the data range",
+    example = "SELECT sr_order_statistic(x, 2) FROM (VALUES (3.0), (1.0), (2.0)) t(x)"
 )]
-fn sr_order_statistic(values: Vec<f64>, order: DuckFirst<f64>) -> DuckOptionResult<f64> {
-    let order = as_u64("sr_order_statistic", order)?;
+fn sr_order_statistic(values: Vec<f64>, order: DuckFirst<u64>) -> DuckOptionResult<f64> {
     let mut data = Data::new(values);
     nan_to_null(data.order_statistic(order as usize))
 }
 
 /// `sr_percentile(x, p)`：p 百分位（`OrderStatistics::percentile`，0..=100 的整数）。
-/// 非整数 p 报错，越界 NAN → NULL；小数百分位用 sr_quantile。
+/// statrs 的 p 是 `usize` → UBIGINT；越界 NAN → NULL；小数百分位用 sr_quantile。
 ///
 /// ```sql
-/// SELECT sr_percentile(x, 50.0) FROM (VALUES (1.0), (5.0), (3.0), (4.0), (10.0), (9.0), (6.0), (7.0), (8.0), (2.0)) t(x);  -- 5.5
+/// SELECT sr_percentile(x, 50) FROM (VALUES (1.0), (5.0), (3.0), (4.0), (10.0), (9.0), (6.0), (7.0), (8.0), (2.0)) t(x);  -- 5.5
 /// ```
 #[duck_aggregate_function(
     auto_collect = true,
-    description = "p-th percentile of a DOUBLE column (whole-number p in 0..=100), NULL when out of range",
+    description = "p-th percentile of a DOUBLE column (p as a UBIGINT in 0..=100), NULL when out of range",
     comment = "Use sr_quantile for non-integer positions",
-    example = "SELECT sr_percentile(x, 50.0) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)"
+    example = "SELECT sr_percentile(x, 50) FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(x)"
 )]
-fn sr_percentile(values: Vec<f64>, p: DuckFirst<f64>) -> DuckOptionResult<f64> {
-    let p = as_u64("sr_percentile", p)?;
+fn sr_percentile(values: Vec<f64>, p: DuckFirst<u64>) -> DuckOptionResult<f64> {
     let mut data = Data::new(values);
     nan_to_null(data.percentile(p as usize))
 }
