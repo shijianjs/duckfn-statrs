@@ -1,12 +1,13 @@
 # name: test/sql/euclid.test
 # description: doc example 全覆盖用例（取自函数源码 `example` 属性，实跑捕获期望值）。
+# 严格对齐 statrs::euclid::Modulus 的 6 种实现（f64、f32、i64、i32、u64、u32），
+# 每条用例验证一种类型的分派。
 # group: [duckfn_statrs]
 
 require duckfn_statrs
 
 # ============================================================================
-# doc example 全覆盖：本组其余函数各一条用例。SQL 取自函数源码的 `example`
-# 属性（即 statrs 官方文档示例），期望值由已构建扩展实跑捕获。
+# f64 版本（statrs 原生 Modulus for f64）
 # ============================================================================
 
 # Canonical (Euclidean) modulus ((x % divisor) + divisor) % divisor, always in [0, divisor); NULL for a zero divisor
@@ -14,3 +15,72 @@ query R
 SELECT sr_modulus(-1.0, 5.0)
 ----
 4.0
+
+# 负数 x 与负数 divisor
+query R
+SELECT sr_modulus(-7.0, -3.0)
+----
+-1.0
+
+# divisor 为 0 → NaN → NULL
+query R
+SELECT sr_modulus(5.0, 0.0)
+----
+NULL
+
+# ============================================================================
+# f32 版本（statrs 原生 Modulus for f32）
+# ============================================================================
+
+query R
+SELECT sr_modulus(-1.0::REAL, 5.0::REAL)
+----
+4.0
+
+# ============================================================================
+# i64 版本（statrs 原生 Modulus for i64）
+# ============================================================================
+
+query R
+SELECT sr_modulus(-1::BIGINT, 5::BIGINT)
+----
+4
+
+# divisor 为 0 → panic → NULL
+query R
+SELECT sr_modulus(5::BIGINT, 0::BIGINT)
+----
+NULL
+
+# ============================================================================
+# i32 版本（statrs 原生 Modulus for i32）
+# ============================================================================
+
+query R
+SELECT sr_modulus(-1::INTEGER, 5::INTEGER)
+----
+4
+
+# ============================================================================
+# u64 版本（statrs 原生 Modulus for u64）
+# ============================================================================
+
+query R
+SELECT sr_modulus(3::UBIGINT, 5::UBIGINT)
+----
+3
+
+# divisor 为 0 → panic → NULL
+query R
+SELECT sr_modulus(5::UBIGINT, 0::UBIGINT)
+----
+NULL
+
+# ============================================================================
+# u32 版本（statrs 原生 Modulus for u32）
+# ============================================================================
+
+query R
+SELECT sr_modulus(3::UINTEGER, 5::UINTEGER)
+----
+3

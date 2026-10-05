@@ -16,13 +16,13 @@ SELECT sr_mean(x)::DECIMAL(10,1) FROM (VALUES (1.0), (2.0), (3.0)) t(x);
 ----
 2.0
 
-# statrs 全能力覆盖：34 个聚合 + 503 个标量 = 537，
+# statrs 全能力覆盖：34 个聚合 + 508 个标量 = 542（含 Modulus 的 5 个整数/浮点 overload），
 # 与 statrs 模块树的对应关系见 functions/mod.rs 头注释。
 # 改了函数数量记得同步这里（先跑 `just sql` 数一遍再填，别凭空加）。
 query I
 SELECT count(*) FROM duckdb_functions() WHERE starts_with(function_name, 'sr_');
 ----
-537
+542
 
 query I
 SELECT count(*) FROM duckdb_functions()
@@ -34,4 +34,4 @@ query I
 SELECT count(*) FROM duckdb_functions()
 WHERE starts_with(function_name, 'sr_') AND function_type = 'scalar';
 ----
-503
+508
