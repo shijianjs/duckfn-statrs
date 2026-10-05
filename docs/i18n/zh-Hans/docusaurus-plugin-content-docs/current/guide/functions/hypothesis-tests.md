@@ -154,5 +154,5 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0), (5.0)) t(x)
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_ttest_onesample([1.0, 2.0], 3.0, 9.0, 1.0)
--- error: the alternative must be 1 = two-sided, 2 = less, 3 = greater
+-- error: sr_ttest_onesample: the alternative must be 1 = two-sided, 2 = less, 3 = greater (statrs' Alternative), got 9
 ```

@@ -300,7 +300,7 @@ SELECT sr_multinomial_pmf([0.5, 0.5], 4, [2::UBIGINT, 2::UBIGINT])::DECIMAL(12,8
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_multinomial_pmf([0.5, 0.5], 4.5, [2::UBIGINT, 2::UBIGINT])
--- error: expected a non-negative whole number, got 4.5
+-- error: no matching signature: trials is UBIGINT, so 4.5 does not bind
 ```
 
 ### sr_multinomial_ln_pmf(probs, trials, counts)
@@ -344,5 +344,5 @@ SELECT sr_multinomial_variance([0.1, 0.3, 0.6], 10)
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0])
--- error: expected 4 entries for a 2x2 covariance matrix
+-- error: sr_multivariate_normal_pdf: expected 4 entries for a 2x2 covariance matrix (row-major), got 2
 ```

@@ -116,7 +116,7 @@ SELECT len(sr_sample_cauchy(0.0, 1.0, 10))
 ----
 10
 
-# Draw k Chi(whole-number freedom) samples into a LIST(DOUBLE)
+# Draw k Chi(UBIGINT freedom) samples into a LIST(DOUBLE)
 query R
 SELECT len(sr_sample_chi(2, 10))
 ----
@@ -134,13 +134,13 @@ SELECT sr_sample_dirac(3.0, 2)
 ----
 [3.0, 3.0]
 
-# Draw k DiscreteUniform(whole-number min, max) samples into a LIST(BIGINT)
+# Draw k DiscreteUniform(BIGINT min, max) samples into a LIST(BIGINT)
 query R
 SELECT len(sr_sample_discrete_uniform(1, 6, 10))
 ----
 10
 
-# Draw k Erlang(whole-number shape, rate) samples into a LIST(DOUBLE)
+# Draw k Erlang(UBIGINT shape, DOUBLE rate) samples into a LIST(DOUBLE)
 query R
 SELECT len(sr_sample_erlang(2, 2.0, 10))
 ----
@@ -170,7 +170,7 @@ SELECT len(sr_sample_gumbel(0.0, 1.0, 10))
 ----
 10
 
-# Draw k Hypergeometric(population, successes, draws as whole numbers) samples into a LIST(UBIGINT)
+# Draw k Hypergeometric(population, successes, draws as UBIGINT) samples into a LIST(UBIGINT)
 query R
 SELECT len(sr_sample_hypergeometric(10, 5, 4, 8))
 ----

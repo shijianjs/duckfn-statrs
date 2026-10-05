@@ -58,7 +58,7 @@ Out-of-range probability:
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_poisson_quantile(-0.1, 3.0)
--- error: the probability must be within [0, 1], got -0.1
+-- error: sr_poisson_quantile: the probability must be within [0, 1], got -0.1
 ```
 
 ### sr_poisson_entropy(lambda)

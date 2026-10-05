@@ -153,7 +153,7 @@ SELECT sr_beta_variance(2.0, 3.0)
 ----
 0.04
 
-# Chi distribution differential entropy, given whole-number freedom
+# Chi distribution differential entropy, given UBIGINT freedom
 query R
 SELECT sr_chi_entropy(2)
 ----
@@ -171,7 +171,7 @@ SELECT sr_chi_max(2)
 ----
 inf
 
-# Chi distribution mean, given whole-number freedom
+# Chi distribution mean, given UBIGINT freedom
 query R
 SELECT sr_chi_mean(2)
 ----
@@ -183,13 +183,13 @@ SELECT sr_chi_min(2)
 ----
 0.0
 
-# Chi distribution mode, given whole-number freedom
+# Chi distribution mode, given UBIGINT freedom
 query R
 SELECT sr_chi_mode(2)
 ----
 1.0
 
-# Chi distribution probability density at x (the sqrt-chi-squared distribution), whole-number freedom
+# Chi distribution probability density at x (the sqrt-chi-squared distribution), UBIGINT freedom
 query R
 SELECT sr_chi_pdf(1.0, 2)
 ----
@@ -207,7 +207,7 @@ SELECT sr_chi_sf(1.0, 2)
 ----
 0.6065306597126333
 
-# Chi distribution skewness, given whole-number freedom
+# Chi distribution skewness, given UBIGINT freedom
 query R
 SELECT sr_chi_skewness(2)
 ----
@@ -291,19 +291,19 @@ SELECT sr_chi_squared_variance(2)
 ----
 4.0
 
-# Chi distribution standard deviation, given whole-number freedom
+# Chi distribution standard deviation, given UBIGINT freedom
 query R
 SELECT sr_chi_std_dev(2)
 ----
 0.6551363775620278
 
-# Chi distribution variance, given whole-number freedom
+# Chi distribution variance, given UBIGINT freedom
 query R
 SELECT sr_chi_variance(2)
 ----
 0.4292036732050959
 
-# Erlang differential entropy (whole-number shape, rate)
+# Erlang differential entropy (UBIGINT shape, DOUBLE rate)
 query R
 SELECT sr_erlang_entropy(2, 1.0)
 ----
@@ -321,7 +321,7 @@ SELECT sr_erlang_max(2, 1.0)
 ----
 inf
 
-# Erlang mean (whole-number shape, rate)
+# Erlang mean (UBIGINT shape, DOUBLE rate)
 query R
 SELECT sr_erlang_mean(2, 1.0)
 ----
@@ -333,7 +333,7 @@ SELECT sr_erlang_min(2, 1.0)
 ----
 0.0
 
-# Erlang mode (whole-number shape, rate)
+# Erlang mode (UBIGINT shape, DOUBLE rate)
 query R
 SELECT sr_erlang_mode(2, 1.0)
 ----
@@ -351,19 +351,19 @@ SELECT sr_erlang_sf(1.0, 2, 2.0)
 ----
 0.40600584970983833
 
-# Erlang skewness (whole-number shape, rate)
+# Erlang skewness (UBIGINT shape, DOUBLE rate)
 query R
 SELECT sr_erlang_skewness(2, 1.0)
 ----
 1.414213562373095
 
-# Erlang standard deviation (whole-number shape, rate)
+# Erlang standard deviation (UBIGINT shape, DOUBLE rate)
 query R
 SELECT sr_erlang_std_dev(2, 1.0)
 ----
 1.4142135623730951
 
-# Erlang variance (whole-number shape, rate)
+# Erlang variance (UBIGINT shape, DOUBLE rate)
 query R
 SELECT sr_erlang_variance(2, 1.0)
 ----

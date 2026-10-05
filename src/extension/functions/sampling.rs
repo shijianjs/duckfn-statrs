@@ -112,7 +112,7 @@ fn sr_sample_cauchy(location: f64, scale: f64, k: i64) -> DuckOptionResult<Vec<f
 /// 从 Chi(freedom) 抽样（整数自由度）。
 #[duck_scalar_function(
     volatile = true,
-    description = "Draw k Chi(whole-number freedom) samples into a LIST(DOUBLE)",
+    description = "Draw k Chi(UBIGINT freedom) samples into a LIST(DOUBLE)",
     example = "SELECT len(sr_sample_chi(2, 10))"
 )]
 fn sr_sample_chi(freedom: u64, k: i64) -> DuckOptionResult<Vec<f64>> {
@@ -144,7 +144,7 @@ fn sr_sample_dirac(v: f64, k: i64) -> DuckOptionResult<Vec<f64>> {
 /// 从 Erlang(shape, rate) 抽样（整数 shape）。
 #[duck_scalar_function(
     volatile = true,
-    description = "Draw k Erlang(whole-number shape, rate) samples into a LIST(DOUBLE)",
+    description = "Draw k Erlang(UBIGINT shape, DOUBLE rate) samples into a LIST(DOUBLE)",
     example = "SELECT len(sr_sample_erlang(2, 2.0, 10))"
 )]
 fn sr_sample_erlang(shape: u64, rate: f64, k: i64) -> DuckOptionResult<Vec<f64>> {
@@ -327,7 +327,7 @@ fn sr_sample_bernoulli(p: f64, k: i64) -> DuckOptionResult<Vec<f64>> {
 /// 从 Binomial(p, n) 抽样。
 #[duck_scalar_function(
     volatile = true,
-    description = "Draw k Binomial(p, whole-number n) samples into a LIST(DOUBLE)",
+    description = "Draw k Binomial(p, UBIGINT n) samples into a LIST(UBIGINT)",
     example = "SELECT len(sr_sample_binomial(0.5, 10, 8))"
 )]
 fn sr_sample_binomial(p: f64, n: u64, k: i64) -> DuckOptionResult<Vec<u64>> {
@@ -339,7 +339,7 @@ fn sr_sample_binomial(p: f64, n: u64, k: i64) -> DuckOptionResult<Vec<u64>> {
 /// 1 = Automatic、2 = Inversion、3 = Rejection）—— 这是 statrs 的 sampler 导出。
 #[duck_scalar_function(
     volatile = true,
-    description = "Draw k Binomial(p, n) samples through statrs' BinomialSampler with an explicit algorithm (1 automatic, 2 inversion, 3 rejection)",
+    description = "Draw k Binomial(p, n) samples through statrs' BinomialSampler with an explicit algorithm (1 automatic, 2 inversion, 3 rejection) into a LIST(UBIGINT)",
     example = "SELECT len(sr_sample_binomial_algorithm(0.5, 10, 1.0, 8))"
 )]
 fn sr_sample_binomial_algorithm(p: f64, n: u64, algorithm: f64, k: i64) -> DuckOptionResult<Vec<u64>> {
@@ -364,7 +364,7 @@ fn sr_sample_binomial_algorithm(p: f64, n: u64, algorithm: f64, k: i64) -> DuckO
 /// 从 DiscreteUniform(min, max)（整数边界）抽样。
 #[duck_scalar_function(
     volatile = true,
-    description = "Draw k DiscreteUniform(whole-number min, max) samples into a LIST(DOUBLE)",
+    description = "Draw k DiscreteUniform(BIGINT min, max) samples into a LIST(BIGINT)",
     example = "SELECT len(sr_sample_discrete_uniform(1, 6, 10))"
 )]
 fn sr_sample_discrete_uniform(min: i64, max: i64, k: i64) -> DuckOptionResult<Vec<i64>> {
@@ -376,7 +376,7 @@ fn sr_sample_discrete_uniform(min: i64, max: i64, k: i64) -> DuckOptionResult<Ve
 /// 从 Geometric(p) 抽样。
 #[duck_scalar_function(
     volatile = true,
-    description = "Draw k Geometric(p) samples into a LIST(DOUBLE)",
+    description = "Draw k Geometric(p) samples into a LIST(UBIGINT)",
     example = "SELECT len(sr_sample_geometric(0.5, 10))"
 )]
 fn sr_sample_geometric(p: f64, k: i64) -> DuckOptionResult<Vec<u64>> {
@@ -387,7 +387,7 @@ fn sr_sample_geometric(p: f64, k: i64) -> DuckOptionResult<Vec<u64>> {
 /// 从 Hypergeometric(population, successes, draws) 抽样。
 #[duck_scalar_function(
     volatile = true,
-    description = "Draw k Hypergeometric(population, successes, draws as whole numbers) samples into a LIST(DOUBLE)",
+    description = "Draw k Hypergeometric(population, successes, draws as UBIGINT) samples into a LIST(UBIGINT)",
     example = "SELECT len(sr_sample_hypergeometric(10, 5, 4, 8))"
 )]
 fn sr_sample_hypergeometric(population: u64, successes: u64, draws: u64, k: i64) -> DuckOptionResult<Vec<u64>> {
@@ -399,7 +399,7 @@ fn sr_sample_hypergeometric(population: u64, successes: u64, draws: u64, k: i64)
 /// 从 NegativeBinomial(r, p) 抽样（u64 通道）。
 #[duck_scalar_function(
     volatile = true,
-    description = "Draw k NegativeBinomial(r, p) samples into a LIST(DOUBLE)",
+    description = "Draw k NegativeBinomial(r, p) samples into a LIST(UBIGINT)",
     example = "SELECT len(sr_sample_negative_binomial(2.0, 0.5, 10))"
 )]
 fn sr_sample_negative_binomial(r: f64, p: f64, k: i64) -> DuckOptionResult<Vec<u64>> {
@@ -410,7 +410,7 @@ fn sr_sample_negative_binomial(r: f64, p: f64, k: i64) -> DuckOptionResult<Vec<u
 /// 从 Poisson(lambda) 抽样。
 #[duck_scalar_function(
     volatile = true,
-    description = "Draw k Poisson(lambda) samples into a LIST(DOUBLE)",
+    description = "Draw k Poisson(lambda) samples into a LIST(UBIGINT)",
     example = "SELECT len(sr_sample_poisson(3.0, 10))"
 )]
 fn sr_sample_poisson(lambda: f64, k: i64) -> DuckOptionResult<Vec<u64>> {
@@ -418,10 +418,10 @@ fn sr_sample_poisson(lambda: f64, k: i64) -> DuckOptionResult<Vec<u64>> {
     Ok(Some(sample_u64("sr_sample_poisson", &d, k)?))
 }
 
-/// 从 Categorical(probs) 抽样（u64 类别索引 → DOUBLE）。
+/// 从 Categorical(probs) 抽样（u64 类别索引 → UBIGINT）。
 #[duck_scalar_function(
     volatile = true,
-    description = "Draw k Categorical(prob LIST) samples as category indices into a LIST(DOUBLE)",
+    description = "Draw k Categorical(prob LIST) samples as category indices into a LIST(UBIGINT)",
     example = "SELECT len(sr_sample_categorical([1.0, 2.0, 1.0], 10))"
 )]
 fn sr_sample_categorical(probs: Vec<f64>, k: i64) -> DuckOptionResult<Vec<u64>> {
@@ -517,10 +517,10 @@ fn sr_sample_dirichlet(alpha: Vec<f64>, k: i64) -> DuckOptionResult<Vec<Vec<f64>
     Ok(Some(rows))
 }
 
-/// 从 Multinomial(p, n) 抽 k 个计数向量（LIST(BIGINT)，每行分量和恒为 n）。
+/// 从 Multinomial(p, n) 抽 k 个计数向量（LIST(UBIGINT)，每行分量和恒为 n）。
 #[duck_scalar_function(
     volatile = true,
-    description = "Draw k multinomial count vectors (BIGINT LISTs summing to n) given category probabilities and the trial count",
+    description = "Draw k multinomial count vectors (UBIGINT LISTs summing to n) given category probabilities and the trial count",
     example = "SELECT len(sr_sample_multinomial([0.3, 0.7], 10, 4))"
 )]
 fn sr_sample_multinomial(p: Vec<f64>, n: u64, k: i64) -> DuckOptionResult<Vec<Vec<u64>>> {

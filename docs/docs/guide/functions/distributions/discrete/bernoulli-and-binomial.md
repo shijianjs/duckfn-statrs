@@ -589,7 +589,7 @@ SELECT sr_geometric_variance(0.5)
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_binomial_pmf(2.5, 0.5, 10)
--- error: expected a non-negative whole number, got 2.5
+-- error: no matching signature: x is UBIGINT, so 2.5 does not bind
 ```
 
 ```sql {"type":"duckfn","show":"value"}

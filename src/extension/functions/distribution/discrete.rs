@@ -258,7 +258,7 @@ fn hypergeometric(
 
 /// 超几何概率质量 P(X = x)：不放回抽样命中的成功数。
 #[duck_scalar_function(
-    description = "Hypergeometric probability mass P(X = x): successes drawn without replacement (population, successes, draws as whole-number DOUBLEs)",
+    description = "Hypergeometric probability mass P(X = x): successes drawn without replacement (population, successes, draws as UBIGINT)",
     example = "SELECT sr_hypergeometric_pmf(2, 10, 5, 4)"
 )]
 fn sr_hypergeometric_pmf(x: u64, population: u64, successes: u64, draws: u64) -> DuckOptionResult<f64> {

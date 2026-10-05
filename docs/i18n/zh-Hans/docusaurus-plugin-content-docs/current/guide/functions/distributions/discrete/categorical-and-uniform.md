@@ -60,7 +60,7 @@ pmf 中 `x` 不是整数：
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT sr_categorical_pmf(1.5, [1.0, 2.0, 1.0])
--- error: expected a non-negative whole number, got 1.5
+-- error: no matching signature: x is UBIGINT, so 1.5 does not bind
 ```
 
 ### sr_categorical_entropy(probs)

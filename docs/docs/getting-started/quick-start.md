@@ -71,7 +71,7 @@ FROM (VALUES (-1.96::DOUBLE), (0.0), (1.96)) t(x);
 Errors on invalid parameters are clear and specific:
 
 ```sql {"type":"duckfn","expect":"error"}
-SELECT sr_normal_pdf(0.0, 0.0, -1.0);    -- error: std_dev must be positive
+SELECT sr_normal_pdf(0.0, 0.0, -1.0);    -- error: sr_normal_pdf: Standard deviation is NaN, zero or less than zero
 ```
 
 ## NULL behaviour

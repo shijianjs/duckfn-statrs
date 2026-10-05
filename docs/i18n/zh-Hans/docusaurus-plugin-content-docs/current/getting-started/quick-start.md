@@ -70,7 +70,7 @@ FROM (VALUES (-1.96::DOUBLE), (0.0), (1.96)) t(x);
 参数非法时报错清晰明确：
 
 ```sql {"type":"duckfn","expect":"error"}
-SELECT sr_normal_pdf(0.0, 0.0, -1.0);    -- 报错：std_dev 必须为正
+SELECT sr_normal_pdf(0.0, 0.0, -1.0);    -- 报错：sr_normal_pdf: Standard deviation is NaN, zero or less than zero
 ```
 
 ## NULL 行为

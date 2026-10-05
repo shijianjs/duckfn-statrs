@@ -76,16 +76,16 @@ sr_cauchy_skewness,Cauchy distribution skewness (undefined),,"SELECT sr_cauchy_s
 sr_cauchy_std_dev,Cauchy distribution standard deviation (undefined),,"SELECT sr_cauchy_std_dev(0.0, 1.0)"
 sr_cauchy_variance,Cauchy distribution variance (undefined),,"SELECT sr_cauchy_variance(0.0, 1.0)"
 sr_chi_cdf,Chi distribution cumulative distribution function P(X <= x),,"SELECT sr_chi_cdf(1.0, 2)"
-sr_chi_entropy,"Chi distribution differential entropy, given whole-number freedom",,SELECT sr_chi_entropy(2)
+sr_chi_entropy,"Chi distribution differential entropy, given UBIGINT freedom",,SELECT sr_chi_entropy(2)
 sr_chi_ln_pdf,Chi distribution log-density at x,,"SELECT sr_chi_ln_pdf(1.0, 2)"
 sr_chi_max,Chi distribution maximum of the support (positive infinity),,SELECT sr_chi_max(2)
-sr_chi_mean,"Chi distribution mean, given whole-number freedom",,SELECT sr_chi_mean(2)
+sr_chi_mean,"Chi distribution mean, given UBIGINT freedom",,SELECT sr_chi_mean(2)
 sr_chi_min,Chi distribution minimum of the support (0),,SELECT sr_chi_min(2)
-sr_chi_mode,"Chi distribution mode, given whole-number freedom",,SELECT sr_chi_mode(2)
-sr_chi_pdf,"Chi distribution probability density at x (the sqrt-chi-squared distribution), whole-number freedom",,"SELECT sr_chi_pdf(1.0, 2)"
+sr_chi_mode,"Chi distribution mode, given UBIGINT freedom",,SELECT sr_chi_mode(2)
+sr_chi_pdf,"Chi distribution probability density at x (the sqrt-chi-squared distribution), UBIGINT freedom",,"SELECT sr_chi_pdf(1.0, 2)"
 sr_chi_quantile,"Chi distribution quantile function: the x whose CDF equals p, for p in [0, 1]",,"SELECT sr_chi_quantile(0.5, 2)"
 sr_chi_sf,Chi distribution survival function P(X > x),,"SELECT sr_chi_sf(1.0, 2)"
-sr_chi_skewness,"Chi distribution skewness, given whole-number freedom",,SELECT sr_chi_skewness(2)
+sr_chi_skewness,"Chi distribution skewness, given UBIGINT freedom",,SELECT sr_chi_skewness(2)
 sr_chi_squared_cdf,Chi-squared cumulative distribution function P(X <= x),,"SELECT sr_chi_squared_cdf(1.0, 2.0)"
 sr_chi_squared_entropy,"Chi-squared differential entropy, given degrees of freedom",,SELECT sr_chi_squared_entropy(2.0)
 sr_chi_squared_ln_pdf,Chi-squared log-density at x,,"SELECT sr_chi_squared_ln_pdf(1.0, 2.0)"
@@ -100,8 +100,8 @@ sr_chi_squared_sf,Chi-squared survival function P(X > x),,"SELECT sr_chi_squared
 sr_chi_squared_skewness,"Chi-squared skewness, given degrees of freedom",,SELECT sr_chi_squared_skewness(2.0)
 sr_chi_squared_std_dev,"Chi-squared standard deviation, given degrees of freedom",,SELECT sr_chi_squared_std_dev(2.0)
 sr_chi_squared_variance,"Chi-squared variance, given degrees of freedom",,SELECT sr_chi_squared_variance(2.0)
-sr_chi_std_dev,"Chi distribution standard deviation, given whole-number freedom",,SELECT sr_chi_std_dev(2)
-sr_chi_variance,"Chi distribution variance, given whole-number freedom",,SELECT sr_chi_variance(2)
+sr_chi_std_dev,"Chi distribution standard deviation, given UBIGINT freedom",,SELECT sr_chi_std_dev(2)
+sr_chi_variance,"Chi distribution variance, given UBIGINT freedom",,SELECT sr_chi_variance(2)
 sr_chisquare,"Chi-square goodness-of-fit test on an observed-count LIST(UBIGINT) (expected frequencies optional, defaults to uniform; ddof optional UBIGINT): LIST [chi-square statistic, p-value]",,"SELECT sr_chisquare([16, 18, 16, 14, 12, 12], NULL, NULL)"
 sr_choose,"Binomial coefficient C(n, k) (statrs' factorial::binomial), n and k UBIGINTs",,"SELECT sr_choose(10, 3)"
 sr_covariance,"Sample covariance of two DOUBLE columns (Bessel-corrected), NULL when fewer than two rows are fully non-NULL","A row with a NULL in either column is skipped entirely, keeping the two columns paired","SELECT sr_covariance(x, y) FROM (VALUES (0.0, -5.0), (3.0, 4.0), (-2.0, 10.0)) t(x, y)"
@@ -156,18 +156,18 @@ sr_erf_inv,"Inverse error function, erf(x) = y solved for x",,SELECT sr_erf_inv(
 sr_erfc,Complementary error function erfc(x) = 1 - erf(x),,SELECT sr_erfc(1.0)
 sr_erfc_inv,"Inverse complementary error function, erfc(x) = y solved for x",,SELECT sr_erfc_inv(0.15729920705028513)
 sr_erlang_cdf,Erlang cumulative distribution function P(X <= x),,"SELECT sr_erlang_cdf(1.0, 2, 2.0)"
-sr_erlang_entropy,"Erlang differential entropy (whole-number shape, rate)",,"SELECT sr_erlang_entropy(2, 1.0)"
+sr_erlang_entropy,"Erlang differential entropy (UBIGINT shape, DOUBLE rate)",,"SELECT sr_erlang_entropy(2, 1.0)"
 sr_erlang_ln_pdf,Erlang log-density at x,,"SELECT sr_erlang_ln_pdf(1.0, 2, 2.0)"
 sr_erlang_max,Erlang maximum of the support (positive infinity),,"SELECT sr_erlang_max(2, 1.0)"
-sr_erlang_mean,"Erlang mean (whole-number shape, rate)",,"SELECT sr_erlang_mean(2, 1.0)"
+sr_erlang_mean,"Erlang mean (UBIGINT shape, DOUBLE rate)",,"SELECT sr_erlang_mean(2, 1.0)"
 sr_erlang_min,Erlang minimum of the support (0),,"SELECT sr_erlang_min(2, 1.0)"
-sr_erlang_mode,"Erlang mode (whole-number shape, rate)",,"SELECT sr_erlang_mode(2, 1.0)"
-sr_erlang_pdf,"Erlang probability density at x (whole-number shape, rate)",,"SELECT sr_erlang_pdf(1.0, 2, 2.0)"
+sr_erlang_mode,"Erlang mode (UBIGINT shape, DOUBLE rate)",,"SELECT sr_erlang_mode(2, 1.0)"
+sr_erlang_pdf,"Erlang probability density at x (UBIGINT shape, DOUBLE rate)",,"SELECT sr_erlang_pdf(1.0, 2, 2.0)"
 sr_erlang_quantile,"Erlang quantile function: the x whose CDF equals p, for p in [0, 1]",,"SELECT sr_erlang_quantile(0.5, 2, 2.0)"
 sr_erlang_sf,Erlang survival function P(X > x),,"SELECT sr_erlang_sf(1.0, 2, 2.0)"
-sr_erlang_skewness,"Erlang skewness (whole-number shape, rate)",,"SELECT sr_erlang_skewness(2, 1.0)"
-sr_erlang_std_dev,"Erlang standard deviation (whole-number shape, rate)",,"SELECT sr_erlang_std_dev(2, 1.0)"
-sr_erlang_variance,"Erlang variance (whole-number shape, rate)",,"SELECT sr_erlang_variance(2, 1.0)"
+sr_erlang_skewness,"Erlang skewness (UBIGINT shape, DOUBLE rate)",,"SELECT sr_erlang_skewness(2, 1.0)"
+sr_erlang_std_dev,"Erlang standard deviation (UBIGINT shape, DOUBLE rate)",,"SELECT sr_erlang_std_dev(2, 1.0)"
+sr_erlang_variance,"Erlang variance (UBIGINT shape, DOUBLE rate)",,"SELECT sr_erlang_variance(2, 1.0)"
 sr_euler_mascheroni,The Euler-Mascheroni constant,,SELECT sr_euler_mascheroni()
 sr_exp_cdf,Exponential cumulative distribution function P(X <= x),,"SELECT sr_exp_cdf(1.0, 2.0)"
 sr_exp_entropy,"Exponential differential entropy, given the rate",,SELECT sr_exp_entropy(2.0)
@@ -265,7 +265,7 @@ sr_hypergeometric_max,Hypergeometric maximum of the support,,"SELECT sr_hypergeo
 sr_hypergeometric_mean,Hypergeometric mean,,"SELECT sr_hypergeometric_mean(10, 5, 4)"
 sr_hypergeometric_min,Hypergeometric minimum of the support,,"SELECT sr_hypergeometric_min(10, 5, 4)"
 sr_hypergeometric_mode,Hypergeometric mode,,"SELECT sr_hypergeometric_mode(10, 5, 4)"
-sr_hypergeometric_pmf,"Hypergeometric probability mass P(X = x): successes drawn without replacement (population, successes, draws as whole-number DOUBLEs)",,"SELECT sr_hypergeometric_pmf(2, 10, 5, 4)"
+sr_hypergeometric_pmf,"Hypergeometric probability mass P(X = x): successes drawn without replacement (population, successes, draws as UBIGINT)",,"SELECT sr_hypergeometric_pmf(2, 10, 5, 4)"
 sr_hypergeometric_quantile,"Hypergeometric quantile function: the x whose CDF equals p, for p in [0, 1]",,"SELECT sr_hypergeometric_quantile(0.5, 10, 5, 4)"
 sr_hypergeometric_sf,Hypergeometric survival function P(X > x),,"SELECT sr_hypergeometric_sf(2, 10, 5, 4)"
 sr_hypergeometric_skewness,Hypergeometric skewness,,"SELECT sr_hypergeometric_skewness(10, 5, 4)"
@@ -442,34 +442,34 @@ sr_quantile,"Tau quantile of a DOUBLE column, tau as the second (constant) argum
 sr_ranks,Ranks of a DOUBLE column as LIST(DOUBLE); method 1=average 2=min 3=max 4=first (statrs' tie breakers),Ties follow the chosen RankTieBreaker; an out-of-range method is a query error,"SELECT sr_ranks(x, 1.0) FROM (VALUES (1.0), (3.0), (2.0), (2.0)) t(x)"
 sr_sample_bernoulli,Draw k Bernoulli(p) samples (0/1) into a LIST(DOUBLE),,"SELECT len(sr_sample_bernoulli(0.5, 10))"
 sr_sample_beta,"Draw k Beta(shape_a, shape_b) samples into a LIST(DOUBLE) using statrs' rand integration",,"SELECT len(sr_sample_beta(2.0, 3.0, 10))"
-sr_sample_binomial,"Draw k Binomial(p, whole-number n) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_binomial(0.5, 10, 8))"
-sr_sample_binomial_algorithm,"Draw k Binomial(p, n) samples through statrs' BinomialSampler with an explicit algorithm (1 automatic, 2 inversion, 3 rejection)",,"SELECT len(sr_sample_binomial_algorithm(0.5, 10, 1.0, 8))"
-sr_sample_categorical,Draw k Categorical(prob LIST) samples as category indices into a LIST(DOUBLE),,"SELECT len(sr_sample_categorical([1.0, 2.0, 1.0], 10))"
+sr_sample_binomial,"Draw k Binomial(p, UBIGINT n) samples into a LIST(UBIGINT)",,"SELECT len(sr_sample_binomial(0.5, 10, 8))"
+sr_sample_binomial_algorithm,"Draw k Binomial(p, n) samples through statrs' BinomialSampler with an explicit algorithm (1 automatic, 2 inversion, 3 rejection) into a LIST(UBIGINT)",,"SELECT len(sr_sample_binomial_algorithm(0.5, 10, 1.0, 8))"
+sr_sample_categorical,Draw k Categorical(prob LIST) samples as category indices into a LIST(UBIGINT),,"SELECT len(sr_sample_categorical([1.0, 2.0, 1.0], 10))"
 sr_sample_cauchy,"Draw k Cauchy(location, scale) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_cauchy(0.0, 1.0, 10))"
-sr_sample_chi,Draw k Chi(whole-number freedom) samples into a LIST(DOUBLE),,"SELECT len(sr_sample_chi(2, 10))"
+sr_sample_chi,Draw k Chi(UBIGINT freedom) samples into a LIST(DOUBLE),,"SELECT len(sr_sample_chi(2, 10))"
 sr_sample_chi_squared,Draw k Chi-squared(freedom) samples into a LIST(DOUBLE),,"SELECT len(sr_sample_chi_squared(2.0, 10))"
 sr_sample_dirac,Draw k Dirac(v) samples into a LIST(DOUBLE),,"SELECT sr_sample_dirac(3.0, 2)"
 sr_sample_dirichlet,"Draw k Dirichlet samples on the simplex (concentration LIST alpha) as a LIST of point LISTs, each summing to 1",,"SELECT len(sr_sample_dirichlet([1.0, 2.0], 4))"
-sr_sample_discrete_uniform,"Draw k DiscreteUniform(whole-number min, max) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_discrete_uniform(1, 6, 10))"
+sr_sample_discrete_uniform,"Draw k DiscreteUniform(BIGINT min, max) samples into a LIST(BIGINT)",,"SELECT len(sr_sample_discrete_uniform(1, 6, 10))"
 sr_sample_empirical,Draw k samples from the empirical distribution of a DOUBLE column into a LIST(DOUBLE); k is the second (constant) argument,,"SELECT sr_sample_empirical(v, 5) FROM (VALUES (1.0), (2.0), (3.0)) t(v)"
-sr_sample_erlang,"Draw k Erlang(whole-number shape, rate) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_erlang(2, 2.0, 10))"
+sr_sample_erlang,"Draw k Erlang(UBIGINT shape, DOUBLE rate) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_erlang(2, 2.0, 10))"
 sr_sample_exp,Draw k Exponential(rate) samples into a LIST(DOUBLE),,"SELECT len(sr_sample_exp(2.0, 10))"
 sr_sample_fisher_snedecor,"Draw k Fisher-Snedecor(f1, f2) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_fisher_snedecor(2.0, 3.0, 10))"
 sr_sample_gamma,"Draw k Gamma(shape, rate) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_gamma(2.0, 2.0, 10))"
-sr_sample_geometric,Draw k Geometric(p) samples into a LIST(DOUBLE),,"SELECT len(sr_sample_geometric(0.5, 10))"
+sr_sample_geometric,Draw k Geometric(p) samples into a LIST(UBIGINT),,"SELECT len(sr_sample_geometric(0.5, 10))"
 sr_sample_gumbel,"Draw k Gumbel(location, scale) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_gumbel(0.0, 1.0, 10))"
-sr_sample_hypergeometric,"Draw k Hypergeometric(population, successes, draws as whole numbers) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_hypergeometric(10, 5, 4, 8))"
+sr_sample_hypergeometric,"Draw k Hypergeometric(population, successes, draws as UBIGINT) samples into a LIST(UBIGINT)",,"SELECT len(sr_sample_hypergeometric(10, 5, 4, 8))"
 sr_sample_inverse_gamma,"Draw k InverseGamma(shape, scale) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_inverse_gamma(2.0, 2.0, 10))"
 sr_sample_laplace,"Draw k Laplace(location, scale) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_laplace(0.0, 1.0, 10))"
 sr_sample_levy,"Draw k Levy(mu, c) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_levy(0.0, 1.0, 10))"
 sr_sample_log_normal,"Draw k LogNormal(location, scale) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_log_normal(0.0, 1.0, 10))"
-sr_sample_multinomial,Draw k multinomial count vectors (BIGINT LISTs summing to n) given category probabilities and the trial count,,"SELECT len(sr_sample_multinomial([0.3, 0.7], 10, 4))"
+sr_sample_multinomial,Draw k multinomial count vectors (UBIGINT LISTs summing to n) given category probabilities and the trial count,,"SELECT len(sr_sample_multinomial([0.3, 0.7], 10, 4))"
 sr_sample_multivariate_normal,"Draw k MultivariateNormal samples (mean LIST, row-major flattened covariance LIST) as a LIST of point LISTs",,"SELECT len(sr_sample_multivariate_normal([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 4))"
 sr_sample_multivariate_students_t,"Draw k multivariate Student's t samples (location LIST, row-major flattened scale LIST, degrees of freedom) as a LIST of point LISTs",,"SELECT len(sr_sample_multivariate_students_t([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0, 4))"
-sr_sample_negative_binomial,"Draw k NegativeBinomial(r, p) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_negative_binomial(2.0, 0.5, 10))"
+sr_sample_negative_binomial,"Draw k NegativeBinomial(r, p) samples into a LIST(UBIGINT)",,"SELECT len(sr_sample_negative_binomial(2.0, 0.5, 10))"
 sr_sample_normal,"Draw k Normal(mean, std_dev) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_normal(0.0, 1.0, 10))"
 sr_sample_pareto,"Draw k Pareto(scale, shape) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_pareto(1.0, 2.0, 10))"
-sr_sample_poisson,Draw k Poisson(lambda) samples into a LIST(DOUBLE),,"SELECT len(sr_sample_poisson(3.0, 10))"
+sr_sample_poisson,Draw k Poisson(lambda) samples into a LIST(UBIGINT),,"SELECT len(sr_sample_poisson(3.0, 10))"
 sr_sample_students_t,"Draw k Student's t(location, scale, freedom) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_students_t(0.0, 1.0, 2.0, 10))"
 sr_sample_triangular,"Draw k Triangular(min, max, mode) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_triangular(0.0, 2.0, 1.0, 10))"
 sr_sample_uniform,"Draw k continuous Uniform(min, max) samples into a LIST(DOUBLE)",,"SELECT len(sr_sample_uniform(0.0, 1.0, 10))"

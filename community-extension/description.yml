@@ -38,7 +38,7 @@ docs:
     sequences) and stats_tests
     (t-test, skewtest, Anderson-Darling, two-sample KS, Mann-Whitney U, chi-square, one-way ANOVA,
     Fisher's exact - returning [statistic, p-value]). Integer slots (binomial n, pmf x, sample k)
-    are whole-number literals, validated - never rounded.
+    are UBIGINT/BIGINT arguments - a non-integer literal does not bind.
 
     Constants follow statrs: the mathematical ones plus its own floating-point precision
     thresholds with sr_almost_eq, so a query can reuse statrs' notion of "close enough" instead
