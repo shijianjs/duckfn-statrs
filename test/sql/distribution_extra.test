@@ -71,6 +71,51 @@ SELECT sr_multinomial_pmf([0.5, 0.5], 4.5, [2, 2])
 ----
 expected a non-negative whole number, got 4.5
 
+# 精度矩阵 = 协方差（多元正态）/ 尺度（多元 t）的逆。I₂ 的逆还是 I₂；[[2,0],[0,4]] 的逆
+# 是 [[1/2,0],[0,1/4]]。
+#
+# 注意比较口径：标量 DOUBLE 在 sqllogictest 里是近似比较，但 DOUBLE[] 是逐元素**精确**
+# 比较（1/2 在 f64 下算出 0.49999999999999994，直接写 0.5 会 FAIL）。所以矩阵一律用
+# list_transform 转成 DECIMAL 再比 —— 既避开浮点尾数噪音，期望值也保持解析可读。
+query RR
+SELECT sr_multivariate_normal_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0]),
+       list_transform(sr_multivariate_normal_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0]),
+                      x -> x::DECIMAL(12,10))
+----
+[1.0, 0.0, 0.0, 1.0]	[0.5000000000, 0.0000000000, 0.0000000000, 0.2500000000]
+
+query R
+SELECT list_transform(sr_multivariate_students_t_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0),
+                      x -> x::DECIMAL(12,10))
+----
+[1.0000000000, 0.0000000000, 0.0000000000, 1.0000000000]
+
+# 非对角矩阵验证「求的是逆」而不是回读参数：Σ = [[4,1],[1,3]] 的行列式 = 11，
+# 故 Σ⁻¹ = (1/11)·[[3,-1],[-1,4]] = [[3/11, -1/11], [-1/11, 4/11]]。
+query R
+SELECT list_transform(sr_multivariate_normal_precision([0.0, 0.0], [4.0, 1.0, 1.0, 3.0]),
+                      x -> x::DECIMAL(12,10))
+----
+[0.2727272727, -0.0909090909, -0.0909090909, 0.3636363636]
+
+# 多元 t 的精度矩阵只与 scale 有关，与自由度无关 —— ν=3 与 ν=50 给同一个矩阵
+query R
+SELECT sr_multivariate_students_t_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0], 3.0)
+     = sr_multivariate_students_t_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0], 50.0)
+----
+true
+
+# 形状不符仍是同一个调用错误（复用 multivariate() / multivariate_student() 里 dim² 的检查）
+statement error
+SELECT sr_multivariate_normal_precision([0.0, 0.0], [1.0, 0.0])
+----
+expected 4 entries for a 2x2 covariance matrix
+
+statement error
+SELECT sr_multivariate_students_t_precision([0.0, 0.0], [1.0, 0.0], 3.0)
+----
+expected 4 entries for a 2x2 scale matrix
+
 # ============================================================================
 # doc example 全覆盖：本组其余函数各一条用例。SQL 取自函数源码的 `example`
 # 属性（即 statrs 官方文档示例），期望值由已构建扩展实跑捕获。

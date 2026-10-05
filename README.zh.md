@@ -37,7 +37,7 @@ SELECT sr_normal_cdf(1.96, 0.0, 1.0);
 
 注册名统一带 `sr_` 前缀，在 `duckdb_functions()` 里可以按前缀整组检索；代码目录与 statrs 的
 模块树同构（`functions/{consts,function,statistics,distribution}/`），对应关系见
-`src/extension/functions/mod.rs` 头注释。当前 34 个聚合 + 495 个标量 = 529 个函数，按族概括：
+`src/extension/functions/mod.rs` 头注释。当前 34 个聚合 + 503 个标量 = 537 个函数，按族概括：
 
 **聚合函数**（一列 DOUBLE 进、一个 DOUBLE 出，`auto_collect` 形态）：
 

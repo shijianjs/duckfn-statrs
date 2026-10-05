@@ -105,6 +105,31 @@ SELECT sr_multivariate_normal_variance([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
 -- [1.0, 0.0, 0.0, 1.0]
 ```
 
+### sr_multivariate_normal_precision(mean, cov)
+
+**Signature**: `sr_multivariate_normal_precision(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE[]`
+
+The **precision matrix** `Σ⁻¹` — the inverse of the covariance matrix, row-major flattened.
+
+Unlike `variance`, which returns the covariance you passed in, this returns a matrix statrs
+actually computes (from the Cholesky factorisation at construction time) — it is the `Σ⁻¹` in
+the density's exponent term `-(1/2)·(x-μ)ᵀ·Σ⁻¹·(x-μ)`. DuckDB has no matrix inverse, so there
+is no way to derive it on the SQL side.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- [1.0, 0.0, 0.0, 1.0]
+```
+
+For the identity covariance the inverse is the identity again. A diagonal case shows the
+inversion directly: `diag(2, 4)⁻¹ = diag(1/2, 1/4)`. The `round` is cosmetic — `1/2` is
+`0.49999999999999994` in binary floating point.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT list_transform(sr_multivariate_normal_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0]), x -> round(x, 10))
+-- [0.5, 0.0, 0.0, 0.25]
+```
+
 ## sr_multivariate_students_t_pdf(x, location, scale, freedom)
 
 **Signature**: `sr_multivariate_students_t_pdf(x LIST(DOUBLE), location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE) -> DOUBLE`
@@ -151,6 +176,27 @@ Covariance matrix `scale · ν / (ν − 2)` as a row-major flattened LIST. Only
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_multivariate_students_t_variance([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
 -- [3.0, 0.0, 0.0, 3.0]
+```
+
+### sr_multivariate_students_t_precision(location, scale, freedom)
+
+**Signature**: `sr_multivariate_students_t_precision(location DOUBLE[], scale DOUBLE[], freedom DOUBLE) -> DOUBLE[]`
+
+The **precision matrix** `scale⁻¹` — the inverse of the scale matrix, row-major flattened.
+
+Do not confuse it with `variance`: that one is `scale · ν / (ν − 2)` (a genuine covariance that
+scales with the degrees of freedom), this one is exactly `scale⁻¹` and does **not** depend on
+`freedom` at all — only `scale` matters. statrs computes it at construction time from the
+Cholesky factorisation, and DuckDB has no matrix inverse, so it is not derivable on the SQL side.
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_students_t_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
+-- [1.0, 0.0, 0.0, 1.0]
+```
+
+```sql {"type":"duckfn","show":"value"}
+SELECT list_transform(sr_multivariate_students_t_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0], 3.0), x -> round(x, 10))
+-- [0.5, 0.0, 0.0, 0.25]
 ```
 
 ### sr_multivariate_students_t_min(location, scale, freedom)

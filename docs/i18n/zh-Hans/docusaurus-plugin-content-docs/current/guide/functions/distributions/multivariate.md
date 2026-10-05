@@ -103,6 +103,29 @@ SELECT sr_multivariate_normal_variance([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
 -- [1.0, 0.0, 0.0, 1.0]
 ```
 
+### sr_multivariate_normal_precision(mean, cov)
+
+**签名**：`sr_multivariate_normal_precision(mean DOUBLE[], cov DOUBLE[]) -> DOUBLE[]`
+
+**精度矩阵** `Σ⁻¹`，即协方差矩阵的逆，行主序展平为 LIST。
+
+与 `variance` 不同 —— 后者把你传进去的协方差原样还回来，这个返回的是 statrs 真算出来的矩阵
+（构造时由 Cholesky 分解得到），也就是密度指数项 `-(1/2)·(x-μ)ᵀ·Σ⁻¹·(x-μ)` 里的那个 `Σ⁻¹`。
+DuckDB 没有矩阵求逆，SQL 侧推不出来。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_normal_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- [1.0, 0.0, 0.0, 1.0]
+```
+
+单位阵的逆还是单位阵；对角情形能直接看出求逆：`diag(2, 4)⁻¹ = diag(1/2, 1/4)`。这里的 `round` 只是
+为了显示好看 —— `1/2` 在二进制浮点下本就是 `0.49999999999999994`。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT list_transform(sr_multivariate_normal_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0]), x -> round(x, 10))
+-- [0.5, 0.0, 0.0, 0.25]
+```
+
 ## sr_multivariate_students_t_pdf(x, location, scale, freedom)
 
 **签名**：`sr_multivariate_students_t_pdf(x LIST(DOUBLE), location LIST(DOUBLE), scale LIST(DOUBLE), freedom DOUBLE) -> DOUBLE`
@@ -145,6 +168,26 @@ SELECT sr_multivariate_students_t_mean([-1.0, 1.0, 3.0], [1.0, 0.0, 0.5, 0.0, 2.
 ```sql {"type":"duckfn","show":"value"}
 SELECT sr_multivariate_students_t_variance([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
 -- [3.0, 0.0, 0.0, 3.0]
+```
+
+### sr_multivariate_students_t_precision(location, scale, freedom)
+
+**签名**：`sr_multivariate_students_t_precision(location DOUBLE[], scale DOUBLE[], freedom DOUBLE) -> DOUBLE[]`
+
+**精度矩阵** `scale⁻¹`，即尺度矩阵的逆，行主序展平为 LIST。
+
+别和 `variance` 搞混：那个是 `scale · ν / (ν − 2)`（真正的协方差，会随自由度变），这个恰是
+`scale⁻¹`，**完全不含 `freedom`** —— 只由 `scale` 决定。statrs 在构造时经 Cholesky 分解算出并
+缓存，DuckDB 没有矩阵求逆，SQL 侧推不出来。
+
+```sql {"type":"duckfn","show":"value"}
+SELECT sr_multivariate_students_t_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
+-- [1.0, 0.0, 0.0, 1.0]
+```
+
+```sql {"type":"duckfn","show":"value"}
+SELECT list_transform(sr_multivariate_students_t_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0], 3.0), x -> round(x, 10))
+-- [0.5, 0.0, 0.0, 0.25]
 ```
 
 ### sr_multivariate_students_t_min(location, scale, freedom)

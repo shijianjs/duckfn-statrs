@@ -5,6 +5,8 @@
 //
 //   statrs                        duckfn_statrs
 //   src/consts.rs                 functions/consts.rs
+//   src/prec.rs                   functions/consts.rs 尾部（5 个精度阈值 + almost_eq；
+//                                 与 consts 同属精度策略，放一起比另开文件好找）
 //   src/function/                 functions/function.rs（含 kernel 族与 evaluate::polynomial）
 //   src/statistics/               functions/statistics/
 //   src/distribution/             functions/distribution/（含 Categorical、Empirical、
@@ -13,17 +15,24 @@
 //   src/generate.rs               functions/generate.rs（波形/对数间距序列取前 n 项 → LIST）
 //   src/stats_tests/              functions/stats_tests/（9 个假设检验）
 //   src/euclid.rs                 functions/euclid.rs（Modulus 规范化取模，f64 标量出口）
-//   src/prec.rs                   内部精度策略，非计算能力，不包装
 //
-// 类型面：标量用 DOUBLE；statrs 的向量/矩阵参数走 LIST(DOUBLE)（多元协方差为行主序摊平的
-// LIST），计数向量走 LIST(BIGINT)。不存在「为 int/f32 等再包一层转换函数」的重复劳动 ——
+// 有意不包装的，只剩两类：
+//   1. `checked_*` 变体（function/ 里）：SQL 侧统一「算不出 → NULL」，checked 的错误路径
+//      与直接版的 NAN 收敛到同一个出口，包两份只是把同一个函数注册两次。
+//   2. statrs 里只在别的类型上重复的同义实现（Modulus 的 f32/整数版、各分布构造函数本身）：
+//      DuckDB 的隐式转换已覆盖，或 SQL 里没有对应的形状。
+//
+// 类型面：标量用 DOUBLE；statrs 的向量/矩阵参数走 LIST(DOUBLE)（多元协方差、精度矩阵为行主序
+// 摊平的 LIST），计数向量走 LIST(BIGINT)。不存在「为 int/f32 等再包一层转换函数」的重复劳动 ——
 // DuckDB 的隐式转换已覆盖。statrs 签名里的 u64/i64 槽位仍经 as_u64/as_i64 做整数校验。
 //
 // FIRST RULE: every capability of statrs gets a SQL surface; nothing may be missing. The tree
 // mirrors statrs' modules row by row (see the table above). Vector and matrix parameters ride on
-// LIST(DOUBLE) (covariances as row-major flattened lists), count vectors on LIST(BIGINT) — there
-// is no extra wrapper per scalar integer/float type, DuckDB's implicit conversions cover that.
-// statrs' own u64/i64 slots stay validated through as_u64/as_i64.
+// LIST(DOUBLE) (covariance and precision matrices as row-major flattened lists), count vectors on
+// LIST(BIGINT) — there is no extra wrapper per scalar integer/float type, DuckDB's implicit
+// conversions cover that. statrs' own u64/i64 slots stay validated through as_u64/as_i64.
+// Only two kinds of item stay unwrapped: the `checked_*` error-path twins of already-wrapped
+// functions, and statrs' same-capability repeats on other types (see the numbered list above).
 
 pub(crate) mod distribution;
 pub(crate) mod statistics;

@@ -39,7 +39,7 @@ The `Justfile` wraps the same commands: `just build`, `just sql "SELECT sr_mean(
 Every registered name carries the `sr_` prefix, so the whole set is one `duckdb_functions()` filter
 away; the code tree mirrors statrs' module tree (`functions/{consts,function,generate,density,
 statistics,distribution,sampling,stats_tests}/`) and the correspondence table is in
-`src/extension/functions/mod.rs`. Currently 34 aggregates + 495 scalars = 529 functions, by family:
+`src/extension/functions/mod.rs`. Currently 34 aggregates + 503 scalars = 537 functions, by family:
 
 **Aggregates** (a DOUBLE column in, one DOUBLE out, all `auto_collect`):
 

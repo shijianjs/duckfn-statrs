@@ -1,12 +1,12 @@
 ---
 title: 总览
 sidebar_position: 1
-description: 函数参考各分页的索引——529 个统计函数的可执行 SQL 示例，按类别组织。
+description: 函数参考各分页的索引——537 个统计函数的可执行 SQL 示例，按类别组织。
 ---
 
 # 函数参考总览
 
-`duckfn_statrs` 注册的 529 个函数都带 `sr_` 前缀。下面每个分页里的每个函数都至少配一个可在
+`duckfn_statrs` 注册的 537 个函数都带 `sr_` 前缀。下面每个分页里的每个函数都至少配一个可在
 浏览器里真跑的 SQL 示例。
 
 在 SQL 里检索所有注册函数：
@@ -28,8 +28,9 @@ ORDER BY function_name;
     Fisher-Snedecor、均匀 / 三角 / Dirac。
   - **离散** —— Bernoulli 与二项试验、Poisson 与超几何、类别与离散均匀。
   - **多元** —— 多元正态、Dirichlet 与多项式。
-- **特殊函数** —— 误差 / Gamma / Beta 族、阶乘、调和数、logistic/logit、多项式与核函数，
-  外加**常量**。
+- **特殊函数** —— 误差 / Gamma / Beta 族、阶乘、调和数、logistic/logit、多项式与核函数
+  （核按名字选，如 `sr_kernel_eval('gaussian', 0.0)`），
+  外加**常量**：数学常量，以及 statrs 自己的浮点精度阈值与 `sr_almost_eq`。
 - **随机抽样** —— 连续采样，以及离散 / 多元 / 经验采样。
 - **密度与信号**、**假设检验**。
 

@@ -1,6 +1,7 @@
 # name: test/sql/consts.test
-# description: statrs::consts 的常量标量函数。期望值即 statrs 源码中的常量字面量
-#   （DECIMAL 定点展示截断到源码给定的位数），证明 SQL 侧与 statrs 内部用的是同一份数。
+# description: statrs::consts 的常量标量函数与 statrs::prec 的精度阈值/almost_eq。
+#   期望值即 statrs 源码中的常量字面量（DECIMAL 定点展示截断到源码给定的位数），
+#   证明 SQL 侧与 statrs 内部用的是同一份数。
 # group: [duckfn_statrs]
 
 require duckfn_statrs
@@ -22,3 +23,37 @@ query R
 SELECT sr_2_sqrt_e_over_pi()::DECIMAL(18,15);
 ----
 1.860382734205266
+
+# statrs::prec 的五个阈值：F64_PREC = 1.11e-16 = 2^-53、DEFAULT_F64_ACC = 1.11e-15、
+# DEFAULT_RELATIVE_ACC = 1e-14、DEFAULT_EPS = 1e-9、DEFAULT_ULPS = 5。
+# DECIMAL 的 scale 按各常量的量级选：1e-9 用 18 位小数放不下 5.0，ULPS 本身是整数。
+query RRRRR
+SELECT sr_f64_prec()::DECIMAL(18,18), sr_default_f64_acc()::DECIMAL(18,18),
+       sr_default_relative_acc()::DECIMAL(18,17), sr_default_eps()::DECIMAL(18,17),
+       sr_default_ulps()::DECIMAL(18,15);
+----
+0.000000000000000111	0.000000000000001110	0.000000000000010000	0.000000001000000000	5.000000000000000
+
+# DEFAULT_F64_ACC 恰为 F64_PREC 的 10 倍 —— 用 statrs 自己的阈值做一次自洽性断言，
+# 而不是各抄一个数字
+query R
+SELECT sr_default_f64_acc() / sr_f64_prec()::DECIMAL(18,12)
+----
+10.000000000000
+
+# almost_eq：容差内为 true、超出为 false。0.1+0.2 与 0.3 在 f64 下相差约 2.8e-17，
+# 默认相对精度 1e-9 之内必然为 true
+query RR
+SELECT sr_almost_eq(0.1 + 0.2, 0.3, 1e-9), sr_almost_eq(1.0, 1.1, 1e-9);
+----
+true	false
+
+# 无穷只与自身相等，NaN 与任何值都不相等（statrs almost_eq 的原义：两边都无穷时
+# 走 a == b，其余交给 approx 的绝对差比较，NaN 因此永不匹配）
+query RRRR
+SELECT sr_almost_eq('inf'::DOUBLE, 'inf'::DOUBLE, 1e-9),
+       sr_almost_eq('inf'::DOUBLE, '-inf'::DOUBLE, 1e-9),
+       sr_almost_eq('nan'::DOUBLE, 'nan'::DOUBLE, 1e-9),
+       sr_almost_eq('nan'::DOUBLE, 0.0, 'inf'::DOUBLE);
+----
+true	false	false	false

@@ -299,6 +299,20 @@ fn sr_multivariate_normal_variance(mean: Vec<f64>, cov: Vec<f64>) -> DuckOptionR
     Ok(dist.variance().map(row_major))
 }
 
+/// 多元正态精度矩阵（协方差的逆，行主序摊平成 LIST(DOUBLE)）。
+///
+/// statrs 在构造时用 Cholesky 分解的逆算出它并缓存（`MultivariateNormal::precision`），
+/// 正是密度指数项 `-(1/2)·(x-μ)ᵀ·Σ⁻¹·(x-μ)` 里的那个 Σ⁻¹。与 `variance` 不同，这不是把
+/// 构造参数原样读回：DuckDB 没有矩阵求逆，SQL 侧算不出来，所以是独立出口。
+#[duck_scalar_function(
+    description = "Precision matrix (inverse of the covariance matrix, row-major flattened LIST) of the multivariate normal distribution",
+    example = "SELECT sr_multivariate_normal_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])"
+)]
+fn sr_multivariate_normal_precision(mean: Vec<f64>, cov: Vec<f64>) -> DuckOptionResult<Vec<f64>> {
+    let dist = multivariate_normal("sr_multivariate_normal_precision", mean, cov)?;
+    Ok(Some(row_major(dist.precision().clone_owned())))
+}
+
 /// 多元正态众数向量（LIST(DOUBLE)）。
 #[duck_scalar_function(
     description = "Mode vector of the multivariate normal distribution given the mean and a row-major flattened covariance matrix",
@@ -397,4 +411,28 @@ fn sr_multivariate_students_t_max(
 ) -> DuckOptionResult<Vec<f64>> {
     let dist = multivariate_student("sr_multivariate_students_t_max", location, scale, freedom)?;
     Ok(Some(dist.max().iter().copied().collect()))
+}
+
+/// 多元 t 精度矩阵（尺度矩阵的逆，行主序摊平成 LIST(DOUBLE)）。
+///
+/// 与 `sr_multivariate_normal_precision` 同理，是 statrs 构造时算好缓存的 Σ⁻¹
+/// （`MultivariateStudent::precision`），不是把 scale 参数读回。注意它与
+/// `variance` 不同：variance 是 `scale·ν/(ν-2)`，精度矩阵就是 `scale⁻¹`，两者互为倒数关系
+/// 的不同对象 —— 想复原尺度矩阵用 variance，想直接拿逆用本函数。
+#[duck_scalar_function(
+    description = "Precision matrix (inverse of the scale matrix, row-major flattened LIST) of the multivariate Student's t distribution",
+    example = "SELECT sr_multivariate_students_t_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)"
+)]
+fn sr_multivariate_students_t_precision(
+    location: Vec<f64>,
+    scale: Vec<f64>,
+    freedom: f64,
+) -> DuckOptionResult<Vec<f64>> {
+    let dist = multivariate_student(
+        "sr_multivariate_students_t_precision",
+        location,
+        scale,
+        freedom,
+    )?;
+    Ok(Some(row_major(dist.precision().clone_owned())))
 }

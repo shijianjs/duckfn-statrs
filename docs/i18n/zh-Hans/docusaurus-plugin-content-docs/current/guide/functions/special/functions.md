@@ -343,36 +343,41 @@ SELECT sr_polynomial(2.0, [1.0, 0.0, 3.0])
 
 ## 核函数
 
-### sr_kernel_eval(x, kind)
+三个核函数都用**核名字符串**（大小写不敏感）选核，而不是数字编码，于是调用点读起来是
+`sr_kernel_eval('gaussian', 0.0)`。九个名字：`gaussian`、`epanechnikov`、`triangular`、
+`tricube`、`quartic`、`uniform`、`cosine`、`logistic`、`sigmoid`。传入别的名字是查询错误，
+错误信息里会列出这九个。
 
-**签名**：`sr_kernel_eval(x DOUBLE, kind DOUBLE) -> DOUBLE`
+### sr_kernel_eval(kind, x)
 
-核函数 `K(x)` 求值。kind 代码：1=gaussian、2=epanechnikov、3=triangular、4=tricube、
-5=quartic、6=uniform、7=cosine、8=logistic、9=sigmoid。
+**签名**：`sr_kernel_eval(kind VARCHAR, x DOUBLE) -> DOUBLE`
+
+核函数 `K(x)` 在归一化距离 `x` 处求值。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_kernel_eval(2.0, 0.0)
+SELECT sr_kernel_eval('epanechnikov', 0.0)
+-- 0.75
 ```
 
 ### sr_kernel_support(kind)
 
-**签名**：`sr_kernel_support(kind DOUBLE) -> LIST(DOUBLE)`
+**签名**：`sr_kernel_support(kind VARCHAR) -> LIST(DOUBLE)`
 
 核的紧支撑区间 `[lo, hi]`。非紧支撑核（gaussian、sigmoid、logistic）给 NULL。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_kernel_support(2.0)
+SELECT sr_kernel_support('epanechnikov')
 -- [-1.0, 1.0]
 ```
 
 ### sr_kernel_eval_with_bandwidth(kind, x, bandwidth)
 
-**签名**：`sr_kernel_eval_with_bandwidth(kind DOUBLE, x DOUBLE, bandwidth DOUBLE) -> DOUBLE`
+**签名**：`sr_kernel_eval_with_bandwidth(kind VARCHAR, x DOUBLE, bandwidth DOUBLE) -> DOUBLE`
 
-带带宽缩放的核函数 K(x / h) / h（kind 编码与 sr_kernel_eval 相同）。
+带带宽缩放的核函数 `K(x / h) / h`，缩放后仍积分为 1（核名与 `sr_kernel_eval` 相同）。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_kernel_eval_with_bandwidth(1.0, 0.0, 0.5)
+SELECT sr_kernel_eval_with_bandwidth('gaussian', 0.0, 0.5)
 -- 0.7978845608028654
 ```
 

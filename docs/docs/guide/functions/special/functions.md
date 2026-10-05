@@ -346,37 +346,43 @@ SELECT sr_polynomial(2.0, [1.0, 0.0, 3.0])
 
 ## Kernel functions
 
-### sr_kernel_eval(x, kind)
+Every kernel function takes the kernel **name** as a string (case-insensitive) rather than a
+numeric code, so a call site reads as `sr_kernel_eval('gaussian', 0.0)`. The nine names are:
+`gaussian`, `epanechnikov`, `triangular`, `tricube`, `quartic`, `uniform`, `cosine`, `logistic`,
+`sigmoid`. An unknown name is a query error listing all nine.
 
-**Signature**: `sr_kernel_eval(x DOUBLE, kind DOUBLE) -> DOUBLE`
+### sr_kernel_eval(kind, x)
 
-Evaluate kernel `K(x)`. Kind codes: 1=gaussian, 2=epanechnikov, 3=triangular, 4=tricube,
-5=quartic, 6=uniform, 7=cosine, 8=logistic, 9=sigmoid.
+**Signature**: `sr_kernel_eval(kind VARCHAR, x DOUBLE) -> DOUBLE`
+
+Evaluate kernel `K(x)` at the normalized distance `x`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_kernel_eval(2.0, 0.0)
+SELECT sr_kernel_eval('epanechnikov', 0.0)
+-- 0.75
 ```
 
 ### sr_kernel_support(kind)
 
-**Signature**: `sr_kernel_support(kind DOUBLE) -> LIST(DOUBLE)`
+**Signature**: `sr_kernel_support(kind VARCHAR) -> LIST(DOUBLE)`
 
 Compact support interval `[lo, hi]` of the kernel. NULL for kernels with unbounded support
 (gaussian, sigmoid, logistic).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_kernel_support(2.0)
+SELECT sr_kernel_support('epanechnikov')
 -- [-1.0, 1.0]
 ```
 
 ### sr_kernel_eval_with_bandwidth(kind, x, bandwidth)
 
-**Signature**: `sr_kernel_eval_with_bandwidth(kind DOUBLE, x DOUBLE, bandwidth DOUBLE) -> DOUBLE`
+**Signature**: `sr_kernel_eval_with_bandwidth(kind VARCHAR, x DOUBLE, bandwidth DOUBLE) -> DOUBLE`
 
-Kernel function with bandwidth scaling K(x / h) / h (same kind codes as sr_kernel_eval).
+Kernel function with bandwidth scaling `K(x / h) / h`, which keeps the kernel integrating to 1
+after scaling (same kernel names as `sr_kernel_eval`).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_kernel_eval_with_bandwidth(1.0, 0.0, 0.5)
+SELECT sr_kernel_eval_with_bandwidth('gaussian', 0.0, 0.5)
 -- 0.7978845608028654
 ```
 

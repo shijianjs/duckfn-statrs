@@ -10,7 +10,7 @@ AGENTS.md（duckfn-extension-template 自带的那一份）：克隆模板后**�
 ## 项目事实（唯一需要人维护的一段）
 
 - 这个扩展做什么：把 [statrs](https://crates.io/crates/statrs) **整体**包装成 DuckDB 函数（当前
-  34 个聚合 + 495 个标量 = 529）：统计量一律聚合函数（`SELECT sr_mean(x) FROM t GROUP BY g`），
+  34 个聚合 + 503 个标量 = 537）：统计量一律聚合函数（`SELECT sr_mean(x) FROM t GROUP BY g`），
   分布/采样/特殊函数/常量一律标量（逐行求值）。代码目录与 statrs 模块树同构
   （functions/{consts,function,generate,density,statistics,distribution,sampling,stats_tests}/），
   **首要规则：statrs 能力不允许缺失**；对应表与仅剩的非能力导出（prec/euclid trait）见

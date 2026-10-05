@@ -317,88 +317,71 @@ fn sr_polynomial(x: f64, coeffs: Vec<f64>) -> DuckOptionResult<f64> {
 }
 
 // ---------------------------------------------------------------------------
-// 核函数族（statrs::function::kernel）：9 个核的 evaluate 与 support，code 表：
-// 1 Gaussian 2 Epanechnikov 3 Triangular 4 Tricube 5 Quartic 6 Uniform
-// 7 Cosine 8 Logistic 9 Sigmoid
+// 核函数族（statrs::function::kernel）：9 个核的 evaluate / evaluate_with_bandwidth / support
+//
+// kind 是核名的字符串（'gaussian'、'epanechnikov' …），不是编号 —— 调用点写
+// `sr_kernel_eval('gaussian', 0.0)` 一眼可读，写 `sr_kernel_eval(1.0, 0.0)` 只能回去查表。
 // ---------------------------------------------------------------------------
 
 use statrs::function::kernel::{
     Cosine, Epanechnikov, Gaussian, Kernel, Logistic as LogisticKernel, Quartic, Sigmoid,
     Triangular as TriangularKernel, Tricube, Uniform as UniformKernel,
 };
+use quack_rs::error::ExtensionError;
 
-/// 核函数 K(x)（按 code 选核）。
-#[duck_scalar_function(
-    description = "Kernel function evaluation K(x); kind 1 gaussian 2 epanechnikov 3 triangular 4 tricube 5 quartic 6 uniform 7 cosine 8 logistic 9 sigmoid",
-    example = "SELECT sr_kernel_eval(1.0, 0.0)"
-)]
-fn sr_kernel_eval(kind: f64, x: f64) -> DuckOptionResult<f64> {
-    let value = match kind {
-        1.0 => Gaussian.evaluate(x),
-        2.0 => Epanechnikov.evaluate(x),
-        3.0 => TriangularKernel.evaluate(x),
-        4.0 => Tricube.evaluate(x),
-        5.0 => Quartic.evaluate(x),
-        6.0 => UniformKernel.evaluate(x),
-        7.0 => Cosine.evaluate(x),
-        8.0 => LogisticKernel.evaluate(x),
-        9.0 => Sigmoid.evaluate(x),
+/// 9 个核的共同形状：按名字选出 statrs 的那个核（大小写不敏感），交回调用方求值。
+///
+/// 原来这里是三段几乎一样的 `match 1.0 => ...`，每加一个核要改三处；收成一个函数后
+/// 「有哪些核」只有下面这张表一处。未知核名在这里就报错，三个出口的错误文案因此一致。
+fn kernel_by_name(name: &str, fn_name: &str) -> Result<Box<dyn Kernel>, ExtensionError> {
+    // 9 个核都是零大小类型，装 Box 只是为了让三个出口共用一份 dyn Kernel。
+    let kernel: Box<dyn Kernel> = match name.to_ascii_lowercase().as_str() {
+        "gaussian" => Box::new(Gaussian),
+        "epanechnikov" => Box::new(Epanechnikov),
+        "triangular" => Box::new(TriangularKernel),
+        "tricube" => Box::new(Tricube),
+        "quartic" => Box::new(Quartic),
+        "uniform" => Box::new(UniformKernel),
+        "cosine" => Box::new(Cosine),
+        "logistic" => Box::new(LogisticKernel),
+        "sigmoid" => Box::new(Sigmoid),
         other => {
             return Err(duck_error(format!(
-                "sr_kernel_eval: the kernel kind must be 1..9 (gaussian, epanechnikov, triangular, tricube, quartic, uniform, cosine, logistic, sigmoid), got {other}"
+                "{fn_name}: unknown kernel {other:?}; expected one of gaussian, epanechnikov, \
+                 triangular, tricube, quartic, uniform, cosine, logistic, sigmoid"
             )));
         }
     };
-    nan_to_null(value)
+    Ok(kernel)
+}
+
+/// 核函数 K(x)（按名字选核，大小写不敏感）。
+#[duck_scalar_function(
+    description = "Kernel function evaluation K(x) for a named kernel (gaussian, epanechnikov, triangular, tricube, quartic, uniform, cosine, logistic, sigmoid; case-insensitive)",
+    example = "SELECT sr_kernel_eval('gaussian', 0.0)"
+)]
+fn sr_kernel_eval(kind: String, x: f64) -> DuckOptionResult<f64> {
+    let kernel = kernel_by_name(&kind, "sr_kernel_eval")?;
+    nan_to_null(kernel.evaluate(x))
 }
 
 /// 带宽缩放后的核函数 `K(x / h) / h`（statrs::Kernel::evaluate_with_bandwidth），
-/// 确保缩放后仍积分为 1；kind 语义与 sr_kernel_eval 完全一致。
+/// 确保缩放后仍积分为 1；核名语义与 sr_kernel_eval 完全一致。
 #[duck_scalar_function(
-    description = "Kernel function with bandwidth scaling K(x / h) / h (same kind codes as sr_kernel_eval)",
-    example = "SELECT sr_kernel_eval_with_bandwidth(1.0, 0.0, 0.5)"
+    description = "Kernel function with bandwidth scaling K(x / h) / h, for a named kernel (same names as sr_kernel_eval)",
+    example = "SELECT sr_kernel_eval_with_bandwidth('gaussian', 0.0, 0.5)"
 )]
-fn sr_kernel_eval_with_bandwidth(kind: f64, x: f64, bandwidth: f64) -> DuckOptionResult<f64> {
-    let value = match kind {
-        1.0 => Gaussian.evaluate_with_bandwidth(x, bandwidth),
-        2.0 => Epanechnikov.evaluate_with_bandwidth(x, bandwidth),
-        3.0 => TriangularKernel.evaluate_with_bandwidth(x, bandwidth),
-        4.0 => Tricube.evaluate_with_bandwidth(x, bandwidth),
-        5.0 => Quartic.evaluate_with_bandwidth(x, bandwidth),
-        6.0 => UniformKernel.evaluate_with_bandwidth(x, bandwidth),
-        7.0 => Cosine.evaluate_with_bandwidth(x, bandwidth),
-        8.0 => LogisticKernel.evaluate_with_bandwidth(x, bandwidth),
-        9.0 => Sigmoid.evaluate_with_bandwidth(x, bandwidth),
-        other => {
-            return Err(duck_error(format!(
-                "sr_kernel_eval_with_bandwidth: the kernel kind must be 1..9 (gaussian, epanechnikov, triangular, tricube, quartic, uniform, cosine, logistic, sigmoid), got {other}"
-            )));
-        }
-    };
-    nan_to_null(value)
+fn sr_kernel_eval_with_bandwidth(kind: String, x: f64, bandwidth: f64) -> DuckOptionResult<f64> {
+    let kernel = kernel_by_name(&kind, "sr_kernel_eval_with_bandwidth")?;
+    nan_to_null(kernel.evaluate_with_bandwidth(x, bandwidth))
 }
 
 /// 核的紧支撑区间 [lo, hi]；非紧支撑核（gaussian / logistic / sigmoid）返回 NULL。
 #[duck_scalar_function(
-    description = "Compact support [lo, hi] of a kernel (same kind codes as sr_kernel_eval); NULL for kernels with unbounded support",
-    example = "SELECT sr_kernel_support(2.0)"
+    description = "Compact support [lo, hi] of a named kernel (same names as sr_kernel_eval); NULL for kernels with unbounded support",
+    example = "SELECT sr_kernel_support('epanechnikov')"
 )]
-fn sr_kernel_support(kind: f64) -> DuckOptionResult<Vec<f64>> {
-    let support = match kind {
-        1.0 => Gaussian.support(),
-        2.0 => Epanechnikov.support(),
-        3.0 => TriangularKernel.support(),
-        4.0 => Tricube.support(),
-        5.0 => Quartic.support(),
-        6.0 => UniformKernel.support(),
-        7.0 => Cosine.support(),
-        8.0 => LogisticKernel.support(),
-        9.0 => Sigmoid.support(),
-        other => {
-            return Err(duck_error(format!(
-                "sr_kernel_support: the kernel kind must be 1..9 (see sr_kernel_eval), got {other}"
-            )));
-        }
-    };
-    Ok(support.map(|(lo, hi)| vec![lo, hi]))
+fn sr_kernel_support(kind: String) -> DuckOptionResult<Vec<f64>> {
+    let kernel = kernel_by_name(&kind, "sr_kernel_support")?;
+    Ok(kernel.support().map(|(lo, hi)| vec![lo, hi]))
 }

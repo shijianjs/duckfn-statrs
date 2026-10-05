@@ -1,12 +1,12 @@
 ---
 title: Overview
 sidebar_position: 1
-description: Index of all function reference pages — 529 statistical functions with executable SQL examples.
+description: Index of all function reference pages — 537 statistical functions with executable SQL examples.
 ---
 
 # Function reference overview
 
-All 529 functions registered by `duckfn_statrs` share the `sr_` prefix. Every function in the
+All 537 functions registered by `duckfn_statrs` share the `sr_` prefix. Every function in the
 sub-pages below includes at least one executable SQL example that runs directly in your browser.
 
 Search all registered functions at runtime:
@@ -30,7 +30,9 @@ The sidebar mirrors the function families, with distributions split by kind:
     discrete uniform.
   - **Multivariate** — multivariate normal, Dirichlet and multinomial.
 - **Special functions** — error / gamma / beta families, factorials, harmonic numbers,
-  logistic/logit, polynomial and kernel helpers — plus the **Constants**.
+  logistic/logit, polynomial and kernel helpers (kernels are selected by name, e.g.
+  `sr_kernel_eval('gaussian', 0.0)`) — plus the **Constants**: the mathematical constants and
+  statrs' own floating-point precision thresholds with `sr_almost_eq`.
 - **Random sampling** — continuous, and discrete / multivariate / empirical samplers.
 - **Density and signals**, **Hypothesis tests**.
 

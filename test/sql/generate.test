@@ -37,21 +37,28 @@ SELECT sr_gen_square(0, 2, 2, 1.0, 0.0, 0)
 sr_gen_square: k must be a positive whole number, got 0
 
 # kernel 族：epanechnikov(0)=3/4、uniform(0)=1/2、gaussian(0)=1/√(2π)；
-# 紧支撑核给 [lo, hi]，非紧支撑核（gaussian / sigmoid）给 NULL
+# 紧支撑核给 [lo, hi]，非紧支撑核（gaussian / logistic / sigmoid）给 NULL
 query RRR
-SELECT sr_kernel_eval(2.0, 0.0), sr_kernel_eval(6.0, 0.0), sr_kernel_eval(1.0, 0.0)::DECIMAL(12,8)
+SELECT sr_kernel_eval('epanechnikov', 0.0), sr_kernel_eval('uniform', 0.0),
+       sr_kernel_eval('gaussian', 0.0)::DECIMAL(12,8)
 ----
 0.75	0.5	0.39894228
 
+# 核名大小写不敏感
+query R
+SELECT sr_kernel_eval('Gaussian', 0.0)::DECIMAL(12,8)
+----
+0.39894228
+
 query RRR
-SELECT sr_kernel_support(2.0), sr_kernel_support(1.0), sr_kernel_support(9.0)
+SELECT sr_kernel_support('epanechnikov'), sr_kernel_support('gaussian'), sr_kernel_support('sigmoid')
 ----
 [-1.0, 1.0]	NULL	NULL
 
 statement error
-SELECT sr_kernel_eval(12.0, 0.0)
+SELECT sr_kernel_eval('wavelet', 0.0)
 ----
-the kernel kind must be 1..9
+unknown kernel "wavelet"
 
 # 多项式 Σ c[i]·x^i：1 + 0x + 3x² 在 x=2 → 13
 query R
@@ -64,8 +71,8 @@ SELECT sr_polynomial(2.0, [1.0, 0.0, 3.0])
 # 属性（即 statrs 官方文档示例），期望值由已构建扩展实跑捕获。
 # ============================================================================
 
-# Kernel function with bandwidth scaling K(x / h) / h (same kind codes as sr_kernel_eval)
+# Kernel function with bandwidth scaling K(x / h) / h, for a named kernel
 query R
-SELECT sr_kernel_eval_with_bandwidth(1.0, 0.0, 0.5)
+SELECT sr_kernel_eval_with_bandwidth('gaussian', 0.0, 0.5)
 ----
 0.7978845608028654
