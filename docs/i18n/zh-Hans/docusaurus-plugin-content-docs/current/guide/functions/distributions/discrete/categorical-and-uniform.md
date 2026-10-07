@@ -160,8 +160,8 @@ SELECT sr_categorical_variance([1.0, 2.0, 1.0])
 **签名**：`sr_discrete_uniform_pmf(x BIGINT, min BIGINT, max BIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_discrete_uniform_pmf(2, 1, 6)::DECIMAL(12,8)
--- 0.16666667
+SELECT sr_discrete_uniform_pmf(2, 1, 6)
+-- 0.16666666666666666
 ```
 
 ### sr_discrete_uniform_ln_pmf(x, min, max)

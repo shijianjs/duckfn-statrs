@@ -20,8 +20,8 @@ The size of `covariance` must equal `len(mean)²`. A mismatch is a query error (
 `panic` is caught at the SQL boundary).
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0])::DECIMAL(12,8)
--- 0.15915494
+SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- 0.15915494309189535
 ```
 
 The value is `1 / (2π)` — the density of a standard bivariate normal at the origin.
@@ -122,12 +122,12 @@ SELECT sr_multivariate_normal_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
 ```
 
 For the identity covariance the inverse is the identity again. A diagonal case shows the
-inversion directly: `diag(2, 4)⁻¹ = diag(1/2, 1/4)`. The `round` is cosmetic — `1/2` is
-`0.49999999999999994` in binary floating point.
+inversion directly: `diag(2, 4)⁻¹ = diag(1/2, 1/4)` — `1/2` prints as `0.49999999999999994`
+in binary floating point.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT list_transform(sr_multivariate_normal_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0]), x -> round(x, 10))
--- [0.5, 0.0, 0.0, 0.25]
+SELECT sr_multivariate_normal_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0])
+-- [0.49999999999999994, 0.0, 0.0, 0.25]
 ```
 
 ## sr_multivariate_students_t_pdf(x, location, scale, freedom)
@@ -138,8 +138,8 @@ Density under a multivariate Student's t distribution. At `location = 0`, `scale
 symmetric `x = 0`, the density matches the multivariate normal at the origin.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)::DECIMAL(12,8)
--- 0.15915494
+SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
+-- 0.1591549430918955
 ```
 
 ### sr_multivariate_students_t_ln_pdf(x, location, scale, freedom)
@@ -195,8 +195,8 @@ SELECT sr_multivariate_students_t_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.
 ```
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT list_transform(sr_multivariate_students_t_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0], 3.0), x -> round(x, 10))
--- [0.5, 0.0, 0.0, 0.25]
+SELECT sr_multivariate_students_t_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0], 3.0)
+-- [0.49999999999999994, 0.0, 0.0, 0.25]
 ```
 
 ### sr_multivariate_students_t_min(location, scale, freedom)
@@ -240,8 +240,8 @@ Density of `x` on the simplex under a Dirichlet distribution with concentration 
 `x` and `alpha` must have the same length.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_dirichlet_pdf([0.5, 0.5], [1.0, 1.0])::DECIMAL(12,8)
--- 1.00000000
+SELECT sr_dirichlet_pdf([0.5, 0.5], [1.0, 1.0])
+-- 1.0000000000000009
 ```
 
 For `alpha = (1, 1)` the Dirichlet is uniform on the simplex, so the density is 1 everywhere
@@ -291,9 +291,11 @@ SELECT sr_dirichlet_variance([1.0, 2.0])
 Differential entropy of `Dir(alpha)`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_dirichlet_entropy([1.0, 1.0])::DECIMAL(12,8)
--- 0.00000000
+SELECT sr_dirichlet_entropy([1.0, 1.0])
+-- -8.881784197001252e-16
 ```
+
+For `alpha = (1, 1)` the entropy is 0; the tiny negative value is floating-point noise.
 
 ## sr_multinomial_pmf(probs, trials, counts)
 
@@ -308,8 +310,8 @@ Probability mass of a count vector under a multinomial distribution.
 The counts must sum to `trials`. A non-integer `trials` is a query error.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_multinomial_pmf([0.5, 0.5], 4, [2::UBIGINT, 2::UBIGINT])::DECIMAL(12,8)
--- 0.37500000
+SELECT sr_multinomial_pmf([0.5, 0.5], 4, [2::UBIGINT, 2::UBIGINT])
+-- 0.3750000000000001
 ```
 
 ```sql {"type":"duckfn","expect":"error"}

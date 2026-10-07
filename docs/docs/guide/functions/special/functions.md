@@ -23,8 +23,8 @@ SELECT sr_erf(0.0)
 ```
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erf(1.0)::DECIMAL(12,6)
--- 0.842701
+SELECT sr_erf(1.0)
+-- 0.8427007929427149
 ```
 
 ### sr_erfc(x)
@@ -34,8 +34,8 @@ SELECT sr_erf(1.0)::DECIMAL(12,6)
 Complementary error function `erfc(x) = 1 - erf(x)`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erfc(1.0)::DECIMAL(12,6)
--- 0.157299
+SELECT sr_erfc(1.0)
+-- 0.15729920705728503
 ```
 
 ### sr_erf_inv(y)
@@ -45,8 +45,8 @@ SELECT sr_erfc(1.0)::DECIMAL(12,6)
 Inverse error function: the x with `erf(x) = y`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erf_inv(sr_erf(0.7))::DECIMAL(12,8)
--- 0.70000000
+SELECT sr_erf_inv(sr_erf(0.7))
+-- 0.6999999999598528
 ```
 
 ### sr_erfc_inv(y)
@@ -56,8 +56,8 @@ SELECT sr_erf_inv(sr_erf(0.7))::DECIMAL(12,8)
 Inverse complementary error function.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_erfc_inv(0.15729920705028513)::DECIMAL(12,6)
--- 1.000000
+SELECT sr_erfc_inv(0.15729920705028513)
+-- 1.0
 ```
 
 ## Gamma family
@@ -80,8 +80,8 @@ SELECT sr_gamma(5.0)
 Natural log of the Gamma function, `ln(Γ(x))`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_ln_gamma(5.0)::DECIMAL(12,6)
--- 3.178054
+SELECT sr_ln_gamma(5.0)
+-- 3.1780538303479497
 ```
 
 ### sr_digamma(x)
@@ -91,8 +91,8 @@ SELECT sr_ln_gamma(5.0)::DECIMAL(12,6)
 Digamma function `ψ(x)`, the derivative of `ln(Γ(x))`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_digamma(2.0)::DECIMAL(12,8)
--- 0.42278434
+SELECT sr_digamma(2.0)
+-- 0.42278433509846486
 ```
 
 ### sr_inv_digamma(y)
@@ -102,8 +102,8 @@ SELECT sr_digamma(2.0)::DECIMAL(12,8)
 Inverse digamma: the x with `ψ(x) = y`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_inv_digamma(0.42278433509846713)::DECIMAL(12,8)
--- 2.00000000
+SELECT sr_inv_digamma(0.42278433509846713)
+-- 2.0000000000000018
 ```
 
 ### sr_gamma_lower_incomplete(a, x)
@@ -113,8 +113,8 @@ SELECT sr_inv_digamma(0.42278433509846713)::DECIMAL(12,8)
 Lower incomplete Gamma `γ(a, x)` — integrates from 0 to x.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_gamma_lower_incomplete(1.0, 1.0)::DECIMAL(12,8)
--- 0.63212056
+SELECT sr_gamma_lower_incomplete(1.0, 1.0)
+-- 0.6321205588285578
 ```
 
 ### sr_gamma_upper_incomplete(a, x)
@@ -124,8 +124,8 @@ SELECT sr_gamma_lower_incomplete(1.0, 1.0)::DECIMAL(12,8)
 Upper incomplete Gamma `Γ(a, x)` — integrates from x to infinity.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_gamma_upper_incomplete(1.0, 1.0)::DECIMAL(12,8)
--- 0.36787944
+SELECT sr_gamma_upper_incomplete(1.0, 1.0)
+-- 0.3678794411714417
 ```
 
 ### sr_gamma_lower_regularized(a, x)
@@ -135,8 +135,8 @@ SELECT sr_gamma_upper_incomplete(1.0, 1.0)::DECIMAL(12,8)
 Regularized lower incomplete Gamma `P(a, x) = γ(a, x) / Γ(a)`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_gamma_lower_regularized(1.0, 1.0)::DECIMAL(12,8)
--- 0.63212056
+SELECT sr_gamma_lower_regularized(1.0, 1.0)
+-- 0.6321205588285581
 ```
 
 ### sr_gamma_upper_regularized(a, x)
@@ -147,8 +147,8 @@ Regularized upper incomplete Gamma `Q(a, x) = Γ(a, x) / Γ(a)`. Complementary t
 regularized form: `P(a, x) + Q(a, x) = 1`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_gamma_upper_regularized(1.0, 1.0)::DECIMAL(12,8)
--- 0.36787944
+SELECT sr_gamma_upper_regularized(1.0, 1.0)
+-- 0.3678794411714419
 ```
 
 ## Beta family
@@ -160,8 +160,8 @@ SELECT sr_gamma_upper_regularized(1.0, 1.0)::DECIMAL(12,8)
 Beta function `B(a, b)`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_beta(2.0, 3.0)::DECIMAL(12,8)
--- 0.08333333
+SELECT sr_beta(2.0, 3.0)
+-- 0.08333333333333326
 ```
 
 ### sr_ln_beta(a, b)
@@ -171,8 +171,8 @@ SELECT sr_beta(2.0, 3.0)::DECIMAL(12,8)
 Natural log of the Beta function.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_ln_beta(2.0, 3.0)::DECIMAL(12,8)
--- -2.48490665
+SELECT sr_ln_beta(2.0, 3.0)
+-- -2.4849066497880012
 ```
 
 ### sr_beta_incomplete(x, a, b)
@@ -192,8 +192,8 @@ SELECT sr_beta_incomplete(2.0, 3.0, 0.5)
 Regularized incomplete Beta `I(x; a, b)`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_beta_regularized(2.0, 3.0, 0.5)::DECIMAL(12,8)
--- 0.68750000
+SELECT sr_beta_regularized(2.0, 3.0, 0.5)
+-- 0.6874999999999998
 ```
 
 ### sr_inv_beta_regularized(a, b, p)
@@ -203,8 +203,8 @@ SELECT sr_beta_regularized(2.0, 3.0, 0.5)::DECIMAL(12,8)
 Inverse of the regularized incomplete Beta: the x where `I(x; a, b) = p`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_inv_beta_regularized(2.0, 3.0, 0.5)::DECIMAL(12,8)
--- 0.38572757
+SELECT sr_inv_beta_regularized(2.0, 3.0, 0.5)
+-- 0.3857275681323894
 ```
 
 ## Factorial and combinatorial
@@ -227,8 +227,8 @@ SELECT sr_factorial(10)
 Natural log of `n!`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_ln_factorial(10)::DECIMAL(12,8)
--- 15.10441257
+SELECT sr_ln_factorial(10)
+-- 15.104412573075516
 ```
 
 ### sr_choose(n, k)
@@ -249,8 +249,8 @@ SELECT sr_choose(10, 3)
 Natural log of the binomial coefficient.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT exp(sr_ln_choose(10, 3))::DECIMAL(12,8)
--- 120.00000000
+SELECT exp(sr_ln_choose(10, 3))
+-- 120.00000000000009
 ```
 
 ### sr_multinomial_coefficient(total, counts)
@@ -273,8 +273,8 @@ SELECT sr_multinomial_coefficient(5, [2::UBIGINT, 2::UBIGINT, 1::UBIGINT])
 Harmonic number `H(n) = sum_{k=1..n} 1/k`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_harmonic(10)::DECIMAL(12,8)
--- 2.92896825
+SELECT sr_harmonic(10)
+-- 2.928968253968252
 ```
 
 ### sr_generalized_harmonic(n, m)
@@ -284,8 +284,8 @@ SELECT sr_harmonic(10)::DECIMAL(12,8)
 Generalized harmonic number `sum_{k=1..n} 1/k^m`.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_generalized_harmonic(10, 2.0)::DECIMAL(12,8)
--- 1.54976773
+SELECT sr_generalized_harmonic(10, 2.0)
+-- 1.5497677311665408
 ```
 
 ## Logistic / logit
@@ -309,8 +309,8 @@ Inverse sigmoid `ln(p / (1 - p))`. Endpoints (`0` and `1`) yield infinity; value
 yield NULL.
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_logit(sr_logistic(1.3))::DECIMAL(12,8)
--- 1.30000000
+SELECT sr_logit(sr_logistic(1.3))
+-- 1.3
 ```
 
 ```sql {"type":"duckfn","show":"value"}

@@ -43,9 +43,9 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
 在常量概率 `p`（范围 [0, 1]）处的经验分位数。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_empirical_quantile(v, 0.5)::DECIMAL(12,6)
+SELECT sr_empirical_quantile(v, 0.5)
 FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
--- 1.999969
+-- 1.999969482421875
 ```
 
 ### sr_empirical_entropy(values)

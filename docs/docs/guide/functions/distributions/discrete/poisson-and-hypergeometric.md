@@ -17,8 +17,8 @@ Parameter: `lambda` (rate, > 0).
 **Signature**: `sr_poisson_pmf(x UBIGINT, lambda DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_poisson_pmf(2, 3.0)::DECIMAL(12,8)
--- 0.22404181
+SELECT sr_poisson_pmf(2, 3.0)
+-- 0.22404180765538775
 ```
 
 ### sr_poisson_ln_pmf(x, lambda)
@@ -26,8 +26,8 @@ SELECT sr_poisson_pmf(2, 3.0)::DECIMAL(12,8)
 **Signature**: `sr_poisson_ln_pmf(x UBIGINT, lambda DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT exp(sr_poisson_ln_pmf(2, 3.0))::DECIMAL(12,8)
--- 0.22404181
+SELECT exp(sr_poisson_ln_pmf(2, 3.0))
+-- 0.22404180765538775
 ```
 
 ### sr_poisson_cdf(x, lambda)
@@ -171,8 +171,8 @@ population of size N with K successes.
 **Signature**: `sr_hypergeometric_pmf(x UBIGINT, population UBIGINT, successes UBIGINT, draws UBIGINT) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_hypergeometric_pmf(2, 10, 5, 4)::DECIMAL(12,8)
--- 0.47619048
+SELECT sr_hypergeometric_pmf(2, 10, 5, 4)
+-- 0.47619047619047616
 ```
 
 ### sr_hypergeometric_ln_pmf(x, population, successes, draws)

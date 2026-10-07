@@ -45,9 +45,9 @@ FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
 Empirical quantile function of `v` at the constant probability `p` in [0, 1].
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_empirical_quantile(v, 0.5)::DECIMAL(12,6)
+SELECT sr_empirical_quantile(v, 0.5)
 FROM (VALUES (1.0), (2.0), (3.0), (4.0)) t(v)
--- 1.999969
+-- 1.999969482421875
 ```
 
 ### sr_empirical_entropy(values)

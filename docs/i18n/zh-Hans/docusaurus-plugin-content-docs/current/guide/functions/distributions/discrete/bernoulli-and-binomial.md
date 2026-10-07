@@ -167,8 +167,8 @@ SELECT sr_bernoulli_variance(0.7)
 概率质量 `P(X = x)`。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_binomial_pmf(3, 0.5, 10)::DECIMAL(12,8)
--- 0.11718750
+SELECT sr_binomial_pmf(3, 0.5, 10)
+-- 0.11718750000000014
 ```
 
 ### sr_binomial_ln_pmf(x, p, n)
@@ -313,8 +313,8 @@ SELECT sr_binomial_variance(0.5, 10)
 **签名**：`sr_negative_binomial_pmf(x UBIGINT, r DOUBLE, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_negative_binomial_pmf(3, 2.0, 0.5)::DECIMAL(12,8)
--- 0.12500000
+SELECT sr_negative_binomial_pmf(3, 2.0, 0.5)
+-- 0.12500000000000086
 ```
 
 ### sr_negative_binomial_ln_pmf(x, r, p)
@@ -472,8 +472,8 @@ SELECT sr_geometric_cdf(1, 0.5)
 **签名**：`sr_geometric_sf(x UBIGINT, p DOUBLE) -> DOUBLE`
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_geometric_sf(1, 0.5)::DECIMAL(12,8)
--- 0.50000000
+SELECT sr_geometric_sf(1, 0.5)
+-- 0.5
 ```
 
 ### sr_geometric_quantile(p, prob)

@@ -19,8 +19,8 @@ x 在给定均值向量与协方差矩阵下的多元正态密度。
 的 panic 已在 SQL 边界拦下）。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0])::DECIMAL(12,8)
--- 0.15915494
+SELECT sr_multivariate_normal_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
+-- 0.15915494309189535
 ```
 
 数值 `1/(2π)` 就是标准二元正态在原点的密度。
@@ -118,12 +118,12 @@ SELECT sr_multivariate_normal_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0])
 -- [1.0, 0.0, 0.0, 1.0]
 ```
 
-单位阵的逆还是单位阵；对角情形能直接看出求逆：`diag(2, 4)⁻¹ = diag(1/2, 1/4)`。这里的 `round` 只是
-为了显示好看 —— `1/2` 在二进制浮点下本就是 `0.49999999999999994`。
+单位阵的逆还是单位阵；对角情形能直接看出求逆：`diag(2, 4)⁻¹ = diag(1/2, 1/4)` —— `1/2` 在二进制
+浮点下打印出来就是 `0.49999999999999994`。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT list_transform(sr_multivariate_normal_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0]), x -> round(x, 10))
--- [0.5, 0.0, 0.0, 0.25]
+SELECT sr_multivariate_normal_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0])
+-- [0.49999999999999994, 0.0, 0.0, 0.25]
 ```
 
 ## sr_multivariate_students_t_pdf(x, location, scale, freedom)
@@ -133,8 +133,8 @@ SELECT list_transform(sr_multivariate_normal_precision([0.0, 0.0], [2.0, 0.0, 0.
 多元 Student's t 密度。当 `location = 0`、`scale = I`、`x = 0` 时与多元正态同形。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)::DECIMAL(12,8)
--- 0.15915494
+SELECT sr_multivariate_students_t_pdf([0.0, 0.0], [0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
+-- 0.1591549430918955
 ```
 
 ### sr_multivariate_students_t_ln_pdf(x, location, scale, freedom)
@@ -186,8 +186,8 @@ SELECT sr_multivariate_students_t_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.
 ```
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT list_transform(sr_multivariate_students_t_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0], 3.0), x -> round(x, 10))
--- [0.5, 0.0, 0.0, 0.25]
+SELECT sr_multivariate_students_t_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0], 3.0)
+-- [0.49999999999999994, 0.0, 0.0, 0.25]
 ```
 
 ### sr_multivariate_students_t_min(location, scale, freedom)
@@ -230,8 +230,8 @@ SELECT sr_multivariate_students_t_mode([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0)
 x 在单纯形上、Dirichlet(alpha) 分布下的密度。`x` 与 `alpha` 长度必须一致。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_dirichlet_pdf([0.5, 0.5], [1.0, 1.0])::DECIMAL(12,8)
--- 1.00000000
+SELECT sr_dirichlet_pdf([0.5, 0.5], [1.0, 1.0])
+-- 1.0000000000000009
 ```
 
 `alpha = (1, 1)` 时 Dirichlet 就是单纯形上的均匀分布，密度处处为 1。
@@ -277,9 +277,11 @@ SELECT sr_dirichlet_variance([1.0, 2.0])
 `Dir(alpha)` 的微分熵。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_dirichlet_entropy([1.0, 1.0])::DECIMAL(12,8)
--- 0.00000000
+SELECT sr_dirichlet_entropy([1.0, 1.0])
+-- -8.881784197001252e-16
 ```
+
+`alpha = (1, 1)` 时熵为 0；这个极小的负值只是浮点噪声。
 
 ## sr_multinomial_pmf(probs, trials, counts)
 
@@ -294,8 +296,8 @@ SELECT sr_dirichlet_entropy([1.0, 1.0])::DECIMAL(12,8)
 `counts` 之和必须等于 `trials`。`trials` 不是整数会报查询错误。
 
 ```sql {"type":"duckfn","show":"value"}
-SELECT sr_multinomial_pmf([0.5, 0.5], 4, [2::UBIGINT, 2::UBIGINT])::DECIMAL(12,8)
--- 0.37500000
+SELECT sr_multinomial_pmf([0.5, 0.5], 4, [2::UBIGINT, 2::UBIGINT])
+-- 0.3750000000000001
 ```
 
 ```sql {"type":"duckfn","expect":"error"}
