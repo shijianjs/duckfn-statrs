@@ -1,7 +1,7 @@
 extension:
   name: duckfn_statrs
   description: Statistical functions from the Rust statrs crate - 34 aggregates and 509 scalars covering every statrs module
-  version: 0.0.3
+  version: 0.1.0
   language: Rust
   build: cargo
   license: MIT
