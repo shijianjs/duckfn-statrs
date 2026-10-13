@@ -2,6 +2,8 @@
 
 # duckfn_statrs
 
+[![上周下载量](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_statrs&label=%E4%B8%8A%E5%91%A8%E4%B8%8B%E8%BD%BD%E9%87%8F&color=blue&logo=duckdb)](https://duckdb.org/community_extensions/extensions/duckfn_statrs)
+
 DuckDB 的 [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)，
 把 Rust 统计计算库 [statrs](https://crates.io/crates/statrs) 包装成可以直接在 SQL 里调用的函数：
 描述统计量做成**聚合函数**（`SELECT sr_mean(x) FROM t GROUP BY g` 这样的写法），正态分布的

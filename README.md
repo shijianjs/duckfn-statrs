@@ -2,6 +2,8 @@
 
 # duckfn_statrs
 
+[![上周下载量](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_statrs&label=%E4%B8%8A%E5%91%A8%E4%B8%8B%E8%BD%BD%E9%87%8F&color=blue&logo=duckdb)](https://duckdb.org/community_extensions/extensions/duckfn_statrs)
+
 A DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development) that
 wraps the Rust statistical computing library [statrs](https://crates.io/crates/statrs) into functions
 callable straight from SQL: the descriptive statistics are **aggregate functions** (written as
