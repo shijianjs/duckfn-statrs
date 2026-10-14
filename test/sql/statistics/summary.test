@@ -89,11 +89,12 @@ GROUP BY g ORDER BY g;
 1	2.000000
 2	10.000000
 
-# 入参类型由 binder 拦下
+# 入参类型由引擎拦下：1.5.6 在 bind 阶段就报 Binder Error，2.0 改成执行期抛 Conversion Error
+# （`Could not convert string 'a' to DOUBLE`）。这里断言的是「被拒了」，不绑具体阶段。
 statement error
 SELECT sr_mean('a') FROM (VALUES ('x')) t(x);
 ----
-Binder Error
+<REGEX>:(Binder Error|Conversion Error)
 
 # 并行聚合的 combine 与单线程一致
 statement ok

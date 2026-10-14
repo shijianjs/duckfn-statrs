@@ -80,13 +80,13 @@ No function matches
 query RR
 SELECT sr_multivariate_normal_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0]),
        list_transform(sr_multivariate_normal_precision([0.0, 0.0], [2.0, 0.0, 0.0, 4.0]),
-                      x -> x::DECIMAL(12,10))
+                      lambda x: x::DECIMAL(12,10))
 ----
 [1.0, 0.0, 0.0, 1.0]	[0.5000000000, 0.0000000000, 0.0000000000, 0.2500000000]
 
 query R
 SELECT list_transform(sr_multivariate_students_t_precision([0.0, 0.0], [1.0, 0.0, 0.0, 1.0], 3.0),
-                      x -> x::DECIMAL(12,10))
+                      lambda x: x::DECIMAL(12,10))
 ----
 [1.0000000000, 0.0000000000, 0.0000000000, 1.0000000000]
 
@@ -94,7 +94,7 @@ SELECT list_transform(sr_multivariate_students_t_precision([0.0, 0.0], [1.0, 0.0
 # 故 Σ⁻¹ = (1/11)·[[3,-1],[-1,4]] = [[3/11, -1/11], [-1/11, 4/11]]。
 query R
 SELECT list_transform(sr_multivariate_normal_precision([0.0, 0.0], [4.0, 1.0, 1.0, 3.0]),
-                      x -> x::DECIMAL(12,10))
+                      lambda x: x::DECIMAL(12,10))
 ----
 [0.2727272727, -0.0909090909, -0.0909090909, 0.3636363636]
 
