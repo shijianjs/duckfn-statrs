@@ -10,7 +10,9 @@
 
 目录名必须与 `extension.name` **逐字一致** —— 社区仓的 `scripts/build.py` 会校验，不一致直接报错。
 
-## 模板里这三样都是占位符，提交前逐个换掉
+## 模板里的占位符（首次提交时逐个换掉，已换完）
+
+首次提交（PR #2945，已合并）时换掉的就是这三样，现已全部就位：
 
 1. `description.yml` 的 `<...>`：`extension.description`、`maintainers`、`repo.github`、`repo.ref`；
 2. `docs.hello_world` 与 `docs.extended_description`：示例函数的说明换成你真正的函数；
@@ -28,6 +30,27 @@ tag 名**。三者都是合法 git ref、社区仓都能照着 clone，但上游
 （`extensions/h3`、`extensions/orc` 都是），跟着走既不用解释，也天生不可变 —— 注册项指向的东西不会随时
 间漂移。写 `main` 的代价是实打实的：构建出来的二进制会自称 main 上的开发版本（`X.Y.Z-dev.N`），与这里
 声明的 `version` 对不上，而且同一个注册项在不同时间构建出的是不同代码。
+
+## `repo.ref_next`：下一个大版本那一腿
+
+社区注册表除了正式版那条腿，还跑一条**预发布**腿（他们的 `build_next.yml`：DuckDB 用
+`v2.0-cyanoptera` 分支、ci-tools 用 `main`、并带 `require_ref_next: true`）。这条腿只认描述文件里的
+`repo.ref_next`：没有这个字段就直接跳过，日志里打一句
+`Skipping prerelease validation: repo.ref_next is not defined` —— 也就是那条 PR 什么都没验证。
+
+本扩展对 2.0 是**扩展代码不用改、测试要改**，所以 `ref_next` 指向**改完测试的那个提交**
+（`e485353`），而不是与 `ref` 同一个 SHA：
+
+- 旧 lambda 箭头语法（`x -> …`）在 2.0 已被移除（`Binder Error: Deprecated lambda arrow`），
+  `test/sql/distribution_extra.test` 改成了 `lambda x: …`（1.5.6 同样支持）；
+- `sr_mean('a')` 的报错阶段从 bind 挪到了转换期（`Binder Error` → `Conversion Error: Could not
+  convert string 'a' to DOUBLE`），`test/sql/statistics/summary.test` 的断言改成 `<REGEX>:` 两种都收。
+
+这两处都在本仓 `.github/workflows/MainDistributionPipeline.yml` 的 `duckdb-next-build` 腿下验过
+（参数与注册表同一套）；那条腿绿了再动 `ref_next`，把它换成该次运行的提交 SHA。
+
+哪天预发布引擎真的要改扩展代码，就照 `UPDATING.md` 走：在本仓开 `vx.y-codename` 分支改到绿，把
+`ref_next` 换成那个分支的最新提交 SHA（`ref` 不动），再复制进社区仓那份克隆、推到同一条 PR 分支。
 
 ## 字段为什么这么写（都不是猜的）
 

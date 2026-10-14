@@ -75,6 +75,7 @@ that need a decision:
 | `extension.maintainers` | Your GitHub handle. |
 | `repo.github` | `owner/repository`. |
 | `repo.ref` | The **commit SHA** (40 characters) of the released version — `git rev-list -n 1 v0.1.0` — not `main` and not the tag name. A registration points at immutable code, and a build from a branch would claim a development version. |
+| `repo.ref_next` | The commit the registry builds for the **upcoming** DuckDB release: its prerelease leg is gated on this field, and without it that leg is skipped. Here it is the commit that adapted the tests to 2.0 — `community-extension/AGENTS.md` spells the reasoning out. |
 | `docs.hello_world` | A runnable example, rendered into a code block. Do not write `INSTALL` / `LOAD` here: the page adds those itself. |
 | `docs.extended_description` | The prose around the function table. |
 
