@@ -26,11 +26,16 @@ No extra flags needed — the community build is signed and matches your DuckDB 
 ## Install from a GitHub Release
 
 If the community route is not yet available for your platform, download the pre-built binary from the
-[releases page](https://github.com/shijianjs/duckfn-statrs/releases):
+[releases page](https://github.com/shijianjs/duckfn-statrs/releases). The asset is named
+`duckfn_statrs-<platform>.duckdb_extension` and has to be **renamed to `duckfn_statrs.duckdb_extension` before it
+can be loaded**: `LOAD` takes an extension name or a local path — it fetches no URLs (`INSTALL '<url>'` is the
+one that downloads) — and DuckDB takes the entry-point symbol from the file name, so the release name fails with
+`did not contain function "duckfn_statrs-windows_amd64_init_c_api"`:
 
-```sql
--- Load directly from the URL (replace the platform suffix with yours)
-LOAD 'https://github.com/shijianjs/duckfn-statrs/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
+```shell
+curl -LO https://github.com/shijianjs/duckfn-statrs/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension
+mv duckfn_statrs-windows_amd64.duckdb_extension duckfn_statrs.duckdb_extension
+duckdb -unsigned -c "LOAD './duckfn_statrs.duckdb_extension';"
 ```
 
 :::note

@@ -140,12 +140,16 @@ deployment, the `{{EXTENSION_VERSION}}` placeholder) are in [`docs/README.md`](d
 
 ## Installing a released extension
 
-Releases ship the `.duckdb_extension` built for each platform:
+Releases ship the `.duckdb_extension` built for each platform, named `duckfn_statrs-<platform>.duckdb_extension`.
+Download the one for your platform and **rename it to `duckfn_statrs.duckdb_extension`** before loading it —
+`LOAD` takes an extension name or a local path (it fetches no URLs; that is what `INSTALL '<url>'` is for), and
+DuckDB takes the entry-point symbol from the file name, so the release name fails with
+`did not contain function "duckfn_statrs-windows_amd64_init_c_api"`:
 
 ```shell
-duckdb -unsigned -c "
-LOAD 'https://github.com/shijianjs/duckfn-statrs/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
-"
+curl -LO https://github.com/shijianjs/duckfn-statrs/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension
+mv duckfn_statrs-windows_amd64.duckdb_extension duckfn_statrs.duckdb_extension
+duckdb -unsigned -c "LOAD './duckfn_statrs.duckdb_extension';"
 ```
 
 Once registered in the [community extensions](https://duckdb.org/community_extensions/list_of_extensions),

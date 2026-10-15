@@ -24,12 +24,15 @@ LOAD duckfn_statrs;
 
 ## 从 GitHub Release 安装
 
-如果社区路线尚不可用，从 [Releases 页面](https://github.com/shijianjs/duckfn-statrs/releases)
-下载对应平台的产物：
+如果社区路线尚不可用，从 [Releases 页面](https://github.com/shijianjs/duckfn-statrs/releases)下载对应平台的
+产物，命名是 `duckfn_statrs-<平台>.duckdb_extension` —— **加载之前必须先改名成 `duckfn_statrs.duckdb_extension`**：
+`LOAD` 收的是扩展名或本地路径，它不会去下载 URL（下载那条路是 `INSTALL '<url>'`），而入口点符号由文件名决定，
+直接用 Release 里的名字会报 `did not contain function "duckfn_statrs-windows_amd64_init_c_api"`：
 
-```sql
--- 直接从 URL 加载（把平台后缀换成你自己的）
-LOAD 'https://github.com/shijianjs/duckfn-statrs/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension';
+```shell
+curl -LO https://github.com/shijianjs/duckfn-statrs/releases/latest/download/duckfn_statrs-windows_amd64.duckdb_extension
+mv duckfn_statrs-windows_amd64.duckdb_extension duckfn_statrs.duckdb_extension
+duckdb -unsigned -c "LOAD './duckfn_statrs.duckdb_extension';"
 ```
 
 :::note
