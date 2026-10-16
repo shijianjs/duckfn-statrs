@@ -2,7 +2,11 @@
 
 # duckfn_statrs
 
-[![上周下载量](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_statrs&label=%E4%B8%8A%E5%91%A8%E4%B8%8B%E8%BD%BD%E9%87%8F&color=blue&logo=duckdb)](https://duckdb.org/community_extensions/extensions/duckfn_statrs)
+[![DuckDB 1.3+](https://img.shields.io/badge/DuckDB-1.3%2B-fff100?logo=duckdb&style=flat)](https://duckdb.org/)
+[![周下载](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_statrs&label=%E5%91%A8%E4%B8%8B%E8%BD%BD&color=blue&logo=duckdb&logoColor=a899ff&style=flat)](https://duckdb.org/community_extensions/extensions/duckfn_statrs)
+[![版本](https://img.shields.io/github/v/release/shijianjs/duckfn-statrs?style=flat&logo=github&label=%E7%89%88%E6%9C%AC)](https://github.com/shijianjs/duckfn-statrs/releases)
+[![许可证](https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-MIT-14459b.svg?style=flat&logo=github)](https://github.com/shijianjs/duckfn-statrs/blob/main/LICENSE)
+[![Rust 1.89+](https://img.shields.io/badge/Rust-1.89%2B-14459b.svg?style=flat)](https://rust-lang.org)
 
 DuckDB 的 [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development)，
 把 Rust 统计计算库 [statrs](https://crates.io/crates/statrs) 包装成可以直接在 SQL 里调用的函数：

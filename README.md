@@ -2,7 +2,11 @@
 
 # duckfn_statrs
 
-[![上周下载量](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_statrs&label=%E4%B8%8A%E5%91%A8%E4%B8%8B%E8%BD%BD%E9%87%8F&color=blue&logo=duckdb)](https://duckdb.org/community_extensions/extensions/duckfn_statrs)
+[![DuckDB 1.3+](https://img.shields.io/badge/DuckDB-1.3%2B-fff100?logo=duckdb&style=flat)](https://duckdb.org/)
+[![Weekly Downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_statrs&label=Weekly%20Downloads&color=blue&logo=duckdb&logoColor=a899ff&style=flat)](https://duckdb.org/community_extensions/extensions/duckfn_statrs)
+[![Release](https://img.shields.io/github/v/release/shijianjs/duckfn-statrs?style=flat&logo=github)](https://github.com/shijianjs/duckfn-statrs/releases)
+[![License](https://img.shields.io/badge/license-MIT-14459b.svg?style=flat&logo=github)](https://github.com/shijianjs/duckfn-statrs/blob/main/LICENSE)
+[![Rust 1.89+](https://img.shields.io/badge/Rust-1.89%2B-14459b.svg?style=flat)](https://rust-lang.org)
 
 A DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development) that
 wraps the Rust statistical computing library [statrs](https://crates.io/crates/statrs) into functions

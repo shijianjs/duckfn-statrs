@@ -137,37 +137,53 @@ SELECT sr_variance(x) FROM (VALUES (1.0)) t(x);  -- NULL (single value)`;
  * badges below, which are rounded too. The row has to look like one set, so the
  * shape is decided at the source rather than patched with CSS.
  *
- * 徽章：`<owner>/<repo>` 还没填时（`REPO_URL` 仍是占位符）只显示不依赖仓库地址的三枚，
+ * The row answers, in order: which DuckDB versions take the extension, how
+ * widely it is installed, the latest release, the licence, and the Rust
+ * toolchain the build needs.
+ *
+ * The labels that are words rather than identifiers follow the site locale, so
+ * the same badge reads "Weekly Downloads" in English and "周下载" in Chinese.
+ *
+ * 徽章：`<owner>/<repo>` 还没填时（`REPO_URL` 仍是占位符）只显示不依赖仓库地址的那些，
  * 免得首页挂着一排坏图。
  */
-function badges(repoUrl: string): HeroBadge[] {
+function badges(repoUrl: string, locale: string): HeroBadge[] {
   const repoSlug = repoUrl.replace(/^https:\/\/github\.com\//, '');
   const hasRepo = !repoSlug.includes('<');
+  const weeklyLabel = locale.startsWith('zh') ? '%E5%91%A8%E4%B8%8B%E8%BD%BD' : 'Weekly%20Downloads';
+  const weeklyAlt = locale.startsWith('zh') ? 'DuckDB 社区仓的周下载量' : 'Weekly downloads from the DuckDB community extensions';
+  const releaseLabel = locale.startsWith('zh') ? '&label=%E7%89%88%E6%9C%AC' : '';
+  const licenseLabel = locale.startsWith('zh') ? '%E8%AE%B8%E5%8F%AF%E8%AF%81' : 'license';
 
   return [
+    {
+      href: 'https://duckdb.org',
+      src: 'https://img.shields.io/badge/DuckDB-1.3%2B-fff100?logo=duckdb&style=flat',
+      alt: 'DuckDB 1.3 or newer',
+    },
+    {
+      href: 'https://duckdb.org/community_extensions/extensions/duckfn_statrs',
+      src: `https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_statrs&label=${weeklyLabel}&color=blue&logo=duckdb&logoColor=a899ff&style=flat`,
+      alt: weeklyAlt,
+    },
     ...(hasRepo
       ? [
           {
             href: `${repoUrl}/releases`,
-            src: `https://img.shields.io/github/v/release/${repoSlug}?style=flat`,
+            src: `https://img.shields.io/github/v/release/${repoSlug}?style=flat&logo=github${releaseLabel}`,
             alt: 'Latest release',
           },
         ]
       : []),
     {
-      href: 'https://github.com/shijianjs/duckfn-statrs/blob/main/LICENSE',
-      src: 'https://img.shields.io/badge/license-MIT-14459b.svg?style=flat',
+      href: `${repoUrl}/blob/main/LICENSE`,
+      src: `https://img.shields.io/badge/${licenseLabel}-MIT-14459b.svg?style=flat&logo=github`,
       alt: 'MIT license',
     },
     {
       href: 'https://rust-lang.org',
       src: 'https://img.shields.io/badge/Rust-1.89%2B-14459b.svg?style=flat',
       alt: 'Rust 1.89 or newer',
-    },
-    {
-      href: 'https://duckdb.org',
-      src: 'https://img.shields.io/badge/DuckDB-1.3%2B-14459b.svg?style=flat',
-      alt: 'DuckDB 1.3 or newer',
     },
   ];
 }
@@ -176,6 +192,7 @@ function heroContent(
   logoSrc: string,
   introHref: string,
   repoUrl: string,
+  locale: string,
   title: string,
   tagline: string,
 ): HeroContent {
@@ -196,7 +213,7 @@ function heroContent(
       href: repoUrl,
       icon: 'simple-icons:github',
     },
-    badges: badges(repoUrl),
+    badges: badges(repoUrl, locale),
   };
 }
 
@@ -411,8 +428,9 @@ function CodeShowcase(): ReactNode {
 }
 
 export default function Home(): ReactNode {
-  const {siteConfig} = useDocusaurusContext();
+  const {siteConfig, i18n} = useDocusaurusContext();
   const repoUrl = siteConfig.customFields?.repoUrl as string;
+  const locale = i18n.currentLocale;
   // Not a hard-coded "/img/...": the site is published under /<repo>/ on GitHub
   // Pages, and only useBaseUrl adds that prefix. The dfk-* components render
   // plain anchors, so every internal href is resolved here before it is passed
@@ -439,6 +457,7 @@ export default function Home(): ReactNode {
             logoUrl,
             introUrl,
             repoUrl,
+            locale,
             siteConfig.title,
             translate({id: 'homepage.tagline', message: siteConfig.tagline}),
           ),
