@@ -149,8 +149,9 @@ duckfn 文档与示例扩展写，不要凭印象：
 - [quack-rs](https://crates.io/crates/quack-rs)：DuckDB C API 绑定，`duckfn_entrypoint!` 展开出的代码
   直接引用它。
 - [libduckdb-sys](https://crates.io/crates/libduckdb-sys)：只取头文件，开启 `loadable-extension`，
-  因此**不需要在本地编译 DuckDB**。版本下限 `>=1.10500`（= DuckDB 1.5.0：这个 crate 把 DuckDB 版本
-  编码成 `1.<major*10000 + minor*100 + patch>.0`，1.5.6 就是 `1.10506.0`）。
+  因此**不需要在本地编译 DuckDB**。下限是 `>=1.10500`（= DuckDB 1.5.0：这个 crate 把 DuckDB 版本
+  编码成 `1.<major*10000 + minor*100 + patch>.0`），而已提交的锁文件现在解析到 `1.20000.0`（DuckDB 2.0.0
+  的头文件，走稳定区 v1 API）。
 
 这些 crate 之外不需要别的依赖。要做时间/日期相关的功能，再打开 duckfn 的 `chrono` feature 并把 `chrono`
 加成依赖（duckfn 不 re-export 它）；Cargo.toml 末尾有写好的两行例子。

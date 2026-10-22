@@ -172,7 +172,8 @@ the following is in it. Write them from duckfn's docs and example extension rath
   `duckfn_entrypoint!` refers to them directly.
 - [libduckdb-sys](https://crates.io/crates/libduckdb-sys): headers only, with `loadable-extension`, which
   is what keeps a local DuckDB build unnecessary. The lower bound is `>=1.10500` (= DuckDB 1.5.0: the
-  crate encodes a DuckDB version as `1.<major*10000 + minor*100 + patch>.0`, so 1.5.6 is `1.10506.0`).
+  crate encodes a DuckDB version as `1.<major*10000 + minor*100 + patch>.0`), while the checked-in lock
+  now resolves `1.20000.0` (DuckDB 2.0.0 headers on the stable v1 API).
 
 Beyond the crates above no further dependencies are needed. For anything date/time related, enable
 duckfn's `chrono` feature and add `chrono` as a dependency (duckfn re-exports none of those crates);
