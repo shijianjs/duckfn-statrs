@@ -8,8 +8,11 @@ description: How to install the duckfn_statrs extension into DuckDB and start ca
 
 ## Prerequisites
 
-- **DuckDB** version 1.3 or newer (the [CLI](https://duckdb.org/docs/stable/why_overview), the app, or
+- **DuckDB** version 1.4 or newer (the [CLI](https://duckdb.org/docs/stable/why_overview), the app, or
   any language client).
+- The release binaries are built against DuckDB 2.0.0 and also load into 1.4.x and 1.5.x (the C API is
+  binary compatible across these versions). There is no separate 1.5 build: on an older DuckDB, install
+  the same 2.0 release asset.
 
 ## Install from the community repository
 

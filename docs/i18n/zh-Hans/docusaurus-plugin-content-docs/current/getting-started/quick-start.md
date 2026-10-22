@@ -8,7 +8,9 @@ description: 如何将 duckfn_statrs 扩展安装到 DuckDB 并开始调用统�
 
 ## 前置条件
 
-- **DuckDB** 1.3 或更新版本（[CLI](https://duckdb.org/docs/stable/why_overview)、App 或任何语言客户端）。
+- **DuckDB** 1.4 或更新版本（[CLI](https://duckdb.org/docs/stable/why_overview)、App 或任意语言客户端）。
+- 发布产物基于 DuckDB 2.0.0 构建，同样能加载进 1.4.x / 1.5.x（C API 二进制兼容）。没有单独的 1.5
+  构建：旧版本用户直接安装同一份 2.0 release 资产即可。
 
 ## 从社区仓库安装
 
