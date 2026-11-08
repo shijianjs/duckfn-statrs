@@ -26,3 +26,7 @@ test/sql/*.*
 !/AGENTS.md
 !/README*.md
 !/DEVELOPMENT*.md
+
+# Agent skills：npx skills 生成的符号链接（绝对路径，本地生成不入库）
+.claude/skills/
+.codebuddy/skills/
