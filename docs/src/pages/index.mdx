@@ -1,0 +1,130 @@
+---
+title: duckfn_statrs
+description: 'Documentation for duckfn_statrs: 511 statistical functions for DuckDB SQL, from the Rust statrs crate.'
+hide_table_of_contents: true
+wrapperClassName: dfk-home
+---
+
+import Link from '@docusaurus/Link';
+import {registerDfkElements} from 'duckfn-docs-kit';
+
+import styles from '@site/src/pages/index.module.css';
+
+{registerDfkElements()}
+
+{/* `MDXPage` supplies the `<Layout>` and the page grid; `dfk-home` is what
+    lets `src/css/home.css` give the page the full width it needs. The badge
+    `href`s carry the repository URL inline because an MDX page cannot read
+    `customFields`. */}
+
+<dfk-hero
+  logo-src="/img/logo.svg"
+  title="duckfn_statrs"
+  tagline="Statistical functions for DuckDB, from the Rust statrs crate">
+
+<dfk-action kind="primary" href="/docs/intro">Get started</dfk-action>
+
+<dfk-action kind="secondary" href="https://github.com/shijianjs/duckfn-statrs" icon="simple-icons:github">GitHub</dfk-action>
+
+<dfk-badge href="https://duckdb.org" src="https://img.shields.io/badge/DuckDB-1.4%2B-fff100?logo=duckdb&style=flat" alt="DuckDB 1.4 or newer" />
+
+<dfk-badge href="https://duckdb.org/community_extensions/extensions/duckfn_statrs" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_statrs&label=Weekly%20Downloads&color=blue&logo=duckdb&logoColor=a899ff&style=flat" alt="Weekly downloads from the DuckDB community extensions" />
+
+<dfk-badge href="https://github.com/shijianjs/duckfn-statrs/releases" src="https://img.shields.io/github/v/release/shijianjs/duckfn-statrs?style=flat&logo=github" alt="Latest release" />
+
+<dfk-badge href="https://github.com/shijianjs/duckfn-statrs/blob/main/LICENSE" src="https://img.shields.io/badge/license-MIT-14459b.svg?style=flat&logo=github" alt="MIT license" />
+
+<dfk-badge href="https://rust-lang.org" src="https://img.shields.io/badge/Rust-1.89%2B-14459b.svg?style=flat" alt="Rust 1.89 or newer" />
+
+</dfk-hero>
+
+<dfk-features section-title="What you get">
+
+<dfk-feature icon="lucide:chart-line" title="Summary statistics as aggregates">
+Mean, median, variance, covariance, quantiles, ranks and more — all native SQL aggregates that work with GROUP BY.
+</dfk-feature>
+
+<dfk-feature icon="lucide:sigma" title="27 probability distributions">
+pdf, cdf, survival function, quantile, and log-density for every distribution — continuous, discrete, and multivariate.
+</dfk-feature>
+
+<dfk-feature icon="lucide:dice-5" title="Random sampling & signal generation">
+Draw k samples from any distribution into a LIST; generate sinusoidal, square, triangle, and sawtooth waveforms.
+</dfk-feature>
+
+<dfk-feature icon="lucide:flask-conical" title="Hypothesis testing">
+t-test, chi-square, ANOVA, Mann-Whitney U, Kolmogorov-Smirnov, Anderson-Darling, Fisher's exact — all in SQL.
+</dfk-feature>
+
+<dfk-feature icon="lucide:function-square" title="Special functions & constants">
+Gamma, Beta, erf, digamma, factorials, binomial coefficients, harmonic numbers, and mathematical constants.
+</dfk-feature>
+
+<dfk-feature icon="lucide:shield-check" title="Predictable NULL semantics">
+Undefined results become SQL NULL, invalid parameters raise clear errors, NULL inputs never produce a number — consistent across all 511 functions.
+</dfk-feature>
+
+</dfk-features>
+
+<section className={styles.sectionTint}>
+<div className={styles.sectionInner}>
+
+## Statistics in plain SQL
+
+511 functions backed by the Rust statrs library, callable directly from your DuckDB queries. Aggregates for summary statistics, scalars for distributions and special functions.
+
+<div className={styles.codeGrid}>
+<div className={styles.codeColumn}>
+
+```sql title="DuckDB SQL"
+-- Install once, then LOAD in every session:
+INSTALL duckfn_statrs FROM community;
+LOAD duckfn_statrs;
+
+-- Aggregates: one column in, one value out per group:
+SELECT g, sr_mean(x) AS mean, sr_std_dev(x) AS sd
+FROM my_table GROUP BY g;
+
+-- Scalars: distribution functions evaluated row by row:
+SELECT sr_normal_pdf(0.0, 0.0, 1.0);    -- 0.3989...
+SELECT sr_gamma_cdf(2.0, 3.0, 2.0);    -- 0.4564...
+
+-- NULL semantics: statrs cannot define it → SQL NULL
+SELECT sr_variance(x) FROM (VALUES (1.0)) t(x);  -- NULL (single value)
+```
+
+</div>
+</div>
+
+<div className={styles.showcaseLinkRow}>
+<Link className={styles.showcaseLink} to="/docs/guide/functions/overview">
+
+Browse all functions
+
+<iconify-icon icon="lucide:arrow-right" className={styles.showcaseLinkArrow} aria-hidden="true" />
+
+</Link>
+</div>
+
+</div>
+</section>
+
+<dfk-next-steps section-title="Where to go next">
+
+<dfk-step href="/docs/getting-started/quick-start" title="Install and load">
+Get the extension running in DuckDB and try your first queries.
+</dfk-step>
+
+<dfk-step href="/docs/guide/functions/overview" title="Function reference">
+Browse all 511 functions organized by category: statistics, distributions, special functions, sampling, and tests.
+</dfk-step>
+
+<dfk-step href="/docs/getting-started/project-structure" title="Development guide">
+Build from source, write new functions, test, and release.
+</dfk-step>
+
+<dfk-step href="/docs/build-and-release" title="Build and release">
+The build paths, the release flow, and the wasm target.
+</dfk-step>
+
+</dfk-next-steps>

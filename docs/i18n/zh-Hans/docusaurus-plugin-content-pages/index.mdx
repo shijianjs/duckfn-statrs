@@ -1,0 +1,129 @@
+---
+title: duckfn_statrs
+description: 'duckfn_statrs 文档：基于 Rust statrs 库的 511 个 DuckDB SQL 统计函数。'
+hide_table_of_contents: true
+wrapperClassName: dfk-home
+---
+
+import Link from '@docusaurus/Link';
+import {registerDfkElements} from 'duckfn-docs-kit';
+
+import styles from '@site/src/pages/index.module.css';
+
+{registerDfkElements()}
+
+{/* `MDXPage` 自带 `<Layout>` 与页面栅格；`dfk-home` 给 `src/css/home.css`
+    一个作用域，把首页放成全宽。徽章的 `href` 内联了仓库地址，因为 MDX 页面
+    读不到 `customFields`。 */}
+
+<dfk-hero
+  logo-src="/img/logo.svg"
+  title="duckfn_statrs"
+  tagline="基于 Rust statrs 库的 DuckDB 统计函数">
+
+<dfk-action kind="primary" href="/docs/intro">开始使用</dfk-action>
+
+<dfk-action kind="secondary" href="https://github.com/shijianjs/duckfn-statrs" icon="simple-icons:github">GitHub</dfk-action>
+
+<dfk-badge href="https://duckdb.org" src="https://img.shields.io/badge/DuckDB-1.4%2B-fff100?logo=duckdb&style=flat" alt="DuckDB 1.4 or newer" />
+
+<dfk-badge href="https://duckdb.org/community_extensions/extensions/duckfn_statrs" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_statrs&label=%E5%91%A8%E4%B8%8B%E8%BD%BD&color=blue&logo=duckdb&logoColor=a899ff&style=flat" alt="DuckDB 社区仓的周下载量" />
+
+<dfk-badge href="https://github.com/shijianjs/duckfn-statrs/releases" src="https://img.shields.io/github/v/release/shijianjs/duckfn-statrs?style=flat&logo=github&label=%E7%89%88%E6%9C%AC" alt="Latest release" />
+
+<dfk-badge href="https://github.com/shijianjs/duckfn-statrs/blob/main/LICENSE" src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-MIT-14459b.svg?style=flat&logo=github" alt="MIT license" />
+
+<dfk-badge href="https://rust-lang.org" src="https://img.shields.io/badge/Rust-1.89%2B-14459b.svg?style=flat" alt="Rust 1.89 or newer" />
+
+</dfk-hero>
+
+<dfk-features section-title="你得到了什么">
+
+<dfk-feature icon="lucide:chart-line" title="统计量聚合函数">
+均值、中位数、方差、协方差、分位数、秩……全部是原生 SQL 聚合，配合 GROUP BY 使用。
+</dfk-feature>
+
+<dfk-feature icon="lucide:sigma" title="27 种概率分布">
+每种分布都有 pdf、cdf、生存函数、分位数、对数密度——连续、离散、多元全覆盖。
+</dfk-feature>
+
+<dfk-feature icon="lucide:dice-5" title="随机抽样与信号生成">
+从任意分布抽 k 个样本输出 LIST；生成正弦、方波、三角、锯齿波形。
+</dfk-feature>
+
+<dfk-feature icon="lucide:flask-conical" title="假设检验">
+t 检验、卡方、ANOVA、Mann-Whitney U、Kolmogorov-Smirnov、Anderson-Darling、Fisher 精确——全部在 SQL 里完成。
+</dfk-feature>
+
+<dfk-feature icon="lucide:function-square" title="特殊函数与常量">
+Gamma、Beta、erf、digamma、阶乘、二项系数、调和数与数学常数。
+</dfk-feature>
+
+<dfk-feature icon="lucide:shield-check" title="可预测的 NULL 语义">
+算不出的结果是 SQL NULL，非法参数报清晰错误，NULL 输入永不产生数字——511 个函数保持一致。
+</dfk-feature>
+
+</dfk-features>
+
+<section className={styles.sectionTint}>
+<div className={styles.sectionInner}>
+
+## 纯 SQL 统计
+
+511 个函数背后是 Rust statrs 库，直接在 DuckDB 查询里调用。统计量用聚合，分布与特殊函数用标量逐行求值。
+
+<div className={styles.codeGrid}>
+<div className={styles.codeColumn}>
+
+```sql title="DuckDB SQL"
+-- Install once, then LOAD in every session:
+INSTALL duckfn_statrs FROM community;
+LOAD duckfn_statrs;
+
+-- Aggregates: one column in, one value out per group:
+SELECT g, sr_mean(x) AS mean, sr_std_dev(x) AS sd
+FROM my_table GROUP BY g;
+
+-- Scalars: distribution functions evaluated row by row:
+SELECT sr_normal_pdf(0.0, 0.0, 1.0);    -- 0.3989...
+SELECT sr_gamma_cdf(2.0, 3.0, 2.0);    -- 0.4564...
+
+-- NULL semantics: statrs cannot define it → SQL NULL
+SELECT sr_variance(x) FROM (VALUES (1.0)) t(x);  -- NULL (single value)
+```
+
+</div>
+</div>
+
+<div className={styles.showcaseLinkRow}>
+<Link className={styles.showcaseLink} to="/docs/guide/functions/overview">
+
+浏览全部函数
+
+<iconify-icon icon="lucide:arrow-right" className={styles.showcaseLinkArrow} aria-hidden="true" />
+
+</Link>
+</div>
+
+</div>
+</section>
+
+<dfk-next-steps section-title="接下来去哪">
+
+<dfk-step href="/docs/getting-started/quick-start" title="安装与加载">
+把扩展跑起来，试试第一批查询。
+</dfk-step>
+
+<dfk-step href="/docs/guide/functions/overview" title="函数参考">
+按类别浏览全部 511 个函数：统计量、分布、特殊函数、抽样、检验。
+</dfk-step>
+
+<dfk-step href="/docs/getting-started/project-structure" title="开发指南">
+从源码构建、写新函数、测试与发版。
+</dfk-step>
+
+<dfk-step href="/docs/build-and-release" title="构建与发版">
+构建路径、发版流程与 wasm 目标。
+</dfk-step>
+
+</dfk-next-steps>
