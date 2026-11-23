@@ -69,7 +69,7 @@ const baseUrl = process.env.DOCS_BASE_URL ?? '/';
 const config: Config = {
   title: 'duckfn_statrs',
   tagline: 'Statistical functions for DuckDB, from the Rust statrs crate',
-  favicon: 'img/logo.svg',
+  favicon: 'img/logo.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -221,7 +221,7 @@ const config: Config = {
       title: 'duckfn_statrs',
       logo: {
         alt: 'duckfn_statrs logo',
-        src: 'img/logo.svg',
+        src: 'img/logo.png',
       },
       items: [
         // 顶栏两项 = 两个侧边栏（见 sidebars.ts）：插件使用者的文档 / 项目开发者文档。
